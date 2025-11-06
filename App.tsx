@@ -1,5 +1,6 @@
 
-import React, { useState, useEffect, useId, useRef } from 'react';
+
+import React, { useState, useEffect, useId, useRef, useCallback } from 'react';
 
 // Since this is a single file generation, we will simulate imports.
 // In a real project, these would be in separate files.
@@ -89,7 +90,7 @@ const App: React.FC = () => {
     // A simple migration for the pings structure if old data exists
     if (savedState) {
         const parsed = JSON.parse(savedState);
-        if (!Array.isArray(parsed.pings[0])) {
+        if (!parsed.pings || !Array.isArray(parsed.pings[0])) {
             parsed.pings = Array(7).fill(0).map(() => Array(7).fill('pending'));
         }
         if (parsed.user && !('avatar' in parsed.user)) {
@@ -131,6 +132,18 @@ const App: React.FC = () => {
 
 
 // --- START: OnboardingScreen Component ---
+const RCLE_TEXT = `Você está sendo convidado(a) a participar como voluntário(a) do estudo Associação longitudinal entre exposição a vídeos curtos e variabilidade emocional: moderação da valência e efeitos no humor diário, DESENVOLVIDO POR PESQUISADORES DO Centro de Ensino Unificado de Brasília (UniCEUB). O nome deste documento que você está lendo é Registro de Consentimento Livre e Esclarecido (RCLE) que visa assegurar seus direitos como participante.
+Sua colaboração neste estudo será de muita importância para nós, mas se desistir a qualquer momento, isso não lhe causará prejuízo. Antes de decidir se deseja participar (de livre e espontânea vontade) você deverá ler e compreender todo o conteúdo.
+A pesquisa tem como objetivo A pesquisa tem como objetivo investigar a relação entre o tempo de exposição a vídeos curtos em plataformas digitais e a variabilidade emocional, considerando a valência afetiva do conteúdo e seus efeitos sobre o humor diário. O estudo busca entender se e como o tempo de visualização de vídeos curtos e a polaridade afetiva do conteúdo podem influenciar a flutuação de emoções e o bem-estar diário dos adultos.
+A participação dos envolvidos é essencial para coletar dados que permitirão uma análise precisa dessa relação, contribuindo para uma melhor compreensão dos impactos das redes sociais na saúde mental e na regulação emocional.
+Sua participação consiste em utilizar um aplicativo gamificado por sete dias, respondendo a notificações periódicas que avaliarão seu estado emocional presente, a valência dos vídeos assistidos e seu humor diário, além de registrar o tempo de uso de redes sociais. O aplicativo também incluirá perguntas sociodemográficas e avaliação momentânea sobre a valência e a variabilidade emocional, registrando o tempo de tela e a ocorrência de eventos estressores e qualidade do sono. A participação é voluntária, anônima e os dados coletados serão utilizados exclusivamente para fins acadêmicos.
+Este estudo possui riscos mínimos e incluem desconforto ao responder perguntas sobre valência emocional dos vídeos e a variação de emoções ao longo do dia. Para minimizar esses riscos, todas as respostas serão anônimas e armazenadas em plataformas seguras, seguindo as orientações da CONEP para pesquisas em ambientes virtuais. Além disso, os participantes podem interromper sua participação a qualquer momento e solicitar a exclusão de seus dados. Medidas de proteção, como o uso de plataformas seguras e o cumprimento da LGPD, serão adotadas para garantir a privacidade e segurança dos dados coletados.
+Com sua participação nesta pesquisa você contribuirá para um melhor entendimento da relação entre o tempo de exposição a vídeos curtos, a valência afetiva dos conteúdos e a variabilidade emocional em adultos. Embora não haja benefícios diretos para os participantes, os resultados poderão gerar insights valiosos que ajudarão na compreensão dos impactos das mídias sociais na saúde mental e no bem-estar emocional, contribuindo para debates acadêmicos e propostas de intervenção mais informadas.
+Sua participação é voluntária. Você não terá nenhum prejuízo se não quiser participar. Você poderá se retirar desta pesquisa a qualquer momento, bastando para isso entrar em contato com um dos pesquisadores responsáveis. Também deverá ser esclarecido quanto ao direito do participante de não responder qualquer uma das perguntas.
+Conforme previsto pelas normas brasileiras de pesquisa com a participação de seres humanos, você não receberá nenhum tipo de compensação financeira pela sua participação neste estudo.
+Seus dados serão manuseados somente pelos pesquisadores e não será permitido o acesso a outras pessoas. Os dados e instrumentos utilizados (por exemplo, fitas, entrevistas, questionários) ficarão guardados sob a responsabilidade de Thiago de Souza Ferreira Carneiro com a garantia de manutenção do sigilo e confidencialidade, e arquivados por um período de 5 anos; após esse tempo serão destruídos. Os resultados deste trabalho poderão ser apresentados em encontros ou revistas científicas. Entretanto, ele mostrará apenas os resultados obtidos como um todo, sem revelar seu nome, instituição a qual pertence ou qualquer informação que esteja relacionada com sua privacidade.
+Se houver alguma dúvida referente aos objetivos, procedimentos e métodos utilizados nesta pesquisa, entre em contato com os pesquisadores responsáveis pelo e-mail thiagosdcarneiro@sempreceub.com ou pelo telefone (61) 99236-0330. Também, se houver alguma consideração ou dúvida referente aos aspectos éticos da pesquisa, entre em contato com o Comitê de Ética em Pesquisa do Centro Universitário de Brasília (CEP-UniCEUB), que aprovou esta pesquisa, pelo telefone 3966-1511 ou pelo e-mail cep.uniceub@uniceub.br. O horário de atendimento do CEP-UniCEUB é de segunda a quinta: 09h30 às 12h30 e 14h30 às 18h30. Também entre em contato para informar ocorrências irregulares ou danosas durante a sua participação no estudo.
+O CEP é um grupo de profissionais de várias áreas do conhecimento e da comunidade, autônomo, de relevância pública, que tem o propósito de defender os interesses dos participantes da pesquisa em sua integridade e dignidade e de contribuir para o desenvolvimento da pesquisa dentro de padrões éticos.`;
 
 const OnboardingScreen: React.FC<{ onComplete: (nickname: string) => void }> = ({ onComplete }) => {
   const [step, setStep] = useState(0);
@@ -140,7 +153,6 @@ const OnboardingScreen: React.FC<{ onComplete: (nickname: string) => void }> = (
     if (agreed) {
       setStep(1);
     } else {
-      // This path is less likely to be taken with the new UI, but kept for logic safety
       alert("Para participar da pesquisa, você precisa concordar com os termos.");
     }
   };
@@ -188,27 +200,13 @@ const OnboardingScreen: React.FC<{ onComplete: (nickname: string) => void }> = (
 const ConsentScreen: React.FC<{ onConsent: (agreed: boolean) => void }> = ({ onConsent }) => {
   const [agreed, setAgreed] = useState(false);
   
-  const rcleText = `Você está sendo convidado(a) a participar como voluntário(a) do estudo Associação longitudinal entre exposição a vídeos curtos e variabilidade emocional: moderação da valência e efeitos no humor diário, DESENVOLVIDO POR PESQUISADORES DO Centro de Ensino Unificado de Brasília (UniCEUB). O nome deste documento que você está lendo é Registro de Consentimento Livre e Esclarecido (RCLE) que visa assegurar seus direitos como participante.
-Sua colaboração neste estudo será de muita importância para nós, mas se desistir a qualquer momento, isso não lhe causará prejuízo. Antes de decidir se deseja participar (de livre e espontânea vontade) você deverá ler e compreender todo o conteúdo.
-A pesquisa tem como objetivo A pesquisa tem como objetivo investigar a relação entre o tempo de exposição a vídeos curtos em plataformas digitais e a variabilidade emocional, considerando a valência afetiva do conteúdo e seus efeitos sobre o humor diário. O estudo busca entender se e como o tempo de visualização de vídeos curtos e a polaridade afetiva do conteúdo podem influenciar a flutuação de emoções e o bem-estar diário dos adultos.
-A participação dos envolvidos é essencial para coletar dados que permitirão uma análise precisa dessa relação, contribuindo para uma melhor compreensão dos impactos das redes sociais na saúde mental e na regulação emocional.
-Sua participação consiste em utilizar um aplicativo gamificado por sete dias, respondendo a notificações periódicas que avaliarão seu estado emocional presente, a valência dos vídeos assistidos e seu humor diário, além de registrar o tempo de uso de redes sociais. O aplicativo também incluirá perguntas sociodemográficas e avaliação momentânea sobre a valência e a variabilidade emocional, registrando o tempo de tela e a ocorrência de eventos estressores e qualidade do sono. A participação é voluntária, anônima e os dados coletados serão utilizados exclusivamente para fins acadêmicos.
-Este estudo possui riscos mínimos e incluem desconforto ao responder perguntas sobre valência emocional dos vídeos e a variação de emoções ao longo do dia. Para minimizar esses riscos, todas as respostas serão anônimas e armazenadas em plataformas seguras, seguindo as orientações da CONEP para pesquisas em ambientes virtuais. Além disso, os participantes podem interromper sua participação a qualquer momento e solicitar a exclusão de seus dados. Medidas de proteção, como o uso de plataformas seguras e o cumprimento da LGPD, serão adotadas para garantir a privacidade e segurança dos dados coletados.
-Com sua participação nesta pesquisa você contribuirá para um melhor entendimento da relação entre o tempo de exposição a vídeos curtos, a valência afetiva dos conteúdos e a variabilidade emocional em adultos. Embora não haja benefícios diretos para os participantes, os resultados poderão gerar insights valiosos que ajudarão na compreensão dos impactos das mídias sociais na saúde mental e no bem-estar emocional, contribuindo para debates acadêmicos e propostas de intervenção mais informadas.
-Sua participação é voluntária. Você não terá nenhum prejuízo se não quiser participar. Você poderá se retirar desta pesquisa a qualquer momento, bastando para isso entrar em contato com um dos pesquisadores responsáveis. Também deverá ser esclarecido quanto ao direito do participante de não responder qualquer uma das perguntas.
-Conforme previsto pelas normas brasileiras de pesquisa com a participação de seres humanos, você não receberá nenhum tipo de compensação financeira pela sua participação neste estudo.
-Seus dados serão manuseados somente pelos pesquisadores e não será permitido o acesso a outras pessoas. Os dados e instrumentos utilizados (por exemplo, fitas, entrevistas, questionários) ficarão guardados sob a responsabilidade de Thiago de Souza Ferreira Carneiro com a garantia de manutenção do sigilo e confidencialidade, e arquivados por um período de 5 anos; após esse tempo serão destruídos. Os resultados deste trabalho poderão ser apresentados em encontros ou revistas científicas. Entretanto, ele mostrará apenas os resultados obtidos como um todo, sem revelar seu nome, instituição a qual pertence ou qualquer informação que esteja relacionada com sua privacidade.
-Se houver alguma dúvida referente aos objetivos, procedimentos e métodos utilizados nesta pesquisa, entre em contato com os pesquisadores responsáveis pelo e-mail thiagosdcarneiro@sempreceub.com ou pelo telefone (61) 99236-0330. Também, se houver alguma consideração ou dúvida referente aos aspectos éticos da pesquisa, entre em contato com o Comitê de Ética em Pesquisa do Centro Universitário de Brasília (CEP-UniCEUB), que aprovou esta pesquisa, pelo telefone 3966-1511 ou pelo e-mail cep.uniceub@uniceub.br. O horário de atendimento do CEP-UniCEUB é de segunda a quinta: 09h30 às 12h30 e 14h30 às 18h30. Também entre em contato para informar ocorrências irregulares ou danosas durante a sua participação no estudo.
-O CEP é um grupo de profissionais de várias áreas do conhecimento e da comunidade, autônomo, de relevância pública, que tem o propósito de defender os interesses dos participantes da pesquisa em sua integridade e dignidade e de contribuir para o desenvolvimento da pesquisa dentro de padrões éticos.
-Caso concorde em participar deste estudo, favor assinalar a opção a seguir: ( ) Concordo em participar do estudo aqui apresentado.`;
-
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
        <div className="w-full max-w-2xl p-8 space-y-6 bg-slate-900/50 backdrop-blur-md rounded-2xl border border-cyan-400/20 shadow-glow-blue">
          <h1 className="text-2xl font-bold text-cyan-400 text-center">Bem vindo ao ENIGMA DE PSYLOGOS!</h1>
          <h2 className="text-xl font-semibold text-white text-center">Registro de Consentimento Livre e Esclarecido</h2>
          <div className="h-64 overflow-y-auto p-4 border border-cyan-400/30 rounded-lg bg-black/20 text-gray-300 text-sm">
-            <p className="whitespace-pre-wrap">{rcleText}</p>
+            <p className="whitespace-pre-wrap">{RCLE_TEXT}</p>
          </div>
          <div className="flex flex-col items-center space-y-6 pt-4">
             <label className="flex items-center space-x-3 cursor-pointer group">
@@ -231,7 +229,7 @@ Caso concorde em participar deste estudo, favor assinalar a opção a seguir: ( 
                 </span>
             </label>
             <button
-                onClick={() => onConsent(true)}
+                onClick={() => onConsent(agreed)}
                 disabled={!agreed}
                 className="w-full max-w-xs px-6 py-3 font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-all duration-300 shadow-glow-blue disabled:bg-gray-600/50 disabled:cursor-not-allowed disabled:shadow-none disabled:text-gray-400"
             >
@@ -251,8 +249,13 @@ Caso concorde em participar deste estudo, favor assinalar a opção a seguir: ( 
 const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>> }> = ({ gameState, setGameState }) => {
   const { user, pings } = gameState;
   const [highlightedPing, setHighlightedPing] = useState<{ day: number, ping: number } | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPingModalOpen, setIsPingModalOpen] = useState(false);
+  const [isRcleModalOpen, setIsRcleModalOpen] = useState(false);
+  const [isPerformanceModalOpen, setIsPerformanceModalOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const findNextPendingPing = () => {
@@ -267,6 +270,18 @@ const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Disp
     };
     setHighlightedPing(findNextPendingPing());
   }, [pings]);
+
+  // Close profile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+        if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+            setIsProfileMenuOpen(false);
+        }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
 
   const handlePingResponse = (confirmed: boolean) => {
     if (!highlightedPing) return;
@@ -296,11 +311,7 @@ const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Disp
         }
     }));
 
-    setIsModalOpen(false);
-  };
-
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
+    setIsPingModalOpen(false);
   };
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -310,15 +321,27 @@ const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Disp
       reader.onloadend = () => {
         setGameState(prev => ({
           ...prev,
-          user: {
-            ...prev.user,
-            avatar: reader.result as string,
-          }
+          user: { ...prev.user, avatar: reader.result as string }
         }));
       };
       reader.readAsDataURL(file);
     }
+    setIsProfileMenuOpen(false);
   };
+  
+  const handleRemoveAvatar = () => {
+    setGameState(prev => ({
+      ...prev,
+      user: { ...prev.user, avatar: null }
+    }));
+    setIsProfileMenuOpen(false);
+  };
+
+  const handleTimerEnd = useCallback(() => {
+    if (highlightedPing) {
+      setIsPingModalOpen(true);
+    }
+  }, [highlightedPing]);
 
 
   const notificationTimes = ['9h', '11h', '13h', '15h', '17h', '19h', '21h'];
@@ -343,28 +366,45 @@ const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Disp
 
   return (
     <div className="p-4 sm:p-6 max-w-4xl mx-auto">
-      {isModalOpen && highlightedPing && (
+      {isPingModalOpen && highlightedPing && (
         <PingConfirmationModal 
           onConfirm={() => handlePingResponse(true)}
           onDeny={() => handlePingResponse(false)}
         />
       )}
+      {isRcleModalOpen && (
+        <RcleModal onClose={() => setIsRcleModalOpen(false)} />
+      )}
+      {isPerformanceModalOpen && (
+        <PerformanceModal 
+          onClose={() => setIsPerformanceModalOpen(false)}
+          gameState={gameState}
+        />
+      )}
       <header className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-4">
-           <button
-            onClick={handleAvatarClick}
-            className="relative group w-16 h-16 rounded-full bg-slate-800 border-2 border-cyan-400 flex items-center justify-center overflow-hidden cursor-pointer transition-all hover:border-cyan-300 hover:shadow-glow-blue-sm"
-            aria-label="Alterar avatar"
-          >
-            {user.avatar ? (
-              <img src={user.avatar} alt="Avatar do usuário" className="w-full h-full object-cover" />
-            ) : (
-              <UserIcon className="w-8 h-8 text-cyan-400" />
+           <div className="relative" ref={profileMenuRef}>
+             <button
+              onClick={() => setIsProfileMenuOpen(prev => !prev)}
+              className="relative group w-16 h-16 rounded-full bg-slate-800 border-2 border-cyan-400 flex items-center justify-center overflow-hidden cursor-pointer transition-all hover:border-cyan-300 hover:shadow-glow-blue-sm"
+              aria-label="Menu do perfil"
+            >
+              {user.avatar ? (
+                <img src={user.avatar} alt="Avatar do usuário" className="w-full h-full object-cover" />
+              ) : (
+                <UserIcon className="w-8 h-8 text-cyan-400" />
+              )}
+            </button>
+            {isProfileMenuOpen && (
+              <ProfileMenu
+                onUpload={() => fileInputRef.current?.click()}
+                onRemove={handleRemoveAvatar}
+                onViewRcle={() => { setIsRcleModalOpen(true); setIsProfileMenuOpen(false); }}
+                onViewPerformance={() => { setIsPerformanceModalOpen(true); setIsProfileMenuOpen(false); }}
+                hasAvatar={!!user.avatar}
+              />
             )}
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <CameraIcon className="w-6 h-6 text-white" />
-            </div>
-          </button>
+           </div>
            <input
             type="file"
             ref={fileInputRef}
@@ -377,14 +417,17 @@ const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Disp
             <p className="text-gray-400">Nível {user.level} - Mente Curiosa</p>
           </div>
         </div>
-        <button 
-          className="p-2 rounded-full bg-slate-800/50 hover:bg-slate-700/50 disabled:opacity-50 disabled:cursor-not-allowed"
-          onClick={() => setIsModalOpen(true)}
-          disabled={!highlightedPing}
-          aria-label="Responder próximo ping"
-        >
-           <BellIcon className="w-6 h-6 text-cyan-400"/>
-        </button>
+        <div className="flex items-center space-x-4">
+          <CountdownTimer onTimerEnd={handleTimerEnd} />
+          <button 
+            className="p-2 rounded-full bg-slate-800/50 hover:bg-slate-700/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => setIsPingModalOpen(true)}
+            disabled={!highlightedPing}
+            aria-label="Responder próximo ping"
+          >
+             <BellIcon className="w-6 h-6 text-cyan-400"/>
+          </button>
+        </div>
       </header>
       
       <main className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -406,9 +449,10 @@ const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Disp
             </div>
             <div className="flex justify-between mt-1 text-sm text-cyan-300">
                 <span>Nível {level}</span>
-                <span>{xpIntoLevel} / {xpForThisLevel} XP</span>
+                <span>{totalXp} / {nextLevelXpTarget} XP</span>
                 <span>Nível {level + 1}</span>
             </div>
+            <p className="text-center text-gray-400 text-xs mt-2">XP total acumulado / XP para próximo nível</p>
         </Card>
 
         <Card className="md:col-span-1">
@@ -520,6 +564,257 @@ const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Disp
 
 
 // --- START: Reusable Components & Icons ---
+
+const Modal: React.FC<{onClose: () => void, children: React.ReactNode, className?: string}> = ({onClose, children, className}) => {
+    return (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+            <div className={`bg-slate-900 border border-cyan-400/30 rounded-2xl shadow-glow-blue w-full relative ${className}`} onClick={(e) => e.stopPropagation()}>
+                <button onClick={onClose} className="absolute top-2 right-2 text-gray-400 hover:text-white transition-colors" aria-label="Fechar modal">
+                    <XIcon className="w-6 h-6" />
+                </button>
+                {children}
+            </div>
+        </div>
+    );
+};
+
+const RcleModal: React.FC<{onClose: () => void}> = ({onClose}) => {
+    return (
+        <Modal onClose={onClose} className="max-w-2xl">
+            <div className="p-8">
+                 <h2 className="text-2xl font-bold text-cyan-400 text-center mb-4">Registro de Consentimento Livre e Esclarecido</h2>
+                 <div className="h-96 overflow-y-auto p-4 border border-cyan-400/30 rounded-lg bg-black/20 text-gray-300 text-sm">
+                    <p className="whitespace-pre-wrap">{RCLE_TEXT}</p>
+                 </div>
+            </div>
+        </Modal>
+    );
+};
+
+const PerformanceModal: React.FC<{onClose: () => void, gameState: GameState}> = ({onClose, gameState}) => {
+    const userXpHistory = gameState.pings.flat().reduce((acc, status, index) => {
+        const lastXp = acc.length > 0 ? acc[acc.length - 1] : 0;
+        let currentXp = lastXp;
+        if (status === 'completed') {
+            const isStar = (index + 1) % 7 === 0;
+            currentXp += (isStar ? 100 : 50);
+        }
+        acc.push(currentXp);
+        return acc;
+    }, [] as number[]);
+
+    const totalPings = 49;
+    while(userXpHistory.length < totalPings) {
+        userXpHistory.push(userXpHistory[userXpHistory.length-1] ?? 0);
+    }
+
+    const avgXp = MOCK_PLAYERS.reduce((sum, p) => sum + p.points, 0) / MOCK_PLAYERS.length;
+    const allPlayers = [...MOCK_PLAYERS, { nickname: gameState.user.nickname, points: gameState.user.points }];
+    const maxXp = Math.max(...allPlayers.map(p => p.points));
+    const chartMaxY = Math.max(maxXp, avgXp, ...userXpHistory, 1) * 1.1;
+
+    // Chart dimensions
+    const width = 500, height = 300;
+    const margin = { top: 20, right: 30, bottom: 50, left: 60 };
+    const chartWidth = width - margin.left - margin.right;
+    const chartHeight = height - margin.top - margin.bottom;
+
+    const toPath = (data: number[]) => {
+        if (data.length === 0) return "";
+        return "M" + data.map((p, i) => {
+            const x = (i / (Math.max(1, totalPings - 1))) * chartWidth;
+            const y = chartHeight - (p / Math.max(1, chartMaxY)) * chartHeight;
+            return `${x.toFixed(2)},${y.toFixed(2)}`;
+        }).join(" L");
+    };
+    
+    const toAreaPath = (data: number[]) => {
+        const linePath = toPath(data);
+        if (!linePath.startsWith("M")) return "";
+        return `${linePath} L ${chartWidth},${chartHeight} L 0,${chartHeight} Z`;
+    };
+
+    const userLinePath = toPath(userXpHistory);
+    const userAreaPath = toAreaPath(userXpHistory);
+
+    const numTicks = 5;
+    const yTicks = Array.from({ length: numTicks + 1 }, (_, i) => {
+        const value = (chartMaxY / numTicks) * i;
+        const yPos = chartHeight - (value / Math.max(1, chartMaxY)) * chartHeight;
+        return { value, y: yPos };
+    });
+
+    return (
+        <Modal onClose={onClose} className="max-w-3xl">
+             <div className="p-6 sm:p-8">
+                 <h2 className="text-2xl font-bold text-cyan-400 text-center mb-6">Resumo de Desempenho</h2>
+                 <div className="flex flex-col items-center">
+                    <div className="w-full">
+                        <svg width="100%" viewBox={`0 0 ${width} ${height}`}>
+                            <defs>
+                                <linearGradient id="userAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#00ffff" stopOpacity="0.4" />
+                                    <stop offset="100%" stopColor="#00ffff" stopOpacity="0" />
+                                </linearGradient>
+                                <filter id="lineGlow" x="-50%" y="-50%" width="200%" height="200%">
+                                  <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                                  <feMerge>
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                  </feMerge>
+                                </filter>
+                            </defs>
+                            <g transform={`translate(${margin.left}, ${margin.top})`}>
+                                {/* Grid lines and Y-axis Ticks */}
+                                {yTicks.map(tick => (
+                                    <g key={tick.value} className="text-gray-500 text-xs">
+                                        <line 
+                                            x1="0" y1={tick.y} 
+                                            x2={chartWidth} y2={tick.y} 
+                                            stroke="currentColor" 
+                                            strokeWidth="0.5" 
+                                            strokeDasharray="2 4"
+                                            opacity="0.3"
+                                        />
+                                        <text 
+                                            x="-10" y={tick.y} 
+                                            textAnchor="end" 
+                                            dominantBaseline="middle"
+                                            fill="currentColor"
+                                        >
+                                            {Math.round(tick.value)}
+                                        </text>
+                                    </g>
+                                ))}
+
+                                {/* Axes lines */}
+                                <line x1="0" y1={chartHeight} x2={chartWidth} y2={chartHeight} stroke="#6b7280" strokeWidth="1" />
+                                <line x1="0" y1="0" x2="0" y2={chartHeight} stroke="#6b7280" strokeWidth="1" />
+
+                                {/* Axes Labels */}
+                                <text x={chartWidth / 2} y={chartHeight + 40} textAnchor="middle" fill="#9ca3af" fontSize="14">Pings ao longo de 7 dias</text>
+                                <text transform={`rotate(-90)`} x={-chartHeight / 2} y={-45} textAnchor="middle" fill="#9ca3af" fontSize="14">XP Acumulado</text>
+                                
+                                {/* Data Lines */}
+                                <line x1="0" y1={chartHeight - (maxXp / Math.max(1, chartMaxY)) * chartHeight} x2={chartWidth} y2={chartHeight - (maxXp / Math.max(1, chartMaxY)) * chartHeight} stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="4 2" opacity="0.6" />
+                                <line x1="0" y1={chartHeight - (avgXp / Math.max(1, chartMaxY)) * chartHeight} x2={chartWidth} y2={chartHeight - (avgXp / Math.max(1, chartMaxY)) * chartHeight} stroke="#8b5cf6" strokeWidth="1.5" strokeDasharray="4 2" />
+
+                                {/* User Area and Line */}
+                                <path d={userAreaPath} fill="url(#userAreaGradient)" />
+                                <path d={userLinePath} fill="none" stroke="#00ffff" strokeWidth="2.5" filter="url(#lineGlow)" />
+                            </g>
+                        </svg>
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-4 text-sm text-gray-300">
+                        <div className="flex items-center space-x-2">
+                            <svg width="16" height="8"><line x1="0" y1="4" x2="16" y2="4" stroke="#00ffff" strokeWidth="2.5" /></svg>
+                            <span>Seu Desempenho</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <svg width="16" height="8"><line x1="0" y1="4" x2="16" y2="4" stroke="#8b5cf6" strokeWidth="1.5" strokeDasharray="4 2" /></svg>
+                            <span>Média dos Jogadores</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <svg width="16" height="8"><line x1="0" y1="4" x2="16" y2="4" stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="4 2" opacity="0.6" /></svg>
+                            <span>Melhor Jogador</span>
+                        </div>
+                    </div>
+                 </div>
+             </div>
+        </Modal>
+    );
+};
+
+const ProfileMenu: React.FC<{onUpload: () => void, onRemove: () => void, onViewRcle: () => void, onViewPerformance: () => void, hasAvatar: boolean}> = 
+  ({onUpload, onRemove, onViewRcle, onViewPerformance, hasAvatar}) => {
+  const baseClass = "flex items-center space-x-3 w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-cyan-400/20 hover:text-cyan-300 transition-colors rounded-md";
+  return (
+      <div className="absolute top-full mt-2 w-56 bg-slate-800/90 backdrop-blur-md border border-cyan-400/20 rounded-lg shadow-glow-blue p-2 z-20">
+          <button onClick={onUpload} className={baseClass}><CameraIcon className="w-4 h-4" /> <span>Alterar Avatar</span></button>
+          {hasAvatar && <button onClick={onRemove} className={baseClass}><TrashIcon className="w-4 h-4" /> <span>Remover Avatar</span></button>}
+          <div className="h-px bg-cyan-400/20 my-1"></div>
+          <button onClick={onViewPerformance} className={baseClass}><ChartBarIcon className="w-4 h-4" /> <span>Desempenho</span></button>
+          <button onClick={onViewRcle} className={baseClass}><DocumentTextIcon className="w-4 h-4" /> <span>Ver Termos</span></button>
+      </div>
+  );
+};
+
+const CountdownTimer: React.FC<{ onTimerEnd: () => void }> = ({ onTimerEnd }) => {
+    const [timeLeft, setTimeLeft] = useState('');
+    const [progress, setProgress] = useState(0);
+    const pingHours = [9, 11, 13, 15, 17, 19, 21];
+
+    const onTimerEndRef = useRef(onTimerEnd);
+    const triggeredRef = useRef(false);
+
+    useEffect(() => {
+        onTimerEndRef.current = onTimerEnd;
+    }, [onTimerEnd]);
+
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            const now = new Date();
+            let nextPingDate = new Date();
+            let prevPingDate = new Date();
+
+            const nextPingHour = pingHours.find(h => h > now.getHours());
+
+            if (nextPingHour !== undefined) {
+                nextPingDate.setHours(nextPingHour, 0, 0, 0);
+                const prevPingHourIndex = pingHours.indexOf(nextPingHour) - 1;
+                if (prevPingHourIndex >= 0) {
+                    prevPingDate.setHours(pingHours[prevPingHourIndex], 0, 0, 0);
+                } else { // Before the first ping of today
+                    prevPingDate.setDate(now.getDate() - 1);
+                    prevPingDate.setHours(pingHours[pingHours.length - 1], 0, 0, 0);
+                }
+            } else { // After the last ping of today
+                nextPingDate.setDate(now.getDate() + 1);
+                nextPingDate.setHours(pingHours[0], 0, 0, 0);
+                prevPingDate.setHours(pingHours[pingHours.length - 1], 0, 0, 0);
+            }
+
+            const diff = nextPingDate.getTime() - now.getTime();
+            
+            if (diff <= 1000 && !triggeredRef.current) {
+              onTimerEndRef.current();
+              triggeredRef.current = true;
+            } else if (diff > 5000 && triggeredRef.current) { // Reset after 5 seconds into new cycle
+              triggeredRef.current = false;
+            }
+
+
+            const hours = Math.max(0, Math.floor(diff / (1000 * 60 * 60)));
+            const minutes = Math.max(0, Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)));
+            const seconds = Math.max(0, Math.floor((diff % (1000 * 60)) / 1000));
+            
+            setTimeLeft(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`);
+
+            const totalDuration = nextPingDate.getTime() - prevPingDate.getTime();
+            const elapsedTime = now.getTime() - prevPingDate.getTime();
+            const progressPercentage = (elapsedTime / totalDuration) * 100;
+            setProgress(Math.min(100, progressPercentage));
+
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, []);
+
+    return (
+        <div className="text-center w-36">
+            <div className="text-xs text-cyan-300/80">Próximo Ping</div>
+            <div className="font-mono text-lg text-cyan-400 tracking-widest">{timeLeft}</div>
+            <div className="w-full bg-gray-700 rounded-full h-1.5 mt-1">
+                <div 
+                    className="bg-green-500 h-1.5 rounded-full transition-all duration-1000 ease-linear" 
+                    style={{width: `${progress}%`}}
+                ></div>
+            </div>
+        </div>
+    );
+};
+
 
 const PingConfirmationModal: React.FC<{ onConfirm: () => void, onDeny: () => void }> = ({ onConfirm, onDeny }) => {
     return (
@@ -680,6 +975,30 @@ const CameraIcon = ({ className = '' }: { className?: string }) => (
     </svg>
 );
 
+const TrashIcon = ({ className = '' }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6"></polyline>
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+  </svg>
+);
+
+const DocumentTextIcon = ({ className = '' }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+    <polyline points="14 2 14 8 20 8"></polyline>
+    <line x1="16" y1="13" x2="8" y2="13"></line>
+    <line x1="16" y1="17" x2="8" y2="17"></line>
+    <polyline points="10 9 9 9 8 9"></polyline>
+  </svg>
+);
+
+const ChartBarIcon = ({ className = '' }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 3v18h18" />
+    <path d="m18 9-5 5-4-4-3 3" />
+  </svg>
+);
+
 
 const BellIcon = ({ className = '' }: { className?: string }) => (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -768,13 +1087,20 @@ const XCircleIcon = ({ className = '' }: { className?: string }) => (
     </svg>
 );
 
+const XIcon = ({ className = '' }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+  </svg>
+);
+
+
 const TrophyIcon = ({ className = '', rank }: { className?: string, rank: number }) => {
   const colors: { [key: number]: string } = {
     1: 'text-yellow-400',
     2: 'text-gray-300',
     3: 'text-orange-400'
   };
-  // FIX: Corrected object property access from incorrect function call syntax to bracket notation.
   const colorClass = colors[rank] || 'text-gray-500';
 
   return (
