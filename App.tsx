@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useId } from 'react';
+import React, { useState, useEffect, useId, useRef } from 'react';
 
 // Since this is a single file generation, we will simulate imports.
 // In a real project, these would be in separate files.
@@ -36,6 +36,7 @@ type User = {
   responseRate: number;
   currentStreak: number;
   completedDays: number;
+  avatar?: string | null;
 };
 
 type Badge = {
@@ -64,6 +65,7 @@ const INITIAL_GAME_STATE: GameState = {
     responseRate: 0,
     currentStreak: 0,
     completedDays: 0,
+    avatar: null,
   },
   badges: [
     { id: 'punctual', name: 'Pontualidade', description: 'Responder 80% das notificações em 10 minutos', unlocked: false },
@@ -89,6 +91,9 @@ const App: React.FC = () => {
         const parsed = JSON.parse(savedState);
         if (!Array.isArray(parsed.pings[0])) {
             parsed.pings = Array(7).fill(0).map(() => Array(7).fill('pending'));
+        }
+        if (parsed.user && !('avatar' in parsed.user)) {
+          parsed.user.avatar = null;
         }
         return parsed;
     }
@@ -135,6 +140,7 @@ const OnboardingScreen: React.FC<{ onComplete: (nickname: string) => void }> = (
     if (agreed) {
       setStep(1);
     } else {
+      // This path is less likely to be taken with the new UI, but kept for logic safety
       alert("Para participar da pesquisa, você precisa concordar com os termos.");
     }
   };
@@ -180,6 +186,8 @@ const OnboardingScreen: React.FC<{ onComplete: (nickname: string) => void }> = (
 };
 
 const ConsentScreen: React.FC<{ onConsent: (agreed: boolean) => void }> = ({ onConsent }) => {
+  const [agreed, setAgreed] = useState(false);
+  
   const rcleText = `Você está sendo convidado(a) a participar como voluntário(a) do estudo Associação longitudinal entre exposição a vídeos curtos e variabilidade emocional: moderação da valência e efeitos no humor diário, DESENVOLVIDO POR PESQUISADORES DO Centro de Ensino Unificado de Brasília (UniCEUB). O nome deste documento que você está lendo é Registro de Consentimento Livre e Esclarecido (RCLE) que visa assegurar seus direitos como participante.
 Sua colaboração neste estudo será de muita importância para nós, mas se desistir a qualquer momento, isso não lhe causará prejuízo. Antes de decidir se deseja participar (de livre e espontânea vontade) você deverá ler e compreender todo o conteúdo.
 A pesquisa tem como objetivo A pesquisa tem como objetivo investigar a relação entre o tempo de exposição a vídeos curtos em plataformas digitais e a variabilidade emocional, considerando a valência afetiva do conteúdo e seus efeitos sobre o humor diário. O estudo busca entender se e como o tempo de visualização de vídeos curtos e a polaridade afetiva do conteúdo podem influenciar a flutuação de emoções e o bem-estar diário dos adultos.
@@ -202,18 +210,32 @@ Caso concorde em participar deste estudo, favor assinalar a opção a seguir: ( 
          <div className="h-64 overflow-y-auto p-4 border border-cyan-400/30 rounded-lg bg-black/20 text-gray-300 text-sm">
             <p className="whitespace-pre-wrap">{rcleText}</p>
          </div>
-         <div className="flex justify-center space-x-4">
-            <button 
-                onClick={() => onConsent(false)}
-                className="px-6 py-3 font-bold text-white bg-red-600/80 rounded-lg hover:bg-red-500/80 transition-all duration-300"
-            >
-                Não concordo
-            </button>
-            <button 
+         <div className="flex flex-col items-center space-y-6 pt-4">
+            <label className="flex items-center space-x-3 cursor-pointer group">
+                <input
+                    type="checkbox"
+                    checked={agreed}
+                    onChange={(e) => setAgreed(e.target.checked)}
+                    className="sr-only peer"
+                    aria-describedby="consent-text"
+                />
+                <span className="w-6 h-6 rounded-md border-2 border-cyan-400/50 flex items-center justify-center transition-all duration-300 group-hover:border-cyan-300 peer-checked:bg-cyan-400 peer-checked:border-cyan-400 peer-checked:shadow-glow-blue-sm">
+                    {agreed && (
+                        <svg className="w-4 h-4 text-brand-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    )}
+                </span>
+                <span id="consent-text" className="text-gray-300 group-hover:text-white transition-colors">
+                    Li e concordo com os termos de participação.
+                </span>
+            </label>
+            <button
                 onClick={() => onConsent(true)}
-                className="px-6 py-3 font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-all duration-300 shadow-glow-blue"
+                disabled={!agreed}
+                className="w-full max-w-xs px-6 py-3 font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-all duration-300 shadow-glow-blue disabled:bg-gray-600/50 disabled:cursor-not-allowed disabled:shadow-none disabled:text-gray-400"
             >
-                Eu concordo em participar
+                Continuar
             </button>
          </div>
        </div>
@@ -230,6 +252,7 @@ const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Disp
   const { user, pings } = gameState;
   const [highlightedPing, setHighlightedPing] = useState<{ day: number, ping: number } | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const findNextPendingPing = () => {
@@ -276,6 +299,28 @@ const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Disp
     setIsModalOpen(false);
   };
 
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setGameState(prev => ({
+          ...prev,
+          user: {
+            ...prev.user,
+            avatar: reader.result as string,
+          }
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+
   const notificationTimes = ['9h', '11h', '13h', '15h', '17h', '19h', '21h'];
   
   const completedPings = pings.flat().filter((p, index) => (index + 1) % 7 !== 0 && p === 'completed').length;
@@ -306,9 +351,27 @@ const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Disp
       )}
       <header className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-4">
-          <div className="w-16 h-16 rounded-full bg-slate-800 border-2 border-cyan-400 flex items-center justify-center">
-            <UserIcon className="w-8 h-8 text-cyan-400" />
-          </div>
+           <button
+            onClick={handleAvatarClick}
+            className="relative group w-16 h-16 rounded-full bg-slate-800 border-2 border-cyan-400 flex items-center justify-center overflow-hidden cursor-pointer transition-all hover:border-cyan-300 hover:shadow-glow-blue-sm"
+            aria-label="Alterar avatar"
+          >
+            {user.avatar ? (
+              <img src={user.avatar} alt="Avatar do usuário" className="w-full h-full object-cover" />
+            ) : (
+              <UserIcon className="w-8 h-8 text-cyan-400" />
+            )}
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <CameraIcon className="w-6 h-6 text-white" />
+            </div>
+          </button>
+           <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleAvatarChange}
+            accept="image/png, image/jpeg"
+            className="hidden"
+          />
           <div>
             <h1 className="text-xl font-bold text-cyan-400">{user.nickname}</h1>
             <p className="text-gray-400">Nível {user.level} - Mente Curiosa</p>
@@ -609,6 +672,14 @@ const UserIcon = ({ className = '' }: { className?: string }) => (
     <circle cx="12" cy="7" r="4" />
   </svg>
 );
+
+const CameraIcon = ({ className = '' }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+        <circle cx="12" cy="13" r="4"></circle>
+    </svg>
+);
+
 
 const BellIcon = ({ className = '' }: { className?: string }) => (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
