@@ -1,10 +1,5 @@
 
-
-
 import React, { useState, useEffect, useId, useRef, useCallback } from 'react';
-
-// Since this is a single file generation, we will simulate imports.
-// In a real project, these would be in separate files.
 
 // --- START: Mock Data & Types ---
 
@@ -21,6 +16,22 @@ const MOCK_PLAYERS = [
     { nickname: 'Mara', points: 750 },
     { nickname: 'Carlos', points: 710 },
 ];
+
+const ADMIN_MOCK_STATS = {
+    totalParticipants: 142,
+    activeUsersToday: 118,
+    globalResponseRate: 76,
+    // 7 Days x 7 Pings (Average % response)
+    pingHeatmap: [
+        [98, 95, 92, 88, 85, 80, 78], // Day 1
+        [95, 92, 90, 85, 82, 78, 75],
+        [90, 88, 85, 82, 78, 75, 72],
+        [88, 85, 82, 80, 75, 72, 70],
+        [85, 82, 80, 78, 72, 70, 68],
+        [82, 80, 78, 75, 70, 68, 65],
+        [80, 78, 75, 72, 68, 65, 60], // Day 7
+    ]
+};
 
 const calculateLevel = (xp: number): number => {
     for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
@@ -130,6 +141,7 @@ const INITIAL_GAME_STATE: GameState = {
   sociodemographicData: null,
 };
 
+type ViewState = 'LANDING' | 'USER' | 'ADMIN_LOGIN' | 'ADMIN_DASHBOARD';
 
 // --- END: Mock Data & Types ---
 
@@ -137,6 +149,7 @@ const INITIAL_GAME_STATE: GameState = {
 // --- START: Main App Component ---
 
 const App: React.FC = () => {
+  const [view, setView] = useState<ViewState>('LANDING');
   const [gameState, setGameState] = useState<GameState>(() => {
     try {
       const savedState = localStorage.getItem('gameState');
@@ -181,18 +194,285 @@ const App: React.FC = () => {
     }));
   };
 
+  const handleAdminLoginSuccess = () => {
+    setView('ADMIN_DASHBOARD');
+  };
+
+  const renderView = () => {
+    switch(view) {
+        case 'LANDING':
+            return <LandingScreen onUserSelect={() => setView('USER')} onAdminSelect={() => setView('ADMIN_LOGIN')} />;
+        case 'ADMIN_LOGIN':
+            return <AdminLoginScreen onLoginSuccess={handleAdminLoginSuccess} onBack={() => setView('LANDING')} />;
+        case 'ADMIN_DASHBOARD':
+            return <AdminDashboardScreen onLogout={() => setView('LANDING')} />;
+        case 'USER':
+            return !gameState.hasOnboarded ? (
+                <OnboardingScreen onComplete={completeOnboarding} />
+            ) : (
+                <DashboardScreen gameState={gameState} setGameState={setGameState} onLogout={() => setView('LANDING')}/>
+            );
+        default:
+            return <LandingScreen onUserSelect={() => setView('USER')} onAdminSelect={() => setView('ADMIN_LOGIN')} />;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-brand-dark bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(0,128,128,0.3),rgba(255,255,255,0))]">
-      {!gameState.hasOnboarded ? (
-        <OnboardingScreen onComplete={completeOnboarding} />
-      ) : (
-        <DashboardScreen gameState={gameState} setGameState={setGameState} />
-      )}
+    <div className="min-h-screen bg-brand-dark bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(0,128,128,0.3),rgba(255,255,255,0))] text-gray-200 font-sans">
+      {renderView()}
     </div>
   );
 };
 
 // --- END: Main App Component ---
+
+
+// --- START: Landing & Admin Components ---
+
+const LandingScreen: React.FC<{onUserSelect: () => void, onAdminSelect: () => void}> = ({onUserSelect, onAdminSelect}) => {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen p-4 relative overflow-hidden">
+             {/* Background Decoration */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+                 <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
+                 <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
+            </div>
+
+            <div className="z-10 text-center max-w-2xl w-full">
+                <div className="w-48 h-48 mx-auto mb-8 animate-slow-spin-slow">
+                     <PlexusFace />
+                </div>
+                <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-2">PSYLOGOS</h1>
+                <p className="text-xl text-cyan-200 mb-12 tracking-wider">O Enigma da Mente</p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full px-4">
+                    <button 
+                        onClick={onUserSelect}
+                        className="group relative overflow-hidden rounded-2xl bg-slate-800/50 border border-cyan-400/30 p-8 hover:bg-slate-800/80 transition-all duration-300 hover:shadow-glow-blue hover:-translate-y-1"
+                    >
+                         <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                         <UserIcon className="w-12 h-12 text-cyan-400 mx-auto mb-4 group-hover:scale-110 transition-transform" />
+                         <h2 className="text-xl font-bold text-white mb-2">Sou Participante</h2>
+                         <p className="text-sm text-gray-400">Acesse sua jornada, responda aos pings e acompanhe seu progresso.</p>
+                    </button>
+
+                    <button 
+                         onClick={onAdminSelect}
+                         className="group relative overflow-hidden rounded-2xl bg-slate-800/50 border border-purple-400/30 p-8 hover:bg-slate-800/80 transition-all duration-300 hover:shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:-translate-y-1"
+                    >
+                         <div className="absolute inset-0 bg-gradient-to-br from-purple-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                         <ChartBarIcon className="w-12 h-12 text-purple-400 mx-auto mb-4 group-hover:scale-110 transition-transform" />
+                         <h2 className="text-xl font-bold text-white mb-2">Sou Pesquisador</h2>
+                         <p className="text-sm text-gray-400">Acesse o painel administrativo para monitorar o estudo e dados.</p>
+                    </button>
+                </div>
+                
+                <p className="mt-12 text-xs text-gray-500">Desenvolvido para fins de pesquisa científica - UniCEUB</p>
+            </div>
+        </div>
+    );
+};
+
+const AdminLoginScreen: React.FC<{onLoginSuccess: () => void, onBack: () => void}> = ({onLoginSuccess, onBack}) => {
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+
+    const handleLogin = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (username === 'Thiago' && password === 'psicólogo') {
+            onLoginSuccess();
+        } else {
+            setError('Credenciais inválidas. Tente novamente.');
+        }
+    };
+
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+             <div className="w-full max-w-md p-8 bg-slate-900/80 backdrop-blur-md rounded-2xl border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.3)]">
+                <button onClick={onBack} className="text-gray-400 hover:text-white mb-4 flex items-center text-sm">
+                    <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                    Voltar
+                </button>
+                <h2 className="text-2xl font-bold text-purple-400 text-center mb-6">Acesso Administrativo</h2>
+                
+                <form onSubmit={handleLogin} className="space-y-4">
+                    <div>
+                        <label className="block text-purple-300 text-sm font-bold mb-2">Usuário</label>
+                        <input 
+                            type="text" 
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            className="w-full px-4 py-2 bg-slate-800 border border-purple-500/30 rounded focus:outline-none focus:border-purple-500 focus:shadow-[0_0_8px_rgba(168,85,247,0.4)] text-white transition-all"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-purple-300 text-sm font-bold mb-2">Senha</label>
+                        <input 
+                            type="password" 
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full px-4 py-2 bg-slate-800 border border-purple-500/30 rounded focus:outline-none focus:border-purple-500 focus:shadow-[0_0_8px_rgba(168,85,247,0.4)] text-white transition-all"
+                        />
+                    </div>
+                    
+                    {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+
+                    <button 
+                        type="submit"
+                        className="w-full px-6 py-3 font-bold text-white bg-purple-600 rounded-lg hover:bg-purple-500 transition-all duration-300 shadow-[0_0_10px_rgba(147,51,234,0.5)] mt-4"
+                    >
+                        Entrar
+                    </button>
+                </form>
+             </div>
+        </div>
+    );
+};
+
+const AdminDashboardScreen: React.FC<{onLogout: () => void}> = ({onLogout}) => {
+    const [toast, setToast] = useState<string | null>(null);
+
+    const triggerPing = () => {
+        // Simulation of triggering pings
+        setToast("Notificações enviadas com sucesso para 118 usuários ativos!");
+        setTimeout(() => setToast(null), 3000);
+    };
+
+    const StatCard = ({label, value, icon, color}: {label: string, value: string|number, icon: any, color: string}) => (
+        <div className={`bg-slate-900/50 p-6 rounded-xl border border-${color}-500/30 flex items-center space-x-4`}>
+            <div className={`p-3 rounded-full bg-${color}-500/20 text-${color}-400`}>
+                {icon}
+            </div>
+            <div>
+                <p className="text-gray-400 text-sm">{label}</p>
+                <p className={`text-2xl font-bold text-${color}-400`}>{value}</p>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="p-4 sm:p-8 max-w-6xl mx-auto">
+             {/* Header */}
+             <header className="flex justify-between items-center mb-10">
+                <div>
+                    <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">Painel do Pesquisador</h1>
+                    <p className="text-gray-400">Monitoramento do Estudo: Enigma da Mente</p>
+                </div>
+                <button onClick={onLogout} className="px-4 py-2 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/10 transition-colors">
+                    Sair
+                </button>
+             </header>
+
+             {/* Toast Notification */}
+             {toast && (
+                <div className="fixed top-4 right-4 bg-green-500/90 text-white px-6 py-4 rounded-lg shadow-lg z-50 animate-fade-in-down flex items-center">
+                    <CheckCircleIcon className="w-6 h-6 mr-2" />
+                    {toast}
+                </div>
+             )}
+
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <StatCard 
+                    label="Total de Participantes" 
+                    value={ADMIN_MOCK_STATS.totalParticipants} 
+                    icon={<UserIcon className="w-6 h-6" />}
+                    color="cyan"
+                />
+                <StatCard 
+                    label="Usuários Ativos (Hoje)" 
+                    value={ADMIN_MOCK_STATS.activeUsersToday} 
+                    icon={<BellIcon className="w-6 h-6" />}
+                    color="green"
+                />
+                <StatCard 
+                    label="Taxa de Resposta Global" 
+                    value={`${ADMIN_MOCK_STATS.globalResponseRate}%`} 
+                    icon={<ChartBarIcon className="w-6 h-6" />}
+                    color="purple"
+                />
+             </div>
+
+             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                 {/* Main Chart / Heatmap */}
+                 <div className="lg:col-span-2 bg-slate-900/50 border border-cyan-500/20 rounded-2xl p-6">
+                    <h3 className="text-xl font-bold text-cyan-400 mb-6">Mapa de Calor: Taxa de Resposta por Ping</h3>
+                    <div className="overflow-x-auto">
+                        <div className="min-w-[500px]">
+                            <div className="grid grid-cols-8 gap-2 mb-2 text-center text-sm text-gray-400 font-semibold">
+                                <div>Dia</div>
+                                {['9h', '11h', '13h', '15h', '17h', '19h', '21h'].map(t => <div key={t}>{t}</div>)}
+                            </div>
+                            {ADMIN_MOCK_STATS.pingHeatmap.map((dayRates, i) => (
+                                <div key={i} className="grid grid-cols-8 gap-2 mb-2 items-center">
+                                    <div className="text-gray-300 font-medium text-center">Dia {i + 1}</div>
+                                    {dayRates.map((rate, j) => {
+                                        // Color logic based on rate
+                                        let bgClass = 'bg-red-500/20 text-red-400 border-red-500/30';
+                                        if (rate >= 80) bgClass = 'bg-green-500/20 text-green-400 border-green-500/30';
+                                        else if (rate >= 50) bgClass = 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+
+                                        return (
+                                            <div key={j} className={`h-10 rounded-md border flex items-center justify-center text-sm font-bold ${bgClass} transition-all hover:scale-105 cursor-default relative group`}>
+                                                {rate}%
+                                                <div className="absolute bottom-full mb-2 hidden group-hover:block bg-slate-800 text-xs px-2 py-1 rounded border border-gray-600 whitespace-nowrap z-10">
+                                                    {Math.round((rate / 100) * ADMIN_MOCK_STATS.activeUsersToday)} respondentes
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="mt-4 flex justify-center space-x-6 text-sm text-gray-400">
+                        <div className="flex items-center"><span className="w-3 h-3 bg-green-500/50 mr-2 rounded"></span>Alta Adesão (&gt;80%)</div>
+                        <div className="flex items-center"><span className="w-3 h-3 bg-yellow-500/50 mr-2 rounded"></span>Média Adesão (50-80%)</div>
+                        <div className="flex items-center"><span className="w-3 h-3 bg-red-500/50 mr-2 rounded"></span>Baixa Adesão (&lt;50%)</div>
+                    </div>
+                 </div>
+
+                 {/* Control Panel */}
+                 <div className="space-y-6">
+                    <div className="bg-slate-900/50 border border-purple-500/20 rounded-2xl p-6">
+                        <h3 className="text-xl font-bold text-purple-400 mb-4">Controle de Campo</h3>
+                        <p className="text-gray-400 text-sm mb-6">Ações manuais para gerenciamento do estudo em tempo real.</p>
+                        
+                        <div className="space-y-4">
+                            <button 
+                                onClick={triggerPing}
+                                className="w-full py-4 px-6 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-[0_0_15px_rgba(147,51,234,0.3)] transition-all transform hover:-translate-y-1 flex items-center justify-center"
+                            >
+                                <BellIcon className="w-6 h-6 mr-3" />
+                                Disparar Pings Agora
+                            </button>
+                            <button className="w-full py-3 px-6 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 rounded-xl transition-all flex items-center justify-center">
+                                <DocumentTextIcon className="w-5 h-5 mr-3" />
+                                Exportar Dados (CSV)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="bg-slate-900/50 border border-gray-700 rounded-2xl p-6">
+                         <h3 className="text-lg font-bold text-gray-300 mb-4">Feedbacks Recentes</h3>
+                         <div className="space-y-3">
+                             <div className="p-3 bg-slate-800/50 rounded-lg border-l-2 border-yellow-400 text-sm">
+                                 <span className="text-yellow-400 font-bold block mb-1">Problema relatado</span>
+                                 <p className="text-gray-400">Participante #42 relatou dificuldade com o slider SAM.</p>
+                             </div>
+                             <div className="p-3 bg-slate-800/50 rounded-lg border-l-2 border-green-400 text-sm">
+                                 <span className="text-green-400 font-bold block mb-1">Sistema</span>
+                                 <p className="text-gray-400">Backup de dados realizado com sucesso às 03:00.</p>
+                             </div>
+                         </div>
+                    </div>
+                 </div>
+             </div>
+        </div>
+    );
+};
+
+// --- END: Landing & Admin Components ---
 
 
 // --- START: OnboardingScreen Component ---
@@ -242,7 +522,7 @@ const OnboardingScreen: React.FC<{ onComplete: (nickname: string, data: Sociodem
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center animate-fade-in">
       <div className="w-full max-w-md p-8 space-y-6 bg-slate-900/50 backdrop-blur-md rounded-2xl border border-cyan-400/20 shadow-glow-blue">
         <h1 className="text-3xl font-bold text-cyan-400">ENIGMA DE PSYLOGOS</h1>
         <div className="w-64 h-64 mx-auto my-4">
@@ -275,7 +555,7 @@ const ConsentScreen: React.FC<{ onConsent: (agreed: boolean) => void }> = ({ onC
   const [agreed, setAgreed] = useState(false);
   
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 animate-fade-in">
        <div className="w-full max-w-2xl p-8 space-y-6 bg-slate-900/50 backdrop-blur-md rounded-2xl border border-cyan-400/20 shadow-glow-blue">
          <h1 className="text-2xl font-bold text-cyan-400 text-center">Bem vindo ao ENIGMA DE PSYLOGOS!</h1>
          <h2 className="text-xl font-semibold text-white text-center">Registro de Consentimento Livre e Esclarecido</h2>
@@ -361,7 +641,7 @@ const SociodemographicQuestionnaireScreen: React.FC<{onComplete: (data: Sociodem
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <div className="flex flex-col items-center justify-center min-h-screen p-4 animate-fade-in">
             <div className="w-full max-w-2xl p-8 space-y-6 bg-slate-900/50 backdrop-blur-md rounded-2xl border border-cyan-400/20 shadow-glow-blue">
                 <h2 className="text-xl font-bold text-cyan-400 text-center">Questionário Sociodemográfico</h2>
                 <div className="w-full bg-gray-700 rounded-full h-1.5">
@@ -573,7 +853,7 @@ type InstrumentFlowState = {
 } | null;
 
 
-const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>> }> = ({ gameState, setGameState }) => {
+const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Dispatch<React.SetStateAction<GameState>>, onLogout: () => void }> = ({ gameState, setGameState, onLogout }) => {
   const { user, pings } = gameState;
   const [highlightedPing, setHighlightedPing] = useState<{ day: number, ping: number } | null>(null);
   const [isRcleModalOpen, setIsRcleModalOpen] = useState(false);
@@ -749,7 +1029,7 @@ const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Disp
   const restOfPlayers = allPlayers.slice(3);
 
   return (
-    <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-4xl mx-auto animate-fade-in">
       {instrumentFlow && (
         <InstrumentModal 
           flow={instrumentFlow}
@@ -793,6 +1073,7 @@ const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Disp
                 onViewRcle={() => { setIsRcleModalOpen(true); setIsProfileMenuOpen(false); }}
                 onViewPerformance={() => { setIsPerformanceModalOpen(true); setIsProfileMenuOpen(false); }}
                 onViewData={() => { setIsSociodemographicModalOpen(true); setIsProfileMenuOpen(false); }}
+                onLogout={onLogout}
                 hasAvatar={!!user.avatar}
               />
             )}
@@ -964,6 +1245,21 @@ const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Disp
         textarea.form-input {
             min-height: 80px;
         }
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes fade-in-down {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slow-spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-fade-in { animation: fade-in 0.5s ease-out; }
+        .animate-fade-in-down { animation: fade-in-down 0.5s ease-out; }
+        .animate-slow-spin-slow { animation: slow-spin-slow 20s linear infinite; }
       `}</style>
     </div>
   );
@@ -1190,8 +1486,8 @@ const PerformanceModal: React.FC<{onClose: () => void, gameState: GameState}> = 
     );
 };
 
-const ProfileMenu: React.FC<{onUpload: () => void, onRemove: () => void, onViewRcle: () => void, onViewPerformance: () => void, onViewData: () => void, hasAvatar: boolean}> = 
-  ({onUpload, onRemove, onViewRcle, onViewPerformance, onViewData, hasAvatar}) => {
+const ProfileMenu: React.FC<{onUpload: () => void, onRemove: () => void, onViewRcle: () => void, onViewPerformance: () => void, onViewData: () => void, onLogout: () => void, hasAvatar: boolean}> = 
+  ({onUpload, onRemove, onViewRcle, onViewPerformance, onViewData, onLogout, hasAvatar}) => {
   const baseClass = "flex items-center space-x-3 w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-cyan-400/20 hover:text-cyan-300 transition-colors rounded-md";
   return (
       <div className="absolute top-full mt-2 w-56 bg-slate-800/90 backdrop-blur-md border border-cyan-400/20 rounded-lg shadow-glow-blue p-2 z-20">
@@ -1201,6 +1497,8 @@ const ProfileMenu: React.FC<{onUpload: () => void, onRemove: () => void, onViewR
           <button onClick={onViewPerformance} className={baseClass}><ChartBarIcon className="w-4 h-4" /> <span>Desempenho</span></button>
           <button onClick={onViewData} className={baseClass}><IdentificationIcon className="w-4 h-4" /> <span>Meus Dados</span></button>
           <button onClick={onViewRcle} className={baseClass}><DocumentTextIcon className="w-4 h-4" /> <span>Ver Termos</span></button>
+          <div className="h-px bg-cyan-400/20 my-1"></div>
+          <button onClick={onLogout} className={`${baseClass} text-red-400 hover:text-red-300 hover:bg-red-500/20`}><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg> <span>Sair</span></button>
       </div>
   );
 };
@@ -1432,7 +1730,7 @@ const EmotionExplorerBadge = ({ className = '', unlocked = false }: { className?
                     <path d="M22 60 L 15 75 L 20 80 L 27 65 Z" fill={handleColor} stroke={highlightColor} strokeWidth="0.5" /> <circle cx="35" cy="40" r="18" fill={unlocked ? "rgba(0, 255, 255, 0.15)" : "rgba(80, 80, 80, 0.3)"} stroke={handleColor} strokeWidth="4" />
                     <g transform="translate(25, 32) scale(0.18)">
                         <path d="M68.5,41.7C65.3,38,62.5,33,62.8,28.3c0.3-4.2,3.3-6.9,3.3-6.9c-1.3-3.2-1.3-7.2-1.3-7.2c-2.6,0-5.2,1.3-6.5,2.6 c-1.3,1.3-2.6,3.9-5.2,3.9s-3.9-2.6-5.2-3.9s-3.9-2.6-6.5-2.6s-5.2,1.3-6.5,2.6s-2.6,3.9-5.2,3.9s-3.9-2.6-5.2-3.9 c-1.3-1.3-3.9-2.6-6.5-2.6c0,0,0,3.9-1.3,7.2c0,0,3,2.6,3.3,6.9c0.3,4.6-2.6,9.6-5.8,13.3S10.2,50,13.4,54.8 c3.3,4.8,8.2,7.9,13.8,7.9c4.2,0,9.1-1.6,12.4-5.2c2.6,3.9,7.8,5.2,12.1,5.2c5.6,0,10.4-3.2,13.8-7.9 C69.1,50,65.3,45.3,68.5,41.7z" fill={`url(#brain-gradient-${uniqueId})`} />
-                        {unlocked && <path d="M68.5,41.7C65.3,38,62.5,33,62.8,28.3c0.3-4.2,3.3-6.9,3.3-6.9c-1.3-3.2-1.3-7.2-1.3-7.2c-2.6,0-5.2,1.3-6.5,2.6 c-1.3,1.3-2.6,3.9-5.2,3.9s-3.9-2.6-5.2-3.9s-3.9-2.6-6.5-2.6s-5.2,1.3-6.5,2.6s-2.6,3.9-5.2,3.9s-3.9-2.6-5.2-3.9 c-1.3-1.3-3.9-2.6-6.5-2.6c0,0,0,3.9-1.3,7.2c0,0,3,2.6,3.3,6.9c0.3,4.6-2.6,9.6-5.8,13.3S10.2,50,13.4,54.8 c3.3,4.8,8.2,7.9,13.8,7.9c4.2,0,9.1-1.6,12.4-5.2c2.6,3.9,7.8,5.2,12.1,5.2c5.6,0,10.4-3.2,13.8-7.9 C69.1,50,65.3,45.3,68.5,41.7z" fill="none" stroke={mainColor} strokeWidth="3" />}
+                        {unlocked && <path d="M68.5,41.7C65.3,38,62.5,33,62.8,28.3c0.3-4.2,3.3-6.9,3.3-6.9c-1.3-3.2-1.3-7.2-1.3-7.2c-2.6,0-5.2,1.3-6.5,2.6 c-1.3,1.3-2.6,3.9-5.2,3.9s-3.9-2.6-5.2-3.9s-3.9-2.6-5.2-3.9s-3.9-2.6-5.2-3.9 c-1.3-1.3-3.9-2.6-6.5-2.6c0,0,0,3.9-1.3,7.2c0,0,3,2.6,3.3,6.9c0.3,4.6-2.6,9.6-5.8,13.3S10.2,50,13.4,54.8 c3.3,4.8,8.2,7.9,13.8,7.9c4.2,0,9.1-1.6,12.4-5.2c2.6,3.9,7.8,5.2,12.1,5.2c5.6,0,10.4-3.2,13.8-7.9 C69.1,50,65.3,45.3,68.5,41.7z" fill="none" stroke={mainColor} strokeWidth="3" />}
                     </g>
                 </g>
             </g>
@@ -1670,7 +1968,7 @@ const PANASComponent: React.FC<{ question: string; onComplete: (data: PanasRespo
     const [responses, setResponses] = useState<PanasResponse>(() => {
         const initialResponses: PanasResponse = {};
         PANAS_ITEMS.forEach(item => {
-            initialResponses[item] = 0; // Default to 0 (no selection)
+            initialResponses[item] = 1; // Default to 1 (Nem um pouco)
         });
         return initialResponses;
     });
