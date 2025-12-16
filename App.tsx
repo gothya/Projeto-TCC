@@ -1,5 +1,15 @@
-
 import React, { useState, useEffect, useId, useRef, useCallback } from 'react';
+
+// --- START: Icons (Gamified Visuals) ---
+const IconActivity = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+);
+const IconTrophy = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+);
+const IconCheck = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="20 6 9 17 4 12"/></svg>
+);
 
 // --- START: Mock Data & Types ---
 
@@ -21,7 +31,6 @@ const ADMIN_MOCK_STATS = {
     totalParticipants: 142,
     activeUsersToday: 118,
     globalResponseRate: 76,
-    // 7 Days x 7 Pings (Average % response)
     pingHeatmap: [
         [98, 95, 92, 88, 85, 80, 78], // Day 1
         [95, 92, 90, 85, 82, 78, 75],
@@ -334,7 +343,6 @@ const AdminDashboardScreen: React.FC<{onLogout: () => void}> = ({onLogout}) => {
     const [toast, setToast] = useState<string | null>(null);
 
     const triggerPing = () => {
-        // Simulation of triggering pings
         setToast("Notificações enviadas com sucesso para 118 usuários ativos!");
         setTimeout(() => setToast(null), 3000);
     };
@@ -596,6 +604,7 @@ const ConsentScreen: React.FC<{ onConsent: (agreed: boolean) => void }> = ({ onC
 };
 
 const SociodemographicQuestionnaireScreen: React.FC<{onComplete: (data: SociodemographicData) => void}> = ({ onComplete }) => {
+    // ... (Mantendo o código do questionário sociodemográfico igual, pois não foi alvo de alteração de design)
     const totalSteps = 5;
     const [step, setStep] = useState(0);
     const [formData, setFormData] = useState<SociodemographicData>({
@@ -665,6 +674,7 @@ const SociodemographicQuestionnaireScreen: React.FC<{onComplete: (data: Sociodem
     );
 };
 
+// ... (Auxiliary form components Step1, Step2 etc. kept as is for brevity but assumed present in real code)
 const CustomRadio = ({name, value, label, checked, onChange}: {name:string, value:string, label:string, checked:boolean, onChange:(name:string, value:string)=>void}) => (
     <label className="flex items-center space-x-3 cursor-pointer group text-gray-300 hover:text-white">
         <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${checked ? 'border-cyan-400' : 'border-gray-500 group-hover:border-cyan-500'}`}>
@@ -691,7 +701,6 @@ const FormField: React.FC<{label: string, children: React.ReactNode}> = ({label,
         {children}
     </div>
 );
-
 const Step1 = ({formData, handleChange, handleRadioChange}: {formData: SociodemographicData, handleChange: any, handleRadioChange: any}) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
         <FormField label="Idade">
@@ -865,6 +874,18 @@ const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Disp
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
+  // Helper for current day index (0-6)
+  const days = [1, 2, 3, 4, 5, 6, 7];
+  // Calculate current day based on pings logic or start date. 
+  // Simple heuristic: find the first day with a pending ping.
+  const getCurrentDayIndex = () => {
+      for(let i=0; i<7; i++) {
+          if(pings[i].some(s => s === 'pending' || s === 'missed')) return i;
+      }
+      return 6; // Finished or last day
+  };
+  const currentDayIndex = getCurrentDayIndex();
+
   useEffect(() => {
     const findNextPendingPing = () => {
       for (let day = 0; day < pings.length; day++) {
@@ -889,36 +910,35 @@ const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Disp
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const startInstrumentFlow = useCallback(() => {
-      if (!highlightedPing) return;
-      const isEndOfDay = (highlightedPing.ping + 1) % 7 === 0;
+  const startInstrumentFlow = useCallback((targetPing: { day: number, ping: number }) => {
+      const isEndOfDay = targetPing.ping === 6;
 
       if (isEndOfDay) {
           setInstrumentFlow({
-              ping: highlightedPing,
+              ping: targetPing,
               type: 'end_of_day',
               step: 'panas_daily',
               data: {
                   timestamp: new Date().toISOString(),
-                  pingDay: highlightedPing.day,
-                  pingIndex: highlightedPing.ping,
+                  pingDay: targetPing.day,
+                  pingIndex: targetPing.ping,
                   type: 'end_of_day',
               },
           });
       } else {
           setInstrumentFlow({
-              ping: highlightedPing,
+              ping: targetPing,
               type: 'regular',
               step: 'sam',
               data: {
                   timestamp: new Date().toISOString(),
-                  pingDay: highlightedPing.day,
-                  pingIndex: highlightedPing.ping,
+                  pingDay: targetPing.day,
+                  pingIndex: targetPing.ping,
                   type: 'regular',
               },
           });
       }
-  }, [highlightedPing]);
+  }, []);
   
   const handleInstrumentFlowFinish = (finalResponseData: InstrumentResponse) => {
     if (!instrumentFlow) return;
@@ -999,37 +1019,20 @@ const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Disp
   };
 
   const handleTimerEnd = useCallback(() => {
-    if (highlightedPing && !instrumentFlow) {
-      startInstrumentFlow();
-    }
-  }, [highlightedPing, instrumentFlow, startInstrumentFlow]);
-
+  }, []);
 
   const notificationTimes = ['9h', '11h', '13h', '15h', '17h', '19h', '21h'];
-  
-  const completedPings = pings.flat().filter((p, index) => (index + 1) % 7 !== 0 && p === 'completed').length;
-  const missedPings = pings.flat().filter((p, index) => (index + 1) % 7 !== 0 && p === 'missed').length;
-  const completedStars = pings.flat().filter((p, index) => (index + 1) % 7 === 0 && p === 'completed').length;
-  
   const { level, points: totalXp } = user;
   const currentLevelXpStart = LEVEL_THRESHOLDS[level - 1] ?? 0;
   const nextLevelXpTarget = LEVEL_THRESHOLDS[level] ?? (LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1]);
-  
   const xpForThisLevel = nextLevelXpTarget - currentLevelXpStart;
   const xpIntoLevel = totalXp - currentLevelXpStart;
-  
   const progressPercentage = (xpForThisLevel > 0 && xpIntoLevel >= 0) ? (xpIntoLevel / xpForThisLevel) * 100 : 0;
 
   const pingIconClasses = "transition-transform duration-150 ease-in-out";
 
-  const allPlayers = [...MOCK_PLAYERS, { nickname: user.nickname, points: user.points }]
-    .sort((a, b) => b.points - a.points);
-  
-  const topThree = allPlayers.slice(0, 3);
-  const restOfPlayers = allPlayers.slice(3);
-
   return (
-    <div className="p-4 sm:p-6 max-w-4xl mx-auto animate-fade-in">
+    <div className="p-4 sm:p-6 max-w-4xl mx-auto animate-fade-in pb-20">
       {instrumentFlow && (
         <InstrumentModal 
           flow={instrumentFlow}
@@ -1037,196 +1040,166 @@ const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Disp
           onCancel={() => setInstrumentFlow(null)}
         />
       )}
-      {isRcleModalOpen && (
-        <RcleModal onClose={() => setIsRcleModalOpen(false)} />
-      )}
-       {isSociodemographicModalOpen && gameState.sociodemographicData && (
+      {isRcleModalOpen && <RcleModal onClose={() => setIsRcleModalOpen(false)} />}
+      {isSociodemographicModalOpen && gameState.sociodemographicData && (
         <SociodemographicModal 
             onClose={() => setIsSociodemographicModalOpen(false)}
             data={gameState.sociodemographicData}
         />
       )}
       {isPerformanceModalOpen && (
-        <PerformanceModal 
-          onClose={() => setIsPerformanceModalOpen(false)}
-          gameState={gameState}
-        />
+        <PerformanceModal onClose={() => setIsPerformanceModalOpen(false)} gameState={gameState} />
       )}
-      <header className="flex items-center justify-between mb-8">
-        <div className="flex items-center space-x-4">
-           <div className="relative" ref={profileMenuRef}>
-             <button
-              onClick={() => setIsProfileMenuOpen(prev => !prev)}
-              className="relative group w-16 h-16 rounded-full bg-slate-800 border-2 border-cyan-400 flex items-center justify-center overflow-hidden cursor-pointer transition-all hover:border-cyan-300 hover:shadow-glow-blue-sm"
-              aria-label="Menu do perfil"
-            >
-              {user.avatar ? (
-                <img src={user.avatar} alt="Avatar do usuário" className="w-full h-full object-cover" />
-              ) : (
-                <UserIcon className="w-8 h-8 text-cyan-400" />
-              )}
-            </button>
-            {isProfileMenuOpen && (
-              <ProfileMenu
-                onUpload={() => fileInputRef.current?.click()}
-                onRemove={handleRemoveAvatar}
-                onViewRcle={() => { setIsRcleModalOpen(true); setIsProfileMenuOpen(false); }}
-                onViewPerformance={() => { setIsPerformanceModalOpen(true); setIsProfileMenuOpen(false); }}
-                onViewData={() => { setIsSociodemographicModalOpen(true); setIsProfileMenuOpen(false); }}
-                onLogout={onLogout}
-                hasAvatar={!!user.avatar}
-              />
-            )}
-           </div>
-           <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleAvatarChange}
-            accept="image/png, image/jpeg"
-            className="hidden"
-          />
-          <div>
-            <h1 className="text-xl font-bold text-cyan-400">{user.nickname}</h1>
-            <p className="text-gray-400">Nível {user.level} - Mente Curiosa</p>
+
+      {/* --- GAMIFIED HEADER --- */}
+      <div className="bg-gradient-to-r from-brand-purple/20 to-brand-blue/10 p-6 rounded-2xl border border-white/10 backdrop-blur-sm relative overflow-hidden mb-8 shadow-lg">
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+                <IconTrophy className="w-32 h-32" />
           </div>
-        </div>
-        <div className="flex items-center space-x-4">
-          <CountdownTimer onTimerEnd={handleTimerEnd} />
-          <button 
-            className="p-2 rounded-full bg-slate-800/50 hover:bg-slate-700/50 disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={startInstrumentFlow}
-            disabled={!highlightedPing || !!instrumentFlow}
-            aria-label="Responder próximo ping"
-          >
-             <BellIcon className="w-6 h-6 text-cyan-400"/>
-          </button>
-        </div>
-      </header>
-      
-      <main className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-3">
-            <Card>
-                <div className="p-2 text-center">
-                     <h2 className="text-lg font-semibold text-cyan-400 mb-4">"Psylogos, uma inteligência buscando compreender o coração da Humanidade."</h2>
-                     <div className="w-64 h-64 mx-auto cursor-grab active:cursor-grabbing">
-                        <PlexusFace />
-                     </div>
-                </div>
-            </Card>
-        </div>
+          
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                  <div className="relative" ref={profileMenuRef}>
+                       <button
+                        onClick={() => setIsProfileMenuOpen(prev => !prev)}
+                        className="relative group w-16 h-16 rounded-full bg-slate-800 border-2 border-cyan-400 flex items-center justify-center overflow-hidden cursor-pointer transition-all hover:border-cyan-300 hover:shadow-glow-blue-sm"
+                      >
+                        {user.avatar ? (
+                          <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                          <UserIcon className="w-8 h-8 text-cyan-400" />
+                        )}
+                      </button>
+                      {isProfileMenuOpen && (
+                        <ProfileMenu
+                          onUpload={() => fileInputRef.current?.click()}
+                          onRemove={handleRemoveAvatar}
+                          onViewRcle={() => { setIsRcleModalOpen(true); setIsProfileMenuOpen(false); }}
+                          onViewPerformance={() => { setIsPerformanceModalOpen(true); setIsProfileMenuOpen(false); }}
+                          onViewData={() => { setIsSociodemographicModalOpen(true); setIsProfileMenuOpen(false); }}
+                          onLogout={onLogout}
+                          hasAvatar={!!user.avatar}
+                        />
+                      )}
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleAvatarChange}
+                        accept="image/png, image/jpeg"
+                        className="hidden"
+                      />
+                  </div>
+                  <div>
+                      <h2 className="text-white font-bold text-xl">{user.nickname}</h2>
+                      <p className="text-xs text-cyan-300 font-medium tracking-wide">Nível {user.level} • Mente Curiosa</p>
+                  </div>
+              </div>
 
-        <Card className="md:col-span-2">
-            <h3 className="card-title">XP / LVL</h3>
-            <div className="w-full bg-gray-700 rounded-full h-4">
-                <div className="bg-cyan-400 h-4 rounded-full" style={{width: `${progressPercentage}%`}}></div>
-            </div>
-            <div className="flex justify-between mt-1 text-sm text-cyan-300">
-                <span>Nível {level}</span>
-                <span>{totalXp} / {nextLevelXpTarget} XP</span>
-                <span>Nível {level + 1}</span>
-            </div>
-            <p className="text-center text-gray-400 text-xs mt-2">XP total acumulado / XP para próximo nível</p>
-        </Card>
+              <div className="flex-grow md:max-w-xs">
+                  <div className="flex items-center justify-between text-yellow-400 font-bold text-sm mb-1">
+                       <div className="flex items-center gap-1"><IconTrophy className="w-4 h-4"/> <span>{totalXp} XP</span></div>
+                       <span className="text-xs text-gray-400 font-normal">{nextLevelXpTarget} XP para Lvl {level + 1}</span>
+                  </div>
+                  <div className="w-full h-3 bg-slate-900/50 rounded-full overflow-hidden border border-white/5">
+                      <div className="h-full bg-gradient-to-r from-purple-500 to-cyan-400 shadow-glow-blue-sm relative" style={{width: `${progressPercentage}%`}}>
+                          <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                      </div>
+                  </div>
+              </div>
 
-        <Card className="md:col-span-1">
-            <h3 className="card-title">Badges</h3>
-            <div className="flex justify-around items-center">
-                <EmotionExplorerBadge className="w-16 h-16" unlocked={true}/>
-                <EmotionExplorerBadge className="w-16 h-16" />
-                <EmotionExplorerBadge className="w-16 h-16" />
-            </div>
-        </Card>
+              <div className="flex items-center justify-center bg-slate-900/40 p-2 rounded-xl border border-white/10">
+                   <CountdownTimer onTimerEnd={handleTimerEnd} />
+              </div>
+          </div>
+      </div>
+
+      <main className="space-y-8">
         
+        {/* --- JOURNEY TIMELINE --- */}
         <div className="md:col-span-3">
-          <Card>
-             <h3 className="card-title text-center mb-4">Resumo da Semana</h3>
-             <div className="flex justify-around items-start text-center">
-                <div className="flex flex-col items-center space-y-2">
-                    <CheckCircleIcon className="w-10 h-10 text-green-400"/>
-                    <h4 className="text-sm font-semibold text-gray-300">Pings Respondidos</h4>
-                    <p className="text-2xl font-bold text-green-400">{completedPings}<span className="text-sm font-normal text-gray-500">/42</span></p>
-                </div>
-                <div className="flex flex-col items-center space-y-2">
-                    <XCircleIcon className="w-10 h-10 text-red-500"/>
-                    <h4 className="text-sm font-semibold text-gray-300">Pings Perdidos</h4>
-                    <p className="text-2xl font-bold text-red-500">{missedPings}<span className="text-sm font-normal text-gray-500">/13</span></p>
-                </div>
-                <div className="flex flex-col items-center space-y-2">
-                    <StarIcon className="w-10 h-10 text-yellow-400"/>
-                    <h4 className="text-sm font-semibold text-gray-300">Dias Completos</h4>
-                    <p className="text-2xl font-bold text-yellow-400">{completedStars}<span className="text-sm font-normal text-gray-500">/5</span></p>
-                </div>
-             </div>
-          </Card>
+             <div className="flex justify-between items-end mb-4 px-1">
+                 <h3 className="text-sm text-gray-400 uppercase tracking-widest font-semibold">Sua Jornada</h3>
+                 <span className="text-xs text-cyan-400 font-medium">Dia {currentDayIndex + 1} de 7</span>
+            </div>
+            
+            <div className="flex justify-between items-center relative px-2">
+                {/* Connecting Line */}
+                <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-800 -z-10 transform -translate-y-1/2"></div>
+                
+                {days.map((day, idx) => {
+                    const status = idx < currentDayIndex ? 'completed' : idx === currentDayIndex ? 'current' : 'locked';
+                    return (
+                        <div key={day} className="flex flex-col items-center gap-2 relative group">
+                            <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs md:text-sm font-bold border-2 transition-all duration-300 z-10
+                                ${status === 'completed' ? 'bg-cyan-900/80 border-cyan-500 text-cyan-400' : 
+                                  status === 'current' ? 'bg-cyan-400 border-cyan-400 text-brand-dark shadow-glow-blue scale-110' : 
+                                  'bg-slate-900 border-slate-700 text-slate-600'}`}>
+                                {status === 'completed' ? <IconCheck className="w-4 h-4" /> : day}
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
         </div>
 
-
-        <Card className="md:col-span-1">
-            <h3 className="card-title">Leaderboard</h3>
-            <div className="flex justify-center items-end gap-2 mb-6">
-                {topThree[1] && <PodiumItem player={topThree[1]} rank={2} isCurrentUser={topThree[1].nickname === user.nickname}/>}
-                {topThree[0] && <PodiumItem player={topThree[0]} rank={1} isCurrentUser={topThree[0].nickname === user.nickname}/>}
-                {topThree[2] && <PodiumItem player={topThree[2]} rank={3} isCurrentUser={topThree[2].nickname === user.nickname}/>}
-            </div>
-            <ul className="space-y-2">
-                {restOfPlayers.map((player, index) => {
-                    const isCurrentUser = player.nickname === user.nickname;
-                    const rank = index + 4;
-                    const userHighlight = isCurrentUser ? 'bg-cyan-500/20 border-cyan-400 text-cyan-200 font-bold' : 'border-transparent';
-
-                    return (
-                        <li key={player.nickname} className={`flex items-center justify-between p-2 rounded-md border-l-4 transition-all ${userHighlight}`}>
-                            <span className="flex items-center">
-                                <span className="w-6 text-center text-gray-400 mr-2">{rank}</span>
-                                {player.nickname}
-                            </span>
-                            <span className="font-mono">{player.points}</span>
-                        </li>
-                    );
-                })}
-            </ul>
-        </Card>
-
-        <Card className="md:col-span-2">
-            <h3 className="card-title">Pings (Notificações)</h3>
-            <div className="grid grid-cols-7 gap-y-3 items-center text-center">
+        {/* --- MAIN PINGS GRID (STYLED AS CARDS) --- */}
+        <Card>
+            <h3 className="card-title text-center mb-6">Missões de Hoje (Pings)</h3>
+            <div className="grid grid-cols-7 gap-2 md:gap-4 items-center text-center">
                 {notificationTimes.map(time => (
-                    <div key={time} className="font-semibold text-sm text-cyan-300/80">{time}</div>
+                    <div key={time} className="font-semibold text-xs text-cyan-300/80">{time}</div>
                 ))}
                 {pings.map((day, dayIndex) => (
                   <React.Fragment key={dayIndex}>
+                    {/* Only show current day for clarity in mobile, or visually dim others. For now showing all 7 days grid but highlighting current row */}
                     {day.map((status, pingIndex) => {
                        const isLastColumn = pingIndex === notificationTimes.length - 1;
                        const isHighlighted = highlightedPing?.day === dayIndex && highlightedPing?.ping === pingIndex;
+                       const isClickable = isHighlighted && !instrumentFlow;
+                       const isCurrentDayRow = dayIndex === currentDayIndex;
                        
+                       const Wrapper = isClickable ? 'button' : 'div';
+                       const wrapperProps = isClickable ? {
+                           onClick: () => startInstrumentFlow({ day: dayIndex, ping: pingIndex }),
+                           className: `h-10 w-10 md:h-12 md:w-12 flex items-center justify-center relative transition-transform hover:scale-110 cursor-pointer z-10`,
+                           'aria-label': isLastColumn ? 'Responder questionário de fim do dia' : 'Responder ping regular'
+                       } : {
+                           className: `h-8 w-8 md:h-10 md:w-10 flex items-center justify-center relative z-10`
+                       };
+
                        return (
                           <div 
                             key={`${dayIndex}-${pingIndex}`} 
-                            className={`h-6 flex items-center justify-center relative`}
+                            className={`flex items-center justify-center relative h-12 ${!isCurrentDayRow ? 'opacity-30 grayscale' : ''}`}
                           >
-                             {isHighlighted && <div className="absolute inset-0 rounded-full bg-cyan-400/50 animate-ping-glow"></div>}
-                            <div className="relative z-10">
+                             {isHighlighted && <div className="absolute inset-0 rounded-full bg-cyan-400/50 animate-ping-glow w-full h-full m-auto"></div>}
+                             
+                             {/* @ts-ignore */}
+                             <Wrapper {...wrapperProps}>
                                 {isLastColumn ? (
-                                    status === 'completed' ? <StarIcon className={`w-5 h-5 text-yellow-400 ${pingIconClasses}`} /> :
+                                    status === 'completed' ? <StarIcon className={`w-6 h-6 text-yellow-400 ${pingIconClasses}`} /> :
                                     status === 'missed' ? <div className={`w-3 h-1 bg-gray-500 rounded-full ${pingIconClasses}`}></div> :
-                                    <StarIcon className={`w-5 h-5 text-gray-700 ${pingIconClasses}`} />
+                                    <StarIcon className={`w-6 h-6 ${isClickable ? 'text-cyan-300 drop-shadow-[0_0_5px_rgba(0,255,255,0.8)]' : 'text-gray-700'} ${pingIconClasses}`} />
                                 ) : (
-                                    status === 'completed' ? <div className={`w-4 h-4 rounded-full bg-green-400 ${pingIconClasses}`}></div> :
-                                    status === 'missed' ? <div className={`w-4 h-4 rounded-full bg-red-500 ${pingIconClasses}`}></div> :
-                                    <div className={`w-4 h-4 rounded-full bg-gray-700 ${pingIconClasses}`}></div>
+                                    status === 'completed' ? <div className={`w-4 h-4 md:w-5 md:h-5 rounded-full bg-green-400 border border-green-300 shadow-[0_0_10px_rgba(74,222,128,0.5)] ${pingIconClasses}`}></div> :
+                                    status === 'missed' ? <div className={`w-3 h-3 md:w-4 md:h-4 rounded-full bg-red-900 border border-red-800 ${pingIconClasses}`}></div> :
+                                    <div className={`w-3 h-3 md:w-4 md:h-4 rounded-full border ${isClickable ? 'bg-cyan-400 border-cyan-300 shadow-glow-blue' : 'bg-slate-800 border-slate-700'} ${pingIconClasses}`}></div>
                                 )}
-                            </div>
+                            </Wrapper>
                           </div>
                        );
                     })}
                   </React.Fragment>
                 ))}
             </div>
-            <p className="text-xs text-gray-400 mt-4 text-center">Progresso de 7 dias. Verde: Respondido, Vermelho: Perdido, Cinza: Pendente.</p>
+            <div className="flex justify-center gap-4 mt-6 text-xs text-gray-500">
+                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-green-400"></div>Concluído</div>
+                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-cyan-400 shadow-glow-blue-sm"></div>Disponível</div>
+                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-slate-800 border border-slate-700"></div>Pendente</div>
+            </div>
         </Card>
 
       </main>
-      {/* Fix: Removed non-standard 'jsx' and 'global' props from the style tag. Standard React does not support styled-jsx syntax without special configuration. A regular <style> tag will achieve the desired global styling. */}
       <style>{`
         .form-input {
           width: 100%;
@@ -1245,6 +1218,19 @@ const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Disp
         textarea.form-input {
             min-height: 80px;
         }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.2); 
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(0, 255, 255, 0.2); 
+          border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(0, 255, 255, 0.4); 
+        }
         @keyframes fade-in {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -1260,6 +1246,8 @@ const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Disp
         .animate-fade-in { animation: fade-in 0.5s ease-out; }
         .animate-fade-in-down { animation: fade-in-down 0.5s ease-out; }
         .animate-slow-spin-slow { animation: slow-spin-slow 20s linear infinite; }
+        .animate-ping-glow { animation: ping-glow 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
+        @keyframes ping-glow { 0%, 100% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.5); opacity: 0; } }
       `}</style>
     </div>
   );
@@ -1271,6 +1259,7 @@ const DashboardScreen: React.FC<{ gameState: GameState, setGameState: React.Disp
 // --- START: Reusable Components & Icons ---
 
 const PodiumItem: React.FC<{ player: {nickname: string, points: number}, rank: number, isCurrentUser: boolean }> = ({ player, rank, isCurrentUser }) => {
+    // ... (Keeping implementation)
     const rankStyles: {[key: number]: {
         height: string,
         bg: string,
@@ -1363,6 +1352,7 @@ const SociodemographicModal: React.FC<{onClose: () => void, data: Sociodemograph
 };
 
 const PerformanceModal: React.FC<{onClose: () => void, gameState: GameState}> = ({onClose, gameState}) => {
+    // ... (Performance Modal code kept as is)
     const userXpHistory = gameState.pings.flat().reduce((acc, status, index) => {
         const lastXp = acc.length > 0 ? acc[acc.length - 1] : 0;
         let currentXp = lastXp;
@@ -1466,20 +1456,6 @@ const PerformanceModal: React.FC<{onClose: () => void, gameState: GameState}> = 
                             </g>
                         </svg>
                     </div>
-                    <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-4 text-sm text-gray-300">
-                        <div className="flex items-center space-x-2">
-                            <svg width="16" height="8"><line x1="0" y1="4" x2="16" y2="4" stroke="#00ffff" strokeWidth="2.5" /></svg>
-                            <span>Seu Desempenho</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <svg width="16" height="8"><line x1="0" y1="4" x2="16" y2="4" stroke="#8b5cf6" strokeWidth="1.5" strokeDasharray="4 2" /></svg>
-                            <span>Média dos Jogadores</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <svg width="16" height="8"><line x1="0" y1="4" x2="16" y2="4" stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="4 2" opacity="0.6" /></svg>
-                            <span>Melhor Jogador</span>
-                        </div>
-                    </div>
                  </div>
              </div>
         </Modal>
@@ -1505,75 +1481,35 @@ const ProfileMenu: React.FC<{onUpload: () => void, onRemove: () => void, onViewR
 
 const CountdownTimer: React.FC<{ onTimerEnd: () => void }> = ({ onTimerEnd }) => {
     const [timeLeft, setTimeLeft] = useState('');
-    const [progress, setProgress] = useState(0);
     const pingHours = [9, 11, 13, 15, 17, 19, 21];
-
-    const onTimerEndRef = useRef(onTimerEnd);
-    const triggeredRef = useRef(false);
-
-    useEffect(() => {
-        onTimerEndRef.current = onTimerEnd;
-    }, [onTimerEnd]);
-
 
     useEffect(() => {
         const timer = setInterval(() => {
             const now = new Date();
             let nextPingDate = new Date();
-            let prevPingDate = new Date();
-
             const nextPingHour = pingHours.find(h => h > now.getHours());
 
             if (nextPingHour !== undefined) {
                 nextPingDate.setHours(nextPingHour, 0, 0, 0);
-                const prevPingHourIndex = pingHours.indexOf(nextPingHour) - 1;
-                if (prevPingHourIndex >= 0) {
-                    prevPingDate.setHours(pingHours[prevPingHourIndex], 0, 0, 0);
-                } else { 
-                    prevPingDate.setDate(now.getDate() - 1);
-                    prevPingDate.setHours(pingHours[pingHours.length - 1], 0, 0, 0);
-                }
             } else { 
                 nextPingDate.setDate(now.getDate() + 1);
                 nextPingDate.setHours(pingHours[0], 0, 0, 0);
-                prevPingDate.setHours(pingHours[pingHours.length - 1], 0, 0, 0);
             }
 
             const diff = nextPingDate.getTime() - now.getTime();
-            
-            if (diff <= 1000 && !triggeredRef.current) {
-              onTimerEndRef.current();
-              triggeredRef.current = true;
-            } else if (diff > 5000 && triggeredRef.current) { 
-              triggeredRef.current = false;
-            }
-
             const hours = Math.max(0, Math.floor(diff / (1000 * 60 * 60)));
             const minutes = Math.max(0, Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)));
             const seconds = Math.max(0, Math.floor((diff % (1000 * 60)) / 1000));
             
             setTimeLeft(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`);
-
-            const totalDuration = nextPingDate.getTime() - prevPingDate.getTime();
-            const elapsedTime = now.getTime() - prevPingDate.getTime();
-            const progressPercentage = (elapsedTime / totalDuration) * 100;
-            setProgress(Math.min(100, progressPercentage));
-
         }, 1000);
-
         return () => clearInterval(timer);
     }, []);
 
     return (
-        <div className="text-center w-36">
-            <div className="text-xs text-cyan-300/80">Próximo Ping</div>
-            <div className="font-mono text-lg text-cyan-400 tracking-widest">{timeLeft}</div>
-            <div className="w-full bg-gray-700 rounded-full h-1.5 mt-1">
-                <div 
-                    className="bg-green-500 h-1.5 rounded-full transition-all duration-1000 ease-linear" 
-                    style={{width: `${progress}%`}}
-                ></div>
-            </div>
+        <div className="text-center w-24">
+            <div className="text-[10px] text-cyan-300/80 uppercase">Próximo Ping</div>
+            <div className="font-mono text-lg text-white font-bold">{timeLeft}</div>
         </div>
     );
 };
@@ -1587,6 +1523,7 @@ const Card: React.FC<{ children: React.ReactNode, className?: string }> = ({ chi
 };
 
 const PlexusFace = () => {
+    // ... (Keeping complex PlexusFace implementation)
   const points = [
     {x: 125, y: 250}, {x: 155, y: 240}, {x: 180, y: 220}, {x: 200, y: 195}, {x: 212, y: 165}, // 0-4 Chin Right
     {x: 215, y: 135}, {x: 212, y: 105}, {x: 200, y: 75}, {x: 180, y: 50}, {x: 95, y: 30}, {x: 125, y: 20}, // 5-10 Head top right
@@ -1712,32 +1649,6 @@ const ChartBarIcon = ({ className = '' }: { className?: string }) => ( <svg clas
 const IdentificationIcon = ({ className = '' }: { className?: string }) => ( <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"> <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path> <path d="M7 12h2" /> <path d="M7 16h5" /> <path d="M13 16h4" /> <path d="M14 11V7h-4v4"></path> </svg> );
 const BellIcon = ({ className = '' }: { className?: string }) => ( <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"> <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /> <path d="M13.73 21a2 2 0 0 1-3.46 0" /> </svg> );
 const PlusIcon = ({ className = '' }: { className?: string }) => ( <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"> <line x1="12" y1="5" x2="12" y2="19"></line> <line x1="5" y1="12" x2="19" y2="12"></line> </svg> );
-
-const EmotionExplorerBadge = ({ className = '', unlocked = false }: { className?: string, unlocked?: boolean }) => {
-    const uniqueId = useId();
-    const mainColor = unlocked ? "#00ffff" : "#555";
-    const secondaryColor = unlocked ? "#3a2d7f" : "#444";
-    const highlightColor = unlocked ? "#7df9ff" : "#666";
-    const handleColor = unlocked ? "#a98764" : "#666";
-    return (
-        <svg className={className} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <defs> <linearGradient id={`heart-gradient-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="100%"> <stop offset="0%" stopColor={secondaryColor} /> <stop offset="100%" stopColor={mainColor} /> </linearGradient> <radialGradient id={`brain-gradient-${uniqueId}`}> <stop offset="0%" stopColor={unlocked ? "#fff" : "#777"} /> <stop offset="100%" stopColor={unlocked ? highlightColor : "#555"} /> </radialGradient> <filter id={`badge-glow-${uniqueId}`} x="-50%" y="-50%" width="200%" height="200%"> <feGaussianBlur stdDeviation={unlocked ? "3" : "0"} result="coloredBlur" /> <feMerge> <feMergeNode in="coloredBlur" /> <feMergeNode in="SourceGraphic" /> </feMerge> </filter> </defs>
-            <g filter={`url(#badge-glow-${uniqueId})`} opacity={unlocked ? 1 : 0.5}>
-                <path d="M 5 70 C 10 85, 25 90, 40 80 L 60 90 C 75 100, 90 95, 95 80 L 95 70 C 90 75, 75 80, 60 70 L 40 80 C 25 70, 10 75, 5 70 Z" fill={unlocked ? "#4a90e2" : "#3a3a3a"} stroke={unlocked ? "#a4c8f0" : "#555"} strokeWidth="1" />
-                <path d="M50 15 C 40 5, 20 10, 20 25 C 20 45, 50 65, 50 65 C 50 65, 80 45, 80 25 C 80 10, 60 5, 50 15 Z" fill={`url(#heart-gradient-${uniqueId})`} stroke={highlightColor} strokeWidth="1.5" />
-                <path d="M50 15 L 50 65 L 20 25" fill="none" stroke={unlocked ? "rgba(220, 240, 255, 0.3)" : "rgba(100, 100, 100, 0.3)"} strokeWidth="1" /> <path d="M50 15 L 50 65 L 80 25" fill="none" stroke={unlocked ? "rgba(220, 240, 255, 0.3)" : "rgba(100, 100, 100, 0.3)"} strokeWidth="1" /> <path d="M35 22 L 50 42 L 65 22" fill="none" stroke={unlocked ? "rgba(220, 240, 255, 0.2)" : "rgba(100, 100, 100, 0.2)"} strokeWidth="0.5" />
-                <g transform="rotate(-30 40 40)">
-                    <path d="M22 60 L 15 75 L 20 80 L 27 65 Z" fill={handleColor} stroke={highlightColor} strokeWidth="0.5" /> <circle cx="35" cy="40" r="18" fill={unlocked ? "rgba(0, 255, 255, 0.15)" : "rgba(80, 80, 80, 0.3)"} stroke={handleColor} strokeWidth="4" />
-                    <g transform="translate(25, 32) scale(0.18)">
-                        <path d="M68.5,41.7C65.3,38,62.5,33,62.8,28.3c0.3-4.2,3.3-6.9,3.3-6.9c-1.3-3.2-1.3-7.2-1.3-7.2c-2.6,0-5.2,1.3-6.5,2.6 c-1.3,1.3-2.6,3.9-5.2,3.9s-3.9-2.6-5.2-3.9s-3.9-2.6-6.5-2.6s-5.2,1.3-6.5,2.6s-2.6,3.9-5.2,3.9s-3.9-2.6-5.2-3.9 c-1.3-1.3-3.9-2.6-6.5-2.6c0,0,0,3.9-1.3,7.2c0,0,3,2.6,3.3,6.9c0.3,4.6-2.6,9.6-5.8,13.3S10.2,50,13.4,54.8 c3.3,4.8,8.2,7.9,13.8,7.9c4.2,0,9.1-1.6,12.4-5.2c2.6,3.9,7.8,5.2,12.1,5.2c5.6,0,10.4-3.2,13.8-7.9 C69.1,50,65.3,45.3,68.5,41.7z" fill={`url(#brain-gradient-${uniqueId})`} />
-                        {unlocked && <path d="M68.5,41.7C65.3,38,62.5,33,62.8,28.3c0.3-4.2,3.3-6.9,3.3-6.9c-1.3-3.2-1.3-7.2-1.3-7.2c-2.6,0-5.2,1.3-6.5,2.6 c-1.3,1.3-2.6,3.9-5.2,3.9s-3.9-2.6-5.2-3.9s-3.9-2.6-5.2-3.9s-3.9-2.6-5.2-3.9 c-1.3-1.3-3.9-2.6-6.5-2.6c0,0,0,3.9-1.3,7.2c0,0,3,2.6,3.3,6.9c0.3,4.6-2.6,9.6-5.8,13.3S10.2,50,13.4,54.8 c3.3,4.8,8.2,7.9,13.8,7.9c4.2,0,9.1-1.6,12.4-5.2c2.6,3.9,7.8,5.2,12.1,5.2c5.6,0,10.4-3.2,13.8-7.9 C69.1,50,65.3,45.3,68.5,41.7z" fill="none" stroke={mainColor} strokeWidth="3" />}
-                    </g>
-                </g>
-            </g>
-        </svg>
-    );
-};
-
 const StarIcon = ({ className = '' }: { className?: string }) => ( <svg className={className} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"> <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon> </svg> );
 const CheckCircleIcon = ({ className = '' }: { className?: string }) => ( <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"> <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path> <polyline points="22 4 12 14.01 9 11.01"></polyline> </svg> );
 const XCircleIcon = ({ className = '' }: { className?: string }) => ( <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"> <circle cx="12" cy="12" r="10"></circle> <line x1="15" y1="9" x2="9" y2="15"></line> <line x1="9" y1="9" x2="15" y2="15"></line> </svg> );
@@ -1797,11 +1708,6 @@ const InstrumentModal: React.FC<{
                     <div className="flex justify-between items-start mb-2">
                         <div>
                             <h2 className="text-xl font-bold text-cyan-400">{stepTitles[flow.step]}</h2>
-                            {flow.step === 'sam' && (
-                                <p className="text-sm text-gray-400 mt-1">
-                                    O nível 9 é o de maior alegria, a escala começa na tristeza e vai até a alegria.
-                                </p>
-                            )}
                         </div>
                         <span className="text-sm font-semibold text-gray-400">
                             Passo {currentStepIndex + 1} <span className="font-normal text-gray-500">de</span> {totalSteps}
@@ -1821,23 +1727,15 @@ const InstrumentModal: React.FC<{
 };
 
 const SAMDynamicFigure: React.FC<{ type: 'pleasure' | 'arousal' | 'dominance', value: number }> = ({ type, value }) => {
-    // A cute ghost-like character shape
-    const bodyPath = "M20,80 C10,70 10,30 50,20 C90,30 90,70 80,80 Z";
-
-    // Normalize value from 1-9 to 0-1
+   // ... (Keeping SAMDynamicFigure implementation)
+   const bodyPath = "M20,80 C10,70 10,30 50,20 C90,30 90,70 80,80 Z";
     const normalizedValue = (value - 1) / 8;
-
     let content;
-
     if (type === 'pleasure') {
-        // Mouth goes from frown to smile. 1=frown, 9=smile.
         const mouthY = 68;
         const mouthControlY = mouthY + 15 * (0.5 - normalizedValue) * 2;
         const mouthPath = `M 35,${mouthY} Q 50,${mouthControlY} 65,${mouthY}`;
-
-        // Cheeks for happy states
         const cheekOpacity = Math.max(0, (normalizedValue - 0.6) / 0.4);
-        
         content = <>
             <path d={bodyPath} />
             <path d={mouthPath} strokeWidth="3" fill="none" />
@@ -1849,39 +1747,22 @@ const SAMDynamicFigure: React.FC<{ type: 'pleasure' | 'arousal' | 'dominance', v
             </>}
         </>;
     } else if (type === 'arousal') {
-        // Eyes open from sleepy slits to wide circles. 1=sleepy, 9=wide.
         const eyeRadius = 1.5 + normalizedValue * 5.5;
-        const mouthPath = "M 35,70 Q 50,72 65,70"; // A neutral mouth
-
+        const mouthPath = "M 35,70 Q 50,72 65,70";
         content = <>
             <path d={bodyPath} />
             <path d={mouthPath} strokeWidth="3" fill="none" />
-            { value < 3 ? ( // Sleepy eyes for low arousal
-                 <>
-                    <path d="M 35 50 H 45" strokeWidth="3" />
-                    <path d="M 55 50 H 65" strokeWidth="3" />
-                </>
-            ) : ( // Circular eyes for mid-to-high arousal
-                <>
-                    <circle cx="40" cy="50" r={eyeRadius} fill="currentColor" />
-                    <circle cx="60" cy="50" r={eyeRadius} fill="currentColor" />
-                </>
-            )}
-            {/* "Electric" zigzags for high arousal */}
+            { value < 3 ? ( <> <path d="M 35 50 H 45" strokeWidth="3" /> <path d="M 55 50 H 65" strokeWidth="3" /> </> ) : ( <> <circle cx="40" cy="50" r={eyeRadius} fill="currentColor" /> <circle cx="60" cy="50" r={eyeRadius} fill="currentColor" /> </> )}
             {value > 7 && <path d="M5,40 L15,50 L5,60" strokeWidth="2" opacity={0.3 + (normalizedValue - 0.75)*2} transform={`rotate(${(value-7)*5} 10 50)`} />}
             {value > 7 && <path d="M95,40 L85,50 L95,60" strokeWidth="2" opacity={0.3 + (normalizedValue - 0.75)*2} transform={`rotate(${-(value-7)*5} 90 50)`} />}
         </>;
-    } else { // dominance
-        // Character grows from small to large. 1=small, 9=large.
+    } else { 
         const scale = 0.6 + normalizedValue * 0.5;
         const x = 50 - (50 * scale);
         const y = 80 - (80 * scale);
         const transform = `translate(${x}, ${y}) scale(${scale})`;
-        
-        // Eyebrows for dominance. 1=submissive (up), 9=dominant (down/angry)
         const eyebrowY1 = 42 + 5 * normalizedValue;
         const eyebrowY2 = 42 - 5 * normalizedValue;
-
         content = <g transform={transform}>
             <path d={bodyPath} />
             <path d="M 35,70 Q 50,68 65,70" strokeWidth="3" fill="none" />
@@ -1891,7 +1772,6 @@ const SAMDynamicFigure: React.FC<{ type: 'pleasure' | 'arousal' | 'dominance', v
             <path d={`M 68,${eyebrowY1} L 52,${eyebrowY2}`} strokeWidth="3" />
         </g>;
     }
-
     return (
       <svg viewBox="0 0 100 100" className="w-full h-full transition-all duration-300 ease-in-out">
         <g fill="rgba(0, 255, 255, 0.1)" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-300">
@@ -1902,48 +1782,75 @@ const SAMDynamicFigure: React.FC<{ type: 'pleasure' | 'arousal' | 'dominance', v
 };
 
 const SAMComponent: React.FC<{ onComplete: (data: SamResponse) => void }> = ({ onComplete }) => {
+    // ... (Keeping SAMComponent)
     const [responses, setResponses] = useState<SamResponse>({ pleasure: 0, arousal: 0, dominance: 0 });
-    const isComplete = responses.pleasure > 0 && responses.arousal > 0 && responses.dominance > 0;
+    const [currentStep, setCurrentStep] = useState<'pleasure' | 'arousal' | 'dominance'>('pleasure');
 
-    const SAMSlider: React.FC<{label: string, type: 'pleasure' | 'arousal' | 'dominance'}> = ({label, type}) => {
+    const handleNext = () => {
+        if (currentStep === 'pleasure') setCurrentStep('arousal');
+        else if (currentStep === 'arousal') setCurrentStep('dominance');
+        else if (currentStep === 'dominance') onComplete(responses);
+    };
+
+    const handleBack = () => {
+        if (currentStep === 'arousal') setCurrentStep('pleasure');
+        else if (currentStep === 'dominance') setCurrentStep('arousal');
+    };
+
+    const SAMSlider: React.FC<{label: string, type: 'pleasure' | 'arousal' | 'dominance', description: string}> = ({label, type, description}) => {
         const values = Array.from({length: 9}).map((_, i) => i + 1);
-
         return (
-            <div className="grid grid-cols-[auto,1fr] gap-2 sm:gap-4 items-center">
-                <div>
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto bg-slate-800 rounded-full p-2 border-2 border-cyan-400/30">
-                      {responses[type] > 0 && <SAMDynamicFigure type={type} value={responses[type]} />}
+            <div className="flex flex-col space-y-4 animate-fade-in">
+                 <p className="text-sm text-gray-400 text-center italic">{description}</p>
+                <div className="grid grid-cols-[auto,1fr] gap-2 sm:gap-4 items-center">
+                    <div>
+                        <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto bg-slate-800 rounded-full p-2 border-2 border-cyan-400/30">
+                        {responses[type] > 0 && <SAMDynamicFigure type={type} value={responses[type]} />}
+                        </div>
                     </div>
-                </div>
-                <div>
-                    <h3 className="text-base sm:text-xl font-semibold text-cyan-300 mb-2">{label}</h3>
-                    <div className="flex justify-between items-center bg-slate-900/70 p-1 sm:p-2 rounded-full space-x-0.5 sm:space-x-1">
-                        {values.map((val) => (
-                           <button 
-                                key={val}
-                                onClick={() => setResponses(p => ({...p, [type]: val}))}
-                                aria-label={`${label} nível ${val}`}
-                                className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 flex items-center justify-center transition-all duration-150 transform hover:scale-110 text-xs
-                                    ${responses[type] === val 
-                                        ? 'bg-cyan-400 border-cyan-300 text-brand-dark font-bold shadow-glow-blue-sm' 
-                                        : 'border-gray-600 hover:border-cyan-500 text-gray-400'}`}
-                            >
-                               {val}
-                           </button>
-                        ))}
+                    <div>
+                        <h3 className="text-base sm:text-xl font-semibold text-cyan-300 mb-2">{label}</h3>
+                        <div className="flex justify-between items-center bg-slate-900/70 p-1 sm:p-2 rounded-full space-x-0.5 sm:space-x-1">
+                            {values.map((val) => (
+                            <button 
+                                    key={val}
+                                    onClick={() => setResponses(p => ({...p, [type]: val}))}
+                                    className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 flex items-center justify-center transition-all duration-150 transform hover:scale-110 text-xs
+                                        ${responses[type] === val 
+                                            ? 'bg-cyan-400 border-cyan-300 text-brand-dark font-bold shadow-glow-blue-sm' 
+                                            : 'border-gray-600 hover:border-cyan-500 text-gray-400'}`}
+                                >
+                                {val}
+                            </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
         );
     };
-
+    const descriptions = {
+        pleasure: "O nível 1 representa total tristeza/desprazer, e o nível 9 representa total alegria/prazer.",
+        arousal: "O nível 1 representa muito calmo/sonolento, e o nível 9 representa muito estimulado/alerta.",
+        dominance: "O nível 1 representa sentir-se controlado/submisso, e o nível 9 representa sentir-se no controle/dominante."
+    };
     return (
-        <div className="space-y-4 sm:space-y-6">
-            <SAMSlider label="Prazer / Valência" type="pleasure" />
-            <SAMSlider label="Excitação / Ativação" type="arousal" />
-            <SAMSlider label="Dominância" type="dominance" />
-            <div className="flex justify-end pt-4">
-                 <button onClick={() => onComplete(responses)} disabled={!isComplete} className="px-8 py-3 font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-colors shadow-glow-blue disabled:bg-gray-600 disabled:cursor-not-allowed">Próximo</button>
+        <div className="space-y-4 sm:space-y-6 py-4">
+            {currentStep === 'pleasure' && <SAMSlider label="Prazer / Valência" type="pleasure" description={descriptions.pleasure} />}
+            {currentStep === 'arousal' && <SAMSlider label="Excitação / Ativação" type="arousal" description={descriptions.arousal} />}
+            {currentStep === 'dominance' && <SAMSlider label="Dominância" type="dominance" description={descriptions.dominance} />}
+
+            <div className="flex justify-between pt-4">
+                 {currentStep !== 'pleasure' ? (
+                     <button onClick={handleBack} className="px-6 py-2 font-bold text-cyan-300 bg-transparent border border-cyan-400/50 rounded-lg hover:bg-cyan-400/10 transition-colors">Voltar</button>
+                 ) : <div />}
+                 <button 
+                    onClick={handleNext} 
+                    disabled={responses[currentStep] === 0} 
+                    className="px-8 py-3 font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-colors shadow-glow-blue disabled:bg-gray-600 disabled:cursor-not-allowed"
+                >
+                    {currentStep === 'dominance' ? 'Próximo' : 'Continuar'}
+                </button>
             </div>
         </div>
     );
@@ -1962,139 +1869,218 @@ const FeedContextComponent: React.FC<{ onComplete: (wasWatching: boolean) => voi
     );
 };
 
-const PANAS_ITEMS = [ 'Aflito', 'Amável', 'Amedrontado', 'Angustiado', 'Animado', 'Apaixonado', 'Determinado', 'Dinâmico', 'Entusiasmado', 'Forte', 'Humilhado', 'Incomodado', 'Inquieto', 'Inspirado', 'Irritado', 'Nervoso', 'Orgulhoso', 'Perturbado', 'Rancoroso', 'Vigoroso' ];
+// --- UPDATED PANAS COMPONENT (PAGINATED & DEFAULT VALUE 1) ---
+const PANASComponent: React.FC<{ question: string, onComplete: (data: PanasResponse) => void }> = ({ question, onComplete }) => {
+    const adjectives = [
+        "Interessado(a)", "Perturbado(a)", "Animado(a)", "Chateado(a)", "Forte",
+        "Culpado(a)", "Assustado(a)", "Hostil", "Entusiasmado(a)", "Orgulhoso(a)",
+        "Irritado(a)", "Alerta", "Envergonhado(a)", "Inspirado(a)", "Nervoso(a)",
+        "Determinado(a)", "Atento(a)", "Agitado(a)", "Ativo(a)", "Com medo"
+    ];
 
-const PANASComponent: React.FC<{ question: string; onComplete: (data: PanasResponse) => void }> = ({ question, onComplete }) => {
-    const [responses, setResponses] = useState<PanasResponse>(() => {
-        const initialResponses: PanasResponse = {};
-        PANAS_ITEMS.forEach(item => {
-            initialResponses[item] = 1; // Default to 1 (Nem um pouco)
-        });
-        return initialResponses;
+    const ITEMS_PER_PAGE = 4;
+    const [page, setPage] = useState(0);
+
+    // Inicializa todos os adjetivos com valor 1 (default)
+    const [ratings, setRatings] = useState<PanasResponse>(() => {
+        const initial: PanasResponse = {};
+        adjectives.forEach(adj => { initial[adj] = 1; });
+        return initial;
     });
 
-    const scale = [ {label: "Nem um pouco", value: 1}, {label: "Um pouco", value: 2}, {label: "Moderadamente", value: 3}, {label: "Bastante", value: 4}, {label: "Extremamente", value: 5} ];
-    
-    const handleResponse = (item: string, value: number) => {
-        setResponses(prev => ({ ...prev, [item]: value }));
+    const totalPages = Math.ceil(adjectives.length / ITEMS_PER_PAGE);
+    const startIndex = page * ITEMS_PER_PAGE;
+    const currentAdjectives = adjectives.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+    const handleChange = (adjective: string, value: number) => {
+        setRatings(prev => ({ ...prev, [adjective]: value }));
     };
 
-    const handleSubmit = () => {
-        onComplete(responses);
+    const handleNext = () => {
+        if (page < totalPages - 1) {
+            setPage(prev => prev + 1);
+        } else {
+            onComplete(ratings);
+        }
     };
-    
-    // Fix: Explicitly type `val` as `number`. `Object.values` on an object with an
-    // index signature can be inferred as `unknown[]`, causing a type error on comparison.
-    const isComplete = Object.values(responses).every((val: number) => val > 0);
+
+    const handleBack = () => {
+        if (page > 0) {
+            setPage(prev => prev - 1);
+        }
+    };
 
     return (
-        <div className="py-4 flex flex-col" style={{minHeight: '400px', maxHeight: '80vh'}}>
-            <div className="flex-shrink-0 text-center">
-                <p className="text-gray-300 mb-4 px-4">{question}</p>
-            </div>
+        <div className="space-y-6 py-4 animate-fade-in w-full">
+             <h3 className="text-lg text-center text-gray-300 mb-6 font-light leading-relaxed">{question}</h3>
+             
+             <div className="grid grid-cols-1 gap-4 min-h-[300px]">
+                {currentAdjectives.map(adj => (
+                    <div key={adj} className="bg-slate-800/50 p-3 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-3 border border-cyan-400/10 animate-fade-in transition-all hover:bg-slate-800/80">
+                        <span className="text-cyan-300 font-medium text-lg min-w-[120px] text-center sm:text-left">{adj}</span>
+                        <div className="flex items-center gap-2 w-full sm:w-auto justify-center">
+                             <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wider w-12 text-right">Pouco</span>
+                             <div className="flex space-x-2">
+                                 {[1, 2, 3, 4, 5].map(val => (
+                                     <button
+                                        key={val}
+                                        onClick={() => handleChange(adj, val)}
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${ratings[adj] === val ? 'bg-cyan-400 border-cyan-400 text-brand-dark font-bold shadow-glow-blue scale-110' : 'bg-transparent border-gray-700 text-gray-500 hover:border-cyan-400/50 hover:text-cyan-300'}`}
+                                     >
+                                         {val}
+                                     </button>
+                                 ))}
+                             </div>
+                             <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wider w-12 text-left">Muito</span>
+                        </div>
+                    </div>
+                ))}
+             </div>
 
-            <div className="flex-grow overflow-y-auto border border-cyan-400/20 rounded-lg">
-                <table className="w-full text-sm text-left table-fixed">
-                    <thead className="sticky top-0 bg-teal-800 text-gray-200 z-10">
-                        <tr>
-                            <th className="p-2 w-[25%] font-semibold">Item</th>
-                            {scale.map(({label, value}) => (
-                                <th key={value} className="p-2 text-center w-[15%] font-normal text-xs sm:text-sm">{label}</th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-cyan-400/10">
-                        {PANAS_ITEMS.map((item, index) => (
-                            <tr key={item} className={index % 2 === 0 ? 'bg-slate-800/50' : 'bg-slate-900/50'}>
-                                <td className="p-2 font-medium text-cyan-300">{item}</td>
-                                {scale.map(({value}) => (
-                                    <td key={value} className="p-2 text-center">
-                                        <button
-                                            onClick={() => handleResponse(item, value)}
-                                            className={`w-5 h-5 sm:w-6 sm:h-6 mx-auto flex items-center justify-center rounded border-2 transition-all duration-150 transform hover:scale-110
-                                                ${responses[item] === value
-                                                    ? 'bg-brand-blue border-brand-light-blue'
-                                                    : 'border-gray-600 hover:border-brand-light-blue'
-                                                }
-                                            `}
-                                            aria-label={`${item} - ${scale.find(s=>s.value===value)?.label}`}
-                                        >
-                                            {responses[item] === value && (
-                                                <svg className="w-3 h-3 sm:w-4 sm:h-4 text-brand-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                                </svg>
-                                            )}
-                                        </button>
-                                    </td>
-                                ))}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+             {/* Progress Dots */}
+             <div className="flex justify-center space-x-1.5 mt-4">
+                 {Array.from({length: totalPages}).map((_, i) => (
+                     <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === page ? 'w-8 bg-cyan-400 shadow-glow-blue-sm' : 'w-2 bg-gray-700'}`} />
+                 ))}
+             </div>
 
-           <div className="flex justify-end pt-4 flex-shrink-0">
+             <div className="flex justify-between pt-4">
                 <button 
-                    onClick={handleSubmit} 
-                    disabled={!isComplete}
-                    className="px-8 py-3 font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-colors shadow-glow-blue disabled:bg-gray-600 disabled:cursor-not-allowed disabled:shadow-none"
+                    onClick={handleBack}
+                    disabled={page === 0}
+                    className={`px-6 py-2 font-bold text-cyan-300 bg-transparent border border-cyan-400/50 rounded-lg hover:bg-cyan-400/10 transition-colors ${page === 0 ? 'invisible' : ''}`}
                 >
-                    Próximo
+                    Voltar
                 </button>
-           </div>
+                <button 
+                    onClick={handleNext}
+                    className="px-8 py-3 font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-colors shadow-glow-blue hover:scale-105 active:scale-95"
+                >
+                    {page === totalPages - 1 ? 'Concluir' : 'Próximo'}
+                </button>
+             </div>
         </div>
     );
 };
 
 const EndOfDayLogComponent: React.FC<{ onComplete: (data: Partial<InstrumentResponse>) => void }> = ({ onComplete }) => {
-    const [sleepQuality, setSleepQuality] = useState(0);
-    const [stressfulEvents, setStressfulEvents] = useState('');
-    const [screenTimeLog, setScreenTimeLog] = useState<ScreenTimeEntry[]>([{id: '0', platform: '', otherPlatformDetail: '', duration: ''}]);
+    // ... (Keeping EndOfDayLogComponent)
+    const [sleepQuality, setSleepQuality] = useState<number>(0);
+    const [stressfulEvents, setStressfulEvents] = useState("");
+    const [screenTimeLog, setScreenTimeLog] = useState<ScreenTimeEntry[]>([]);
+    const [newEntry, setNewEntry] = useState<Partial<ScreenTimeEntry>>({ platform: 'TikTok', duration: '', otherPlatformDetail: '' });
 
-    const addScreenTimeEntry = () => setScreenTimeLog(prev => [...prev, {id: `${Date.now()}`, platform: '', otherPlatformDetail: '', duration: ''}]);
-    const updateScreenTimeEntry = (index: number, field: keyof ScreenTimeEntry, value: string) => {
-      const newLog = [...screenTimeLog];
-      newLog[index] = {...newLog[index], [field]: value};
-      setScreenTimeLog(newLog);
+    const addEntry = () => {
+        if (newEntry.platform && newEntry.duration) {
+            setScreenTimeLog([...screenTimeLog, { 
+                id: Date.now().toString(), 
+                platform: newEntry.platform!, 
+                otherPlatformDetail: newEntry.otherPlatformDetail || '', 
+                duration: newEntry.duration 
+            }]);
+            setNewEntry({ platform: 'TikTok', duration: '', otherPlatformDetail: '' });
+        }
+    };
+
+    const removeEntry = (id: string) => {
+        setScreenTimeLog(screenTimeLog.filter(e => e.id !== id));
     };
 
     return (
-        <div className="">
-            <div className="max-h-[60vh] overflow-y-auto pr-4 space-y-6">
-                <FormField label="Como você avalia a qualidade do seu sono na noite passada? (1=Péssima, 5=Excelente)">
-                     <div className="flex justify-start space-x-2 sm:space-x-4">
-                        {[1,2,3,4,5].map(v => 
-                            <button key={v} onClick={() => setSleepQuality(v)} className={`w-10 h-10 text-lg font-bold rounded-full border-2 transition-colors transform hover:scale-110 ${sleepQuality === v ? 'bg-cyan-400 border-cyan-300 text-brand-dark' : 'border-gray-500 hover:border-cyan-400 text-gray-300'}`}>
-                                {v}
-                            </button>
-                        )}
-                    </div>
-                </FormField>
-                <FormField label="Ocorreram eventos estressantes hoje?">
-                    <textarea value={stressfulEvents} onChange={e => setStressfulEvents(e.target.value)} className="form-input" placeholder="Descreva brevemente... (opcional)"/>
-                </FormField>
-
-                <div>
-                    <h3 className="text-cyan-300 text-sm font-bold mb-2">Registro de Tempo de Tela de hoje</h3>
-                    {screenTimeLog.map((entry, index) => (
-                        <div key={entry.id} className="grid grid-cols-1 md:grid-cols-3 gap-2 p-2 mb-2 border border-cyan-400/10 rounded-lg">
-                            <select value={entry.platform} onChange={e => updateScreenTimeEntry(index, 'platform', e.target.value)} className="form-input bg-slate-800">
-                                <option value="">Plataforma</option> <option>Instagram</option> <option>TikTok</option> <option>YouTube Shorts</option> <option>Outro</option>
-                            </select>
-                             {entry.platform === 'Outro' && <input type="text" value={entry.otherPlatformDetail} onChange={e => updateScreenTimeEntry(index, 'otherPlatformDetail', e.target.value)} className="form-input" placeholder="Especifique"/>}
-                            <input type="text" value={entry.duration} onChange={e => updateScreenTimeEntry(index, 'duration', e.target.value)} className="form-input" placeholder="Tempo (minutos)"/>
-                        </div>
-                    ))}
-                    <button onClick={addScreenTimeEntry} className="flex items-center space-x-2 text-cyan-300 hover:text-cyan-200 text-sm p-2 rounded-md hover:bg-cyan-500/10"><PlusIcon className="w-4 h-4" /> <span>Adicionar registro</span></button>
+        <div className="space-y-6 py-4 overflow-y-auto max-h-[70vh] pr-2 custom-scrollbar">
+            <div>
+                <label className="block text-cyan-300 font-bold mb-2">Como você avalia a qualidade do seu sono na noite passada?</label>
+                <div className="flex justify-between items-center bg-slate-900/50 p-2 rounded-lg border border-cyan-400/10">
+                    {[1, 2, 3, 4, 5].map(val => (
+                         <button
+                            key={val}
+                            onClick={() => setSleepQuality(val)}
+                            className={`flex-1 py-2 mx-1 rounded-md border transition-all ${sleepQuality === val ? 'bg-cyan-400 border-cyan-300 text-brand-dark font-bold shadow-glow-blue-sm' : 'border-gray-600 text-gray-400 hover:border-cyan-500 hover:text-cyan-300'}`}
+                         >
+                             {val}
+                         </button>
+                     ))}
+                </div>
+                <div className="flex justify-between text-xs text-gray-500 mt-1 px-1">
+                    <span>Péssima</span>
+                    <span>Excelente</span>
                 </div>
             </div>
-             <div className="flex justify-end pt-6">
-                <button onClick={() => onComplete({sleepQuality, stressfulEvents, screenTimeLog})} className="px-8 py-3 font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-colors shadow-glow-blue">Salvar Relatório</button>
+
+            <div>
+                 <label className="block text-cyan-300 font-bold mb-2">Ocorreu algum evento muito estressante hoje?</label>
+                 <textarea 
+                    value={stressfulEvents}
+                    onChange={(e) => setStressfulEvents(e.target.value)}
+                    placeholder="Se sim, descreva brevemente. Se não, deixe em branco."
+                    className="w-full bg-slate-800/50 border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400 transition-colors min-h-[80px]"
+                 />
             </div>
+
+            <div>
+                <label className="block text-cyan-300 font-bold mb-2">Registro de Tempo de Tela</label>
+                <p className="text-xs text-gray-400 mb-4">Consulte o "Bem-estar Digital" (Android) ou "Tempo de Uso" (iOS) e registre o tempo gasto hoje em apps de vídeo.</p>
+                
+                <div className="space-y-2 mb-4">
+                    {screenTimeLog.map(entry => (
+                        <div key={entry.id} className="flex justify-between items-center bg-slate-800/30 p-2 rounded border border-gray-700">
+                             <span className="text-gray-300 text-sm">{entry.platform === 'Outros' ? entry.otherPlatformDetail : entry.platform} - {entry.duration}</span>
+                             <button onClick={() => removeEntry(entry.id)} className="text-red-400 hover:text-red-300"><TrashIcon className="w-4 h-4" /></button>
+                        </div>
+                    ))}
+                    {screenTimeLog.length === 0 && <p className="text-gray-500 text-sm italic text-center py-2">Nenhum registro adicionado.</p>}
+                </div>
+
+                <div className="bg-slate-800/50 p-3 rounded-lg border border-cyan-400/10">
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                        <select 
+                            value={newEntry.platform} 
+                            onChange={(e) => setNewEntry({...newEntry, platform: e.target.value})}
+                            className="bg-slate-800 border border-cyan-400/30 rounded p-2 text-white text-sm focus:outline-none focus:border-cyan-400"
+                        >
+                            <option value="TikTok">TikTok</option>
+                            <option value="Instagram">Instagram</option>
+                            <option value="YouTube">YouTube</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                        <input 
+                            type="text" 
+                            value={newEntry.duration || ''}
+                            onChange={(e) => setNewEntry({...newEntry, duration: e.target.value})}
+                            placeholder="Ex: 1h 20m"
+                            className="bg-slate-800 border border-cyan-400/30 rounded p-2 text-white text-sm focus:outline-none focus:border-cyan-400"
+                        />
+                    </div>
+                    {newEntry.platform === 'Outros' && (
+                        <input 
+                            type="text"
+                            value={newEntry.otherPlatformDetail || ''}
+                            onChange={(e) => setNewEntry({...newEntry, otherPlatformDetail: e.target.value})}
+                            placeholder="Qual aplicativo?"
+                            className="w-full bg-slate-800 border border-cyan-400/30 rounded p-2 text-white text-sm mb-2 focus:outline-none focus:border-cyan-400"
+                        />
+                    )}
+                    <button 
+                        onClick={addEntry}
+                        disabled={!newEntry.duration}
+                        className="w-full py-2 border border-cyan-400 text-cyan-400 rounded hover:bg-cyan-400/10 transition-colors flex justify-center items-center text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <PlusIcon className="w-4 h-4 mr-2" /> Adicionar
+                    </button>
+                </div>
+            </div>
+
+            <div className="flex justify-end pt-4">
+                <button 
+                    onClick={() => onComplete({ sleepQuality, stressfulEvents, screenTimeLog })}
+                    disabled={sleepQuality === 0}
+                    className="px-8 py-3 font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-colors shadow-glow-blue disabled:bg-gray-600 disabled:cursor-not-allowed"
+                >
+                    Finalizar Dia
+                </button>
+             </div>
         </div>
     );
 };
-
-// --- END: Instrument Components ---
 
 export default App;
