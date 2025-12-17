@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { ConsentScreen } from "./screen/ConsentScreen";
-import { SociodemographicQuestionnaireScreen } from "./screen/SociodemographicQuestionnaireScreen";
-import { PlexusFace } from "./PlexusFace";
+import { ConsentScreen } from "./ConsentScreen";
+import { SociodemographicQuestionnaireScreen } from "./SociodemographicQuestionnaireScreen";
+import { PlexusFace } from "../PlexusFace";
 
 type SociodemographicData = {
   age: number | string;

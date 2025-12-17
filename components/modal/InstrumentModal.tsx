@@ -5,6 +5,8 @@ import { InstrumentResponse } from "../data/InstrumentResponse";
 import { SAMComponent } from "../SAMComponent";
 import { FeedContextComponent } from "../FeedContextComponent";
 import { PANASComponent } from "../PANASComponent";
+import { EndOfDayLogComponent } from "../EndOfDayLogComponent";
+import { Modal } from "./Modal";
 
 export const InstrumentModal: React.FC<{
   flow: InstrumentFlowState;

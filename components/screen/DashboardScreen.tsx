@@ -1,4 +1,23 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { GameState } from "../data/GameState";
+import { InstrumentFlowState } from "../states/InstrumentFlowState";
+import { InstrumentResponse } from "../data/InstrumentResponse";
+import { MOCK_PLAYERS } from "../data/MockPlayers";
+import { InstrumentModal } from "../modal/InstrumentModal";
+import { RcleModal } from "../modal/RcleModal";
+import { SociodemographicModal } from "../menu/SociodemographicModal";
+import { PerformanceModal } from "../modal/PerformanceModal";
+import { ProfileMenu } from "../menu/ProfileMenu";
+import { UserIcon } from "../icons/UserIcon";
+import { CountdownTimer } from "../CountdownTimer";
+import { BellIcon } from "../icons/BellIcon";
+import { Card } from "../Card";
+import { PlexusFace } from "../PlexusFace";
+import { EmotionExplorerBadge } from "../EmotionExplorerBadge";
+import { CheckCircleIcon } from "../icons/CheckCircleIcon";
+import { XCircleIcon } from "../icons/XCircleIcon";
+import { StarIcon } from "../icons/StarIcon";
+import { PodiumItem } from "../PodiumItem";
 
 export const DashboardScreen: React.FC<{
   gameState: GameState;
@@ -78,6 +97,20 @@ export const DashboardScreen: React.FC<{
       });
     }
   }, [highlightedPing]);
+
+  const LEVEL_THRESHOLDS = [
+    0, 160, 320, 480, 640, 800, 960, 1120, 1280, 1440, 1600, 1760, 1920, 2080,
+    2240, 2400, 2560, 2720, 2880, 3040, 3200,
+  ];
+
+  const calculateLevel = (xp: number): number => {
+    for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+      if (xp >= LEVEL_THRESHOLDS[i]) {
+        return i + 1;
+      }
+    }
+    return 1;
+  };
 
   const handleInstrumentFlowFinish = (
     finalResponseData: InstrumentResponse
