@@ -1,3 +1,11 @@
+import React from "react";
+
+import { InstrumentFlowState } from "../states/InstrumentFlowState";
+import { InstrumentResponse } from "../data/InstrumentResponse";
+import { SAMComponent } from "../SAMComponent";
+import { FeedContextComponent } from "../FeedContextComponent";
+import { PANASComponent } from "../PANASComponent";
+
 export const InstrumentModal: React.FC<{
   flow: InstrumentFlowState;
   onStep: (data: Partial<InstrumentResponse>) => void;

@@ -1,5 +1,8 @@
 import { User } from "./User";
 import { Badge } from "./Badge";
+import { InstrumentResponse } from "./InstrumentResponse";
+import { PingStatus } from "./PingStatus";
+import { SociodemographicData } from "./SocialDemographicData";
 
 export type GameState = {
   user: User;
