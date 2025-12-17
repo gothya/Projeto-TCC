@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { FormField } from "./components/form/FormField";
-import { InstrumentResponse } from "./components/data/InstrumentResponse";
-import { ScreenTimeEntry } from "./components/screen/ScreenTimeEntry";
-import { PlusIcon } from "./components/icons/PlusIcon";
+import { FormField } from "./form/FormField";
+import { InstrumentResponse } from "./data/InstrumentResponse";
+import { ScreenTimeEntry } from "./screen/ScreenTimeEntry";
+import { PlusIcon } from "./icons/PlusIcon";
 
 export const EndOfDayLogComponent: React.FC<{
   onComplete: (data: Partial<InstrumentResponse>) => void;
