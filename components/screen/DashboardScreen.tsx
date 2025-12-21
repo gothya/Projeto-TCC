@@ -5,7 +5,7 @@ import { InstrumentResponse } from "../data/InstrumentResponse";
 import { MOCK_PLAYERS } from "../data/MockPlayers";
 import { InstrumentModal } from "../modal/InstrumentModal";
 import { RcleModal } from "../modal/RcleModal";
-import { SociodemographicModal } from "../menu/SociodemographicModal";
+import { SociodemographicModal } from "../modal/SociodemographicModal";
 import { PerformanceModal } from "../modal/PerformanceModal";
 import { ProfileMenu } from "../menu/ProfileMenu";
 import { UserIcon } from "../icons/UserIcon";
