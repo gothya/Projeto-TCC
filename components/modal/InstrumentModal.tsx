@@ -66,8 +66,8 @@ export const InstrumentModal: React.FC<{
   };
 
   return (
-    <Modal onClose={onCancel} className="max-w-4xl">
-      <div className="p-4 sm:p-8">
+    <Modal onClose={onCancel} className="max-w-4xl h-[85vh] flex flex-col">
+      <div className="p-4 sm:p-8 flex flex-col flex-grow min-h-0">
         <div className="mb-4">
           <div className="flex justify-between items-start mb-2">
             <div>

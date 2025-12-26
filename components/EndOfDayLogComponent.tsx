@@ -42,11 +42,10 @@ export const EndOfDayLogComponent: React.FC<{
               <button
                 key={v}
                 onClick={() => setSleepQuality(v)}
-                className={`w-10 h-10 text-lg font-bold rounded-full border-2 transition-colors transform hover:scale-110 ${
-                  sleepQuality === v
-                    ? "bg-cyan-400 border-cyan-300 text-brand-dark"
-                    : "border-gray-500 hover:border-cyan-400 text-gray-300"
-                }`}
+                className={`w-10 h-10 text-lg font-bold rounded-full border-2 transition-colors transform hover:scale-110 ${sleepQuality === v
+                  ? "bg-cyan-400 border-cyan-300 text-brand-dark"
+                  : "border-gray-500 hover:border-cyan-400 text-gray-300"
+                  }`}
               >
                 {v}
               </button>
@@ -78,9 +77,12 @@ export const EndOfDayLogComponent: React.FC<{
                 }
                 className="form-input bg-slate-800"
               >
-                <option value="">Plataforma</option> <option>Instagram</option>{" "}
-                <option>TikTok</option> <option>YouTube Shorts</option>{" "}
-                <option>Outro</option>
+                <option value="">Plataforma</option>
+                <option>Instagram</option>
+                <option>Tiktok</option>
+                <option>Shorts (Youtube)</option>
+                <option>Kwai</option>
+                <option value="Outro">Outro (especificar)</option>
               </select>
               {entry.platform === "Outro" && (
                 <input
@@ -98,7 +100,8 @@ export const EndOfDayLogComponent: React.FC<{
                 />
               )}
               <input
-                type="text"
+                type="number"
+                min="0"
                 value={entry.duration}
                 onChange={(e) =>
                   updateScreenTimeEntry(index, "duration", e.target.value)
