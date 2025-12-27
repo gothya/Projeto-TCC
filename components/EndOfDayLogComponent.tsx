@@ -10,7 +10,7 @@ export const EndOfDayLogComponent: React.FC<{
   const [sleepQuality, setSleepQuality] = useState(0);
   const [stressfulEvents, setStressfulEvents] = useState("");
   const [screenTimeLog, setScreenTimeLog] = useState<ScreenTimeEntry[]>([
-    { id: "0", platform: "", otherPlatformDetail: "", duration: "" },
+    { id: "0", platform: "", otherPlatformDetail: "", startTime: "", duration: "" },
   ]);
 
   const addScreenTimeEntry = () =>
@@ -20,6 +20,7 @@ export const EndOfDayLogComponent: React.FC<{
         id: `${Date.now()}`,
         platform: "",
         otherPlatformDetail: "",
+        startTime: "",
         duration: "",
       },
     ]);
@@ -77,12 +78,14 @@ export const EndOfDayLogComponent: React.FC<{
                 }
                 className="form-input bg-slate-800"
               >
-                <option value="">Plataforma</option>
-                <option>Instagram</option>
-                <option>Tiktok</option>
-                <option>Shorts (Youtube)</option>
-                <option>Kwai</option>
-                <option value="Outro">Outro (especificar)</option>
+                <option value="" disabled hidden>
+                  Escolha...
+                </option>
+                <option className="text-black">Instagram</option>
+                <option className="text-black">Tiktok</option>
+                <option className="text-black">Shorts (Youtube)</option>
+                <option className="text-black">Kwai</option>
+                <option value="Outro" className="text-black">Outro (especificar)</option>
               </select>
               {entry.platform === "Outro" && (
                 <input
@@ -99,6 +102,16 @@ export const EndOfDayLogComponent: React.FC<{
                   placeholder="Especifique"
                 />
               )}
+
+              <input
+                type="text"
+                value={entry.startTime}
+                onChange={(e) =>
+                  updateScreenTimeEntry(index, "startTime", e.target.value)
+                }
+                className="form-input"
+                placeholder="Início (ex: 13h)"
+              />
               <input
                 type="number"
                 min="0"
@@ -107,7 +120,7 @@ export const EndOfDayLogComponent: React.FC<{
                   updateScreenTimeEntry(index, "duration", e.target.value)
                 }
                 className="form-input"
-                placeholder="Tempo (minutos)"
+                placeholder="Duração (min)"
               />
             </div>
           ))}
