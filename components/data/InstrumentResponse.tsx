@@ -1,6 +1,6 @@
 import { SamResponse } from "./SamResponse";
 import { PanasResponse } from "./PanasResponse";
-import { ScreenTimeEntry } from "../screen/ScreenTimeEntry";
+import { ScreenTimeEntry } from "./ScreenTimeEntry";
 
 export type InstrumentResponse = {
   timestamp: string;

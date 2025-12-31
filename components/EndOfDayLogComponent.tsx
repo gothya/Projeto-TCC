@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FormField } from "./form/FormField";
 import { InstrumentResponse } from "./data/InstrumentResponse";
-import { ScreenTimeEntry } from "./screen/ScreenTimeEntry";
+import { ScreenTimeEntry } from "./data/ScreenTimeEntry";
 import { PlusIcon } from "./icons/PlusIcon";
 
 export const EndOfDayLogComponent: React.FC<{
