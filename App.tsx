@@ -6,6 +6,7 @@ import { AdminDashboardScreen } from "./components/screen/AdminDashboardScreen";
 import { AdminLoginScreen } from "./components/screen/AdminLoginScreen";
 import { OnboardingScreen } from "./components/screen/OnboardingScreen";
 import { DashboardScreen } from "./components/screen/DashboardScreen";
+import { GameStateService } from "./services/gamestate/GameStateService";
 
 const INITIAL_GAME_STATE: GameState = {
   user: {
@@ -142,6 +143,122 @@ const App: React.FC = () => {
       {renderView()}
     </div>
   );
+};
+
+const saveGameState = () => {
+  GameStateService.saveGameState({
+    user: {
+      nickname: "Shalai",
+      points: 0,
+      level: 1,
+      responseRate: 0,
+      currentStreak: 0,
+      completedDays: 0,
+      avatar: null,
+    },
+    badges: [
+      {
+        id: "punctual",
+        name: "Pontualidade",
+        description: "Responder 80% das notificações em 10 minutos",
+        unlocked: false,
+      },
+      {
+        id: "week_streak",
+        name: "Streak Semanal",
+        description: "Completar todos os 7 dias",
+        unlocked: false,
+      },
+    ],
+    hasOnboarded: true,
+    studyStartDate: "2025-12-31T13:56:31.277Z",
+    responses: [],
+    pings: [
+      [
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+      ],
+      [
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+      ],
+      [
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+      ],
+      [
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+      ],
+      [
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+      ],
+      [
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+      ],
+      [
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+        "pending",
+      ],
+    ],
+    sociodemographicData: {
+      age: "38",
+      gender: "Masculino",
+      maritalStatus: "Solteiro(a)",
+      education: "Pós-graduação / Mestrado / Doutorado",
+      occupation: "programador",
+      continuousMedication: "Não",
+      medicationDetails: "",
+      healthDiagnosis: "Não",
+      diagnosisDetails: "",
+      monthlyIncome: "De 3 a 5 salários mínimos",
+      platforms: ["YouTube Shorts"],
+      otherPlatform: "",
+      usagePeriod: "Manhã",
+      dailyUsage: "3 a 4 horas",
+      purpose_talk: "Muitas vezes",
+      purpose_share: "Algumas vezes",
+      purpose_watch: "",
+      purpose_search: "Algumas vezes",
+    },
+  });
 };
 
 export default App;

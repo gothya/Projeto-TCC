@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { ConsentScreen } from "./ConsentScreen";
 import { SociodemographicQuestionnaireScreen } from "./SociodemographicQuestionnaireScreen";
 import { PlexusFace } from "../PlexusFace";
+import { GameStateService } from "@/services/gamestate/GameStateService";
 
 type SociodemographicData = {
   age: number | string;
@@ -49,6 +50,119 @@ export const OnboardingScreen: React.FC<{
 
   const handleNicknameSubmit = () => {
     if (nickname.trim().length > 2 && sociodemographicData) {
+      GameStateService.saveGameState({
+        user: {
+          nickname: "Shalai",
+          points: 0,
+          level: 1,
+          responseRate: 0,
+          currentStreak: 0,
+          completedDays: 0,
+          avatar: null,
+        },
+        badges: [
+          {
+            id: "punctual",
+            name: "Pontualidade",
+            description: "Responder 80% das notificações em 10 minutos",
+            unlocked: false,
+          },
+          {
+            id: "week_streak",
+            name: "Streak Semanal",
+            description: "Completar todos os 7 dias",
+            unlocked: false,
+          },
+        ],
+        hasOnboarded: true,
+        studyStartDate: "2025-12-31T13:56:31.277Z",
+        responses: [],
+        pings: [
+          [
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+          ],
+          [
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+          ],
+          [
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+          ],
+          [
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+          ],
+          [
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+          ],
+          [
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+          ],
+          [
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+            "pending",
+          ],
+        ],
+        sociodemographicData: {
+          age: "38",
+          gender: "Masculino",
+          maritalStatus: "Solteiro(a)",
+          education: "Pós-graduação / Mestrado / Doutorado",
+          occupation: "programador",
+          continuousMedication: "Não",
+          medicationDetails: "",
+          healthDiagnosis: "Não",
+          diagnosisDetails: "",
+          monthlyIncome: "De 3 a 5 salários mínimos",
+          platforms: ["YouTube Shorts"],
+          otherPlatform: "",
+          usagePeriod: "Manhã",
+          dailyUsage: "3 a 4 horas",
+          purpose_talk: "Muitas vezes",
+          purpose_share: "Algumas vezes",
+          purpose_watch: "",
+          purpose_search: "Algumas vezes",
+        },
+      });
       onComplete(nickname, sociodemographicData);
     }
   };
