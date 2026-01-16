@@ -5,7 +5,13 @@ export const SAMDynamicFigure: React.FC<{
   value: number;
 }> = ({ type, value }) => {
 
+  let img_name;
+
+  if (type === 'pleasure') img_name = 'valencia';
+  if (type === 'arousal') img_name = 'ativacao';
+  if (type === 'dominance') img_name = 'dominancia';
+
   return (
-    <img src={`/valencia_${value}.png`} alt={type} />
+    <img src={`/${img_name}_${value}.png`} alt={type} />
   );
 };
