@@ -43,8 +43,8 @@ export const DashboardScreen: React.FC<{
   useEffect(() => {
     const findNextPendingPing = () => {
       for (let day = 0; day < pings.length; day++) {
-        for (let ping = 0; ping < pings[day].length; ping++) {
-          if (pings[day][ping] === "pending") {
+        for (let ping = 0; ping < pings[day].statuses.length; ping++) {
+          if (pings[day].statuses[ping] === "pending") {
             return { day, ping };
           }
         }
@@ -213,13 +213,13 @@ export const DashboardScreen: React.FC<{
   const notificationTimes = ["9h", "11h", "13h", "15h", "17h", "19h", "21h"];
 
   const completedPings = pings
-    .flat()
+    .flatMap(d => d.statuses)
     .filter((p, index) => (index + 1) % 7 !== 0 && p === "completed").length;
   const missedPings = pings
-    .flat()
+    .flatMap(d => d.statuses)
     .filter((p, index) => (index + 1) % 7 !== 0 && p === "missed").length;
   const completedStars = pings
-    .flat()
+    .flatMap(d => d.statuses)
     .filter((p, index) => (index + 1) % 7 === 0 && p === "completed").length;
 
   const { level, points: totalXp } = user;
@@ -479,7 +479,7 @@ export const DashboardScreen: React.FC<{
             ))}
             {pings.map((day, dayIndex) => (
               <React.Fragment key={dayIndex}>
-                {day.map((status, pingIndex) => {
+                {day.statuses.map((status, pingIndex) => {
                   const isLastColumn =
                     pingIndex === notificationTimes.length - 1;
                   const isHighlighted =

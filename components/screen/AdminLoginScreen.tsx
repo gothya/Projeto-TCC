@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { signInAnonymously } from "firebase/auth";
+import { auth } from "../../services/firebase";
 
 export const AdminLoginScreen: React.FC<{
   onLoginSuccess: () => void;
@@ -8,11 +10,17 @@ export const AdminLoginScreen: React.FC<{
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: extrair para banco de dados
     if (username === "Thiago" && password === "psicólogo") {
-      onLoginSuccess();
+      try {
+        await signInAnonymously(auth);
+        onLoginSuccess();
+      } catch (err) {
+        console.error("Admin auth failed:", err);
+        setError("Erro ao autenticar com o servidor.");
+      }
     } else {
       setError("Credenciais inválidas. Tente novamente.");
     }

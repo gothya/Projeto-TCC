@@ -10,6 +10,6 @@ export type GameState = {
   hasOnboarded: boolean;
   studyStartDate: string | null;
   responses: InstrumentResponse[];
-  pings: PingStatus[][];
+  pings: { statuses: PingStatus[] }[];
   sociodemographicData: SociodemographicData | null;
 };
