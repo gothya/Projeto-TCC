@@ -13,4 +13,3 @@ export const SAMDynamicFigure: React.FC<{
     <img src={`/${img_name}_${value}.png`} alt={type} />
   );
 };
-git 

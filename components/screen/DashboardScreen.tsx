@@ -119,15 +119,23 @@ export const DashboardScreen: React.FC<{
     const { day, ping } = instrumentFlow.ping;
 
     setGameState((prev) => {
-      const newPings = prev.pings.map((row) => [...row]);
-      newPings[day][ping] = "completed";
+      const newPings = prev.pings.map((dayObj) => ({
+        ...dayObj,
+        statuses: [...dayObj.statuses],
+      }));
+      newPings[day].statuses[ping] = "completed";
 
-      const newXp = newPings.flat().reduce((acc, status, index) => {
-        if (status === "completed") {
-          const isStar = (index + 1) % 7 === 0;
-          return acc + (isStar ? 100 : 50);
-        }
-        return acc;
+      const newXp = newPings.reduce((acc, dayObj, dayIndex) => {
+        return acc + dayObj.statuses.reduce((dayAcc, status, pingIndex) => {
+          if (status === "completed") {
+            // Check if it's a star (last item of the day)
+            // Flattened index conceptually: dayIndex * 7 + pingIndex
+            // But simpler logic: pingIndex === 6 is the star for that day
+            const isStar = pingIndex === 6;
+            return dayAcc + (isStar ? 100 : 50);
+          }
+          return dayAcc;
+        }, 0);
       }, 0);
 
       const newLevel = calculateLevel(newXp);

@@ -82,12 +82,14 @@ export const AdminDashboardScreen: React.FC<{
       let totalPings = 0;
       let answeredPings = 0;
       user.pings.forEach(day => {
-        day.forEach(status => {
-          if (status !== "pending") {
-            totalPings++;
-            if (status === "completed") answeredPings++;
-          }
-        });
+        if (day.statuses) {
+          day.statuses.forEach(status => {
+            if (status !== "pending") {
+              totalPings++;
+              if (status === "completed") answeredPings++;
+            }
+          });
+        }
       });
       const rate = totalPings === 0 ? 0 : (answeredPings / totalPings);
       totalRateSum += rate;
@@ -136,7 +138,7 @@ export const AdminDashboardScreen: React.FC<{
 
     user.responses.forEach(r => {
       if (r.sam) {
-        samTotals.valence += r.sam.valence;
+        samTotals.valence += r.sam.pleasure;
         samTotals.arousal += r.sam.arousal;
         samTotals.dominance += r.sam.dominance;
         samTotals.count++;

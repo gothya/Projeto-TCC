@@ -6,21 +6,26 @@ import { getAnalytics, isSupported } from "firebase/analytics";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBeEkCMplmX5DCH7Xa_rffqGCOm3Mznrvc",
-  authDomain: "psylogos---enigma-da-mente.firebaseapp.com",
-  projectId: "psylogos---enigma-da-mente",
-  storageBucket: "psylogos---enigma-da-mente.firebasestorage.app",
-  messagingSenderId: "378736884536",
-  appId: "1:378736884536:web:8fb880588de9b5df491fcd",
-  measurementId: "G-GF6B4T3BHM"
+  apiKey: import.meta.env.VITE_API_KEY,
+  authDomain: import.meta.env.VITE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_APP_ID,
+  measurementId: import.meta.env.VITE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
+console.log("FIREBASE CONFIG DEBUG:", {
+  apiKey: import.meta.env.VITE_API_KEY ? "Loaded (" + import.meta.env.VITE_API_KEY.substring(0, 5) + "...)" : "MISSING",
+  projectId: import.meta.env.VITE_PROJECT_ID,
+  authDomain: import.meta.env.VITE_AUTH_DOMAIN
+});
 const app = initializeApp(firebaseConfig);
 
 // Export services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// Analytics (only supported in browser environments)
+// Analytics (only supported in browser process.environments)
 export const analytics = isSupported().then(yes => yes ? getAnalytics(app) : null);
