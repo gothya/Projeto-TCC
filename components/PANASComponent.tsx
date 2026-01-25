@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { PanasResponse } from "./data/PanasResponse";
 import { PANAS_ITEMS } from "./data/PanasItems";
 
@@ -22,7 +22,7 @@ export const PANASComponent: React.FC<{
     return initialResponses;
   });
 
-  const ITEMS_PER_STEP = 4;
+  const ITEMS_PER_STEP = 5;
   const totalSteps = Math.ceil(PANAS_ITEMS.length / ITEMS_PER_STEP);
 
   const currentItems = PANAS_ITEMS.slice(
@@ -46,6 +46,14 @@ export const PANASComponent: React.FC<{
       setCurrentStep((prev) => prev - 1);
     }
   };
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [currentStep]);
 
   const VolumeSlider: React.FC<{
     value: number;
@@ -88,7 +96,7 @@ export const PANASComponent: React.FC<{
         </div>
       </div>
 
-      <div className="flex-grow space-y-6 overflow-y-auto px-1 py-2">
+      <div ref={scrollContainerRef} className="flex-grow space-y-6 overflow-y-auto px-1 py-2">
         {currentItems.map((item) => (
           <div key={item} className="space-y-2 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
             <h3 className="text-lg font-medium text-center text-gray-200">{item}</h3>

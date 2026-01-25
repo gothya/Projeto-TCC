@@ -103,15 +103,22 @@ export const EndOfDayLogComponent: React.FC<{
                 />
               )}
 
-              <input
-                type="text"
+              <select
                 value={entry.startTime}
                 onChange={(e) =>
                   updateScreenTimeEntry(index, "startTime", e.target.value)
                 }
-                className="form-input"
-                placeholder="Início (ex: 13h)"
-              />
+                className="form-input bg-slate-800"
+              >
+                <option value="" disabled hidden>
+                  Horário
+                </option>
+                {Array.from({ length: 24 }).map((_, i) => (
+                  <option key={i} value={`${i}h`} className="text-black">
+                    {`${i}h`}
+                  </option>
+                ))}
+              </select>
               <input
                 type="number"
                 min="0"

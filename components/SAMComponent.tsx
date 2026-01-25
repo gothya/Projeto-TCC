@@ -36,55 +36,48 @@ export const SAMComponent: React.FC<{
     const values = Array.from({ length: 9 }).map((_, i) => i + 1);
 
     return (
-      <div className="flex flex-col items-center gap-4 animate-fade-in w-full py-2">
-        {/* Figure Section - Larger and Centered */}
-        <div className="relative group shrink-0">
-          <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-200"></div>
-          <div className="relative w-32 h-32 sm:w-48 sm:h-48 bg-slate-800 rounded-full p-4 border-2 border-cyan-400/30 shadow-2xl flex items-center justify-center">
+      <div className="flex flex-col items-center justify-between h-full w-full py-1">
+        {/* Figure Section - Maximized */}
+        <div className="relative group shrink-0 flex-1 flex items-center justify-center min-h-0">
+          <div className="absolute inset-0 bg-gradient-to-b from-cyan-900/10 to-transparent rounded-full opacity-0 pointer-events-none"></div>
+          <div className="relative w-48 h-48 sm:w-60 sm:h-60 md:w-72 md:h-72 bg-slate-800 rounded-full p-4 border-2 border-cyan-400/30 shadow-[0_0_30px_rgba(34,211,238,0.1)] flex items-center justify-center transition-all duration-500">
             {responses[type] > 0 ? (
               <SAMDynamicFigure type={type} value={responses[type]} />
             ) : (
-              <div className="text-gray-600 text-sm text-center px-4">
-                Selecione um nível abaixo
+              <div className="text-gray-500 text-sm text-center px-8 animate-pulse">
+                Selecione um nível abaixo para visualizar
               </div>
             )}
           </div>
         </div>
 
-        {/* Controls Section - Moved Below */}
-        <div className="w-full max-w-3xl flex flex-col items-center animate-slide-up">
-          <h3 className="text-lg sm:text-xl font-bold text-cyan-300 mb-2 text-center tracking-wide">
+        {/* Controls Section - Moved to Bottom Base */}
+        <div className="w-full max-w-2xl flex flex-col items-center animate-slide-up bg-slate-900/40 p-4 rounded-3xl border border-white/5 mt-2">
+          <h3 className="text-lg sm:text-2xl font-bold text-cyan-300 mb-3 text-center tracking-wide drop-shadow-sm">
             {label}
           </h3>
 
-          <div className="w-full bg-slate-900/80 p-3 sm:p-5 rounded-3xl border border-white/5 backdrop-blur-sm shadow-xl">
-            <div className="flex justify-between items-center gap-1 sm:gap-2">
+          <div className="w-full">
+            <div className="flex justify-between items-center gap-1">
               {values.map((val) => (
                 <button
                   key={val}
                   onClick={() => setResponses((p) => ({ ...p, [type]: val }))}
                   aria-label={`${label} nível ${val}`}
                   className={`
-                        relative group flex items-center justify-center transition-all duration-300
-                        w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl border-2
+                        relative group flex items-center justify-center transition-all duration-200
+                        w-8 h-8 sm:w-12 sm:h-12 rounded-xl border-2
                         ${responses[type] === val
-                      ? "bg-cyan-500 border-cyan-300 text-white shadow-[0_0_15px_rgba(6,182,212,0.6)] scale-110 z-10"
-                      : "bg-slate-800 border-slate-600 text-gray-400 hover:border-cyan-400/50 hover:text-cyan-200 hover:bg-slate-700 hover:-translate-y-1"
+                      ? "bg-cyan-500 border-cyan-300 text-white shadow-[0_0_20px_rgba(6,182,212,0.5)] scale-110 z-10"
+                      : "bg-slate-800 border-slate-600 text-gray-400 hover:border-cyan-400/50 hover:text-cyan-200 hover:bg-slate-700"
                     }
                     `}
                 >
                   <span className="text-sm sm:text-lg font-bold">{val}</span>
-
-                  {/* Tooltip-ish indicator for meaning */}
-                  {(val === 1 || val === 9) && (
-                    <span className={`absolute -bottom-6 text-[10px] sm:text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity text-cyan-400/80 font-medium pointer-events-none`}>
-                      {val === 1 ? "Min" : "Max"}
-                    </span>
-                  )}
                 </button>
               ))}
             </div>
-            <div className="flex justify-between w-full mt-2 px-2 text-[10px] sm:text-xs text-gray-500 font-medium uppercase tracking-wider">
+            <div className="flex justify-between w-full mt-2 px-1 text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-widest">
               <span>Baixo</span>
               <span>Alto</span>
             </div>

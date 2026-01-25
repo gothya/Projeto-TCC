@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { GameState } from "../data/GameState";
 import { InstrumentFlowState } from "../states/InstrumentFlowState";
 import { InstrumentResponse } from "../data/InstrumentResponse";
-import { MOCK_PLAYERS } from "../data/MockPlayers";
+// import { MOCK_PLAYERS } from "../data/MockPlayers"; // Removed mock
+import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
+import { db } from "../../services/firebase";
 import { InstrumentModal } from "../modal/InstrumentModal";
 import { RcleModal } from "../modal/RcleModal";
 import { SociodemographicModal } from "../modal/SociodemographicModal";
@@ -39,6 +41,32 @@ export const DashboardScreen: React.FC<{
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+
+
+
+  // Leaderboard State
+  const [leaderboardData, setLeaderboardData] = useState<{ nickname: string, points: number }[]>([]);
+
+  // Fetch Leaderboard Real-time
+  useEffect(() => {
+    const q = query(collection(db, "users"), orderBy("user.points", "desc")); // Assuming structure is doc.data().user.points
+    // But wait, GameState is { user: { points... } }.
+    // Firestore queries on nested fields work: "user.points"
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const players: { nickname: string, points: number }[] = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data() as GameState;
+        players.push({
+          nickname: data.user.nickname,
+          points: data.user.points
+        });
+      });
+      setLeaderboardData(players);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const findNextPendingPing = () => {
@@ -154,6 +182,40 @@ export const DashboardScreen: React.FC<{
     setInstrumentFlow(null);
   };
 
+  const handleMissedPing = useCallback(() => {
+    if (!instrumentFlow) return;
+    const { day, ping } = instrumentFlow.ping;
+
+    setGameState((prev) => {
+      const newPings = prev.pings.map((dayObj) => ({
+        ...dayObj,
+        statuses: [...dayObj.statuses],
+      }));
+      newPings[day].statuses[ping] = "missed";
+
+      return {
+        ...prev,
+        pings: newPings,
+      };
+    });
+    setInstrumentFlow(null);
+  }, [instrumentFlow]);
+
+  // 5 Minute Timeout for Active Ping
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    if (instrumentFlow) {
+      timeoutId = setTimeout(() => {
+        handleMissedPing();
+      }, 5 * 60 * 1000); // 5 minutes
+    }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [instrumentFlow, handleMissedPing]);
+
   const handleInstrumentStep = (stepData: Partial<InstrumentResponse>) => {
     if (!instrumentFlow) return;
 
@@ -245,10 +307,14 @@ export const DashboardScreen: React.FC<{
 
   const pingIconClasses = "transition-transform duration-150 ease-in-out";
 
-  const allPlayers = [
-    ...MOCK_PLAYERS,
-    { nickname: user.nickname, points: user.points },
-  ].sort((a, b) => b.points - a.points);
+  // Use real data
+  const allPlayers = leaderboardData.length > 0 ? leaderboardData : [{ nickname: user.nickname, points: user.points }];
+
+  // Fallback if empty (shouldn't happen if user exists)
+  // const allPlayers = [
+  //   ...MOCK_PLAYERS,
+  //   { nickname: user.nickname, points: user.points },
+  // ].sort((a, b) => b.points - a.points);
 
   const topThree = allPlayers.slice(0, 3);
   const restOfPlayers = allPlayers.slice(3);
@@ -259,7 +325,7 @@ export const DashboardScreen: React.FC<{
         <InstrumentModal
           flow={instrumentFlow}
           onStep={handleInstrumentStep}
-          onCancel={() => setInstrumentFlow(null)}
+          onCancel={handleMissedPing}
         />
       )}
       {isRcleModalOpen && (
