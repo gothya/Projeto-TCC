@@ -16,8 +16,16 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-console.log("FIREBASE CONFIG DEBUG:", {
-  apiKey: import.meta.env.VITE_API_KEY ? "Loaded (" + import.meta.env.VITE_API_KEY.substring(0, 5) + "...)" : "MISSING",
+// DEBUG: Check if keys are loaded
+const apiKey = import.meta.env.VITE_API_KEY;
+if (!apiKey) {
+  console.error("CRITICAL: Firebase API Key is MISSING in environment variables!");
+} else {
+  console.log("SUCCESS: Firebase API Key loaded (" + apiKey.substring(0, 5) + "...)");
+}
+
+console.log("FULL CONFIG DEBUG:", {
+  apiKey: apiKey ? "PRESENT" : "MISSING",
   projectId: import.meta.env.VITE_PROJECT_ID,
   authDomain: import.meta.env.VITE_AUTH_DOMAIN
 });
