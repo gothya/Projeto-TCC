@@ -90,6 +90,117 @@ export const AdminDashboardScreen: React.FC<{
 
   const activeUsersCount = allUsers.length;
 
+  // --- CSV EXPORT LOGIC ---
+  const downloadCSV = () => {
+    if (allUsers.length === 0) {
+      setToast("Nenhum dado disponível para exportar.");
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
+    // 1. Define Headers
+    // Base headers
+    const headers = [
+      "Participant_ID",
+      "Nickname",
+      "Response_Date_Time", // Data/Hora da resposta
+      "Ping_Day_Index", // Qual dia do estudo (0-6)
+      "Ping_Slot_Index", // Qual slot (0-6)
+      "SAM_Valence",
+      "SAM_Arousal",
+      "SAM_Dominance",
+      "Sleep_Quality",
+      "Stress_Log",
+      "Screen_Time_Total_Min",
+      "Screen_Time_Breakdown", // String format
+      // PANAS items (Spread)
+      ...POSITIVE_ITEMS.map(i => `PANAS_POS_${i.toUpperCase()}`),
+      ...NEGATIVE_ITEMS.map(i => `PANAS_NEG_${i.toUpperCase()}`)
+    ];
+
+    // 2. Build Rows
+    const rows: string[] = [];
+
+    allUsers.forEach(user => {
+      user.responses.forEach(r => {
+        const rowData: (string | number)[] = [];
+
+        // ID & Nick
+        rowData.push(user.id || "N/A");
+        rowData.push(user.user?.nickname || "Unknown");
+
+        // Date
+        const dateStr = r.timestamp ? new Date(r.timestamp).toLocaleString("pt-BR") : "N/A";
+        rowData.push(dateStr);
+
+        // Ping Info
+        rowData.push(r.pingDay ?? "-");
+        rowData.push(r.pingIndex ?? "-");
+
+        // SAM
+        rowData.push(r.sam?.pleasure ?? "");
+        rowData.push(r.sam?.arousal ?? "");
+        rowData.push(r.sam?.dominance ?? "");
+
+        // Sleep
+        rowData.push(r.sleepQuality ?? "");
+
+        // Stress
+        // Escape quotes to prevent CSV breakage
+        const stressSafe = r.stressfulEvents ? `"${r.stressfulEvents.replace(/"/g, '""')}"` : "";
+        rowData.push(stressSafe);
+
+        // Screen Time
+        let totalSt = 0;
+        let stDetails = "";
+        if (r.screenTimeLog) {
+          const breakdown: string[] = [];
+          r.screenTimeLog.forEach(entry => {
+            const dur = parseInt(entry.duration || "0");
+            if (!isNaN(dur)) totalSt += dur;
+            breakdown.push(`${entry.platform || "Other"}:${dur}m`);
+          });
+          stDetails = `"${breakdown.join(" | ")}"`;
+        }
+        rowData.push(totalSt);
+        rowData.push(stDetails);
+
+        // PANAS
+        // We need to map to the exact order of headers
+        // Header order: POSITIVE_ITEMS then NEGATIVE_ITEMS
+        const responsePanas = r.panas || {};
+
+        POSITIVE_ITEMS.forEach(item => {
+          rowData.push(responsePanas[item] ?? "");
+        });
+        NEGATIVE_ITEMS.forEach(item => {
+          rowData.push(responsePanas[item] ?? "");
+        });
+
+        // Join row
+        rows.push(rowData.join(","));
+      });
+    });
+
+    // 3. Construct CSV Content
+    // Add BOM for Excel UTF-8 compatibility
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\n");
+
+    // 4. Trigger Download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `dados_estudo_enigma_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setToast(`Exportado com sucesso: ${rows.length} registros.`);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+
   const calculateGlobalPingStats = () => {
     let totalIssued = 0;
     let totalAnswered = 0;
@@ -509,9 +620,18 @@ export const AdminDashboardScreen: React.FC<{
           </h1>
           <p className="text-gray-400">Monitoramento do Estudo: Enigma da Mente</p>
         </div>
-        <button onClick={onLogout} className="px-4 py-2 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/10 transition-colors">
-          Sair
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={downloadCSV}
+            className="flex items-center gap-2 px-4 py-2 bg-green-500/20 text-green-400 border border-green-500/50 rounded-lg hover:bg-green-500/30 transition-colors font-semibold"
+          >
+            <DocumentTextIcon className="w-5 h-5" />
+            Exportar CSV
+          </button>
+          <button onClick={onLogout} className="px-4 py-2 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/10 transition-colors">
+            Sair
+          </button>
+        </div>
       </header>
 
       {/* Toast */}

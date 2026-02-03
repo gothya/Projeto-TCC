@@ -70,7 +70,7 @@ export const Step4 = ({
           name="otherPlatform"
           value={formData.otherPlatform}
           onChange={handleChange}
-          className="form-input mt-2"
+          className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all mt-2"
           placeholder="Quais?"
         />
       )}

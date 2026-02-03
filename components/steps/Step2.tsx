@@ -57,7 +57,7 @@ export const Step2 = ({
           name="medicationDetails"
           value={formData.medicationDetails}
           onChange={handleChange}
-          className="form-input"
+          className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all"
           placeholder="Nome do remédio"
         />
       </FormField>
@@ -87,7 +87,7 @@ export const Step2 = ({
           name="diagnosisDetails"
           value={formData.diagnosisDetails}
           onChange={handleChange}
-          className="form-input"
+          className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all"
           placeholder="Nome do diagnóstico"
         />
       </FormField>

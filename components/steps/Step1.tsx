@@ -38,7 +38,7 @@ export const Step1 = ({
         name="age"
         value={formData.age}
         onChange={handleChange}
-        className="form-input"
+        className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all"
         placeholder="Sua idade"
       />
     </FormField>
@@ -154,7 +154,7 @@ export const Step1 = ({
           name="occupation"
           value={formData.occupation}
           onChange={handleChange}
-          className="form-input"
+          className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all"
           placeholder="Sua ocupação"
         />
       </FormField>

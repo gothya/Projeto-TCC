@@ -13,13 +13,12 @@ export const CustomCheckbox = ({
   checked: boolean;
   onChange: React.ChangeEventHandler<HTMLInputElement>;
 }) => (
-  <label className="flex items-center space-x-3 cursor-pointer group text-gray-300 hover:text-white">
+  <label className="flex items-center space-x-3 cursor-pointer group text-gray-100 hover:text-white">
     <span
-      className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-        checked
+      className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${checked
           ? "border-cyan-400 bg-cyan-400"
-          : "border-gray-500 group-hover:border-cyan-500"
-      }`}
+          : "border-gray-400 group-hover:border-cyan-500"
+        }`}
     >
       {checked && (
         <svg

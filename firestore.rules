@@ -1,13 +1,19 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow users to read/write their own document
     match /users/{userId} {
-      allow create: if request.auth != null;
+      // 1. Participant Access: Can read/write ONLY their own document
+      allow create: if request.auth != null; // Allow creation if authenticated (anon or email)
       allow update, delete: if request.auth != null && request.auth.uid == userId;
-      // TEMPORARY: Allow any authenticated user to read (for Admin dashboard)
-      // In production, use Custom Claims or a specific admin field
-      allow read: if request.auth != null;
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      // 2. Admin Access:
+      // Option A (Simple): Allow read ONLY if the user has a specific verified email (Hardcoded for single admin TCC)
+      // Replace 'SEU_EMAIL_DE_ADMIN@GMAIL.COM' with your actual admin email in the condition below if you want stricter security,
+      // OR use a specific UID.
+      // For now, we allow read if auth.token.email is verified or present, preventing Anonymous users from reading ALL.
+      // Anonymous users have 'provider_id' as 'anonymous'.
+      allow read: if request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous';
     }
   }
 }

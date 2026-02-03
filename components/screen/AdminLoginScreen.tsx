@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { signInAnonymously } from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../services/firebase";
 
 export const AdminLoginScreen: React.FC<{
@@ -12,17 +12,17 @@ export const AdminLoginScreen: React.FC<{
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: extrair para banco de dados
-    if (username === "Thiago" && password === "psicólogo") {
-      try {
-        await signInAnonymously(auth);
-        onLoginSuccess();
-      } catch (err) {
-        console.error("Admin auth failed:", err);
-        setError("Erro ao autenticar com o servidor.");
-      }
-    } else {
-      setError("Credenciais inválidas. Tente novamente.");
+    try {
+      await signInWithEmailAndPassword(auth, username, password);
+      onLoginSuccess();
+    } catch (err: any) {
+      console.error("Admin auth failed:", err);
+      let msg = "Erro ao autenticar.";
+      if (err.code === 'auth/invalid-email') msg = "E-mail inválido.";
+      if (err.code === 'auth/user-not-found') msg = "Usuário não encontrado.";
+      if (err.code === 'auth/wrong-password') msg = "Senha incorreta.";
+      if (err.code === 'auth/invalid-credential') msg = "Credenciais inválidas.";
+      setError(msg);
     }
   };
 
@@ -55,10 +55,10 @@ export const AdminLoginScreen: React.FC<{
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-purple-300 text-sm font-bold mb-2">
-              Usuário
+              E-mail
             </label>
             <input
-              type="text"
+              type="email"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full px-4 py-2 bg-slate-800 border border-purple-500/30 rounded focus:outline-none focus:border-purple-500 focus:shadow-[0_0_8px_rgba(168,85,247,0.4)] text-white transition-all"
