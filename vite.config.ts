@@ -20,7 +20,8 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.VITE_STORAGE_BUCKET': JSON.stringify(process.env.VITE_STORAGE_BUCKET || env.VITE_STORAGE_BUCKET),
       'import.meta.env.VITE_MESSAGING_SENDER_ID': JSON.stringify(process.env.VITE_MESSAGING_SENDER_ID || env.VITE_MESSAGING_SENDER_ID),
       'import.meta.env.VITE_APP_ID': JSON.stringify(process.env.VITE_APP_ID || env.VITE_APP_ID),
-      'import.meta.env.VITE_MEASUREMENT_ID': JSON.stringify(process.env.VITE_MEASUREMENT_ID || env.VITE_MEASUREMENT_ID)
+      'import.meta.env.VITE_MEASUREMENT_ID': JSON.stringify(process.env.VITE_MEASUREMENT_ID || env.VITE_MEASUREMENT_ID),
+      'import.meta.env.VITE_FIREBASE_VAPID_KEY': JSON.stringify(process.env.VITE_FIREBASE_VAPID_KEY || env.VITE_FIREBASE_VAPID_KEY)
     },
     resolve: {
       alias: {

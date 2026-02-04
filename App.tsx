@@ -9,6 +9,7 @@ import { DashboardScreen } from "./components/screen/DashboardScreen";
 import { useAuth } from "./contexts/AuthContext";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "./services/firebase";
+import { NotificationService } from "./services/NotificationService";
 
 const INITIAL_GAME_STATE: GameState = {
   user: {
@@ -55,6 +56,11 @@ const App: React.FC = () => {
 
   // Load GameState from Firestore when user authenticates
   useEffect(() => {
+    // Initialize Notification Service for foreground messages
+    NotificationService.init().then((service) => {
+      service.onMessageListener();
+    });
+
     async function loadData() {
       if (!firebaseUser) {
         // Reset to initial if logged out, or keep basic state

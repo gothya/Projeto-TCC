@@ -13,6 +13,7 @@ import { ProfileMenu } from "../menu/ProfileMenu";
 import { UserIcon } from "../icons/UserIcon";
 import { CountdownTimer } from "../CountdownTimer";
 import { BellIcon } from "../icons/BellIcon";
+import { NotificationService } from "../../services/NotificationService";
 import { Card } from "../Card";
 import { PlexusFace } from "../PlexusFace";
 import { EmotionExplorerBadge } from "../EmotionExplorerBadge";
@@ -41,6 +42,22 @@ export const DashboardScreen: React.FC<{
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  const [notificationPermission, setNotificationPermission] = useState(
+    Notification.permission
+  );
+
+  const requestNotificationPermission = async () => {
+    const service = await NotificationService.init();
+    const token = await service.requestPermission();
+    if (token) {
+      setNotificationPermission("granted");
+      alert("Notificações ativadas com sucesso!");
+    } else {
+      setNotificationPermission("denied");
+      alert("Não foi possível ativar as notificações. Verifique as permissões do navegador.");
+    }
+  };
 
 
 
@@ -395,6 +412,14 @@ export const DashboardScreen: React.FC<{
           </div>
         </div>
         <div className="flex items-center space-x-4">
+          {notificationPermission === "default" && (
+            <button
+              onClick={requestNotificationPermission}
+              className="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 px-3 py-1 rounded hover:bg-cyan-500/30 transition-colors"
+            >
+              Ativar Notificações
+            </button>
+          )}
           <CountdownTimer onTimerEnd={handleTimerEnd} />
           <button
             className="p-2 rounded-full bg-slate-800/50 hover:bg-slate-700/50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -524,7 +549,7 @@ export const DashboardScreen: React.FC<{
 
               return (
                 <li
-                  key={player.nickname}
+                  key={`${player.nickname}-${index}`}
                   className={`flex items-center justify-between p-2 rounded-md border-l-4 transition-all ${userHighlight}`}
                 >
                   <span className="flex items-center">
