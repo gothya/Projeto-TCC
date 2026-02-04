@@ -57,9 +57,18 @@ const App: React.FC = () => {
   // Load GameState from Firestore when user authenticates
   useEffect(() => {
     // Initialize Notification Service for foreground messages
-    NotificationService.init().then((service) => {
-      service.onMessageListener();
-    });
+    if (firebaseUser) {
+      NotificationService.init().then(async (service) => {
+        service.onMessageListener();
+        // Check if we already have permission/token and save it to ensure it's up to date
+        if (Notification.permission === "granted") {
+          const token = await service.requestPermission();
+          if (token) {
+            await service.saveTokenToFirestore(firebaseUser.uid, token);
+          }
+        }
+      });
+    }
 
     async function loadData() {
       if (!firebaseUser) {

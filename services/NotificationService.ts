@@ -1,5 +1,6 @@
-import { messaging } from "./firebase";
+import { db, messaging } from "./firebase";
 import { getToken, onMessage, Messaging } from "firebase/messaging";
+import { doc, updateDoc, setDoc } from "firebase/firestore";
 
 export class NotificationService {
     private static instance: NotificationService;
@@ -72,5 +73,19 @@ export class NotificationService {
                 new Notification(title, { body, icon: '/vite.svg' });
             }
         });
+    }
+
+    public async saveTokenToFirestore(uid: string, token: string) {
+        if (!uid || !token) return;
+
+        try {
+            const userRef = doc(db, "users", uid);
+            // We use setDoc with merge: true to arguably be safer if doc doesn't exist, 
+            // though in our app logic user doc should exist.
+            await setDoc(userRef, { fcmToken: token }, { merge: true });
+            console.log("Token saved to Firestore for user:", uid);
+        } catch (error) {
+            console.error("Error saving token to Firestore:", error);
+        }
     }
 }

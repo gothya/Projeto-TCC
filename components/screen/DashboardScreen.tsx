@@ -5,6 +5,7 @@ import { InstrumentResponse } from "../data/InstrumentResponse";
 // import { MOCK_PLAYERS } from "../data/MockPlayers"; // Removed mock
 import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
 import { db } from "../../services/firebase";
+import { useAuth } from "../../contexts/AuthContext";
 import { InstrumentModal } from "../modal/InstrumentModal";
 import { RcleModal } from "../modal/RcleModal";
 import { SociodemographicModal } from "../modal/SociodemographicModal";
@@ -40,6 +41,8 @@ export const DashboardScreen: React.FC<{
   const [instrumentFlow, setInstrumentFlow] =
     useState<InstrumentFlowState>(null);
 
+  const { user: authUser } = useAuth(); // Get the authenticated user for UID
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -52,6 +55,9 @@ export const DashboardScreen: React.FC<{
     const token = await service.requestPermission();
     if (token) {
       setNotificationPermission("granted");
+      if (authUser) {
+        await service.saveTokenToFirestore(authUser.uid, token);
+      }
       alert("Notificações ativadas com sucesso!");
     } else {
       setNotificationPermission("denied");
