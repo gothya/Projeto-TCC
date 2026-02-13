@@ -37,7 +37,7 @@ const app = initializeApp(firebaseConfig);
 // Export services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const messaging = await isMessagingSupported().then(yes => yes ? getMessaging(app) : null);
+export const messaging = isMessagingSupported().then(yes => yes ? getMessaging(app) : null);
 
 // Analytics (only supported in browser process.environments)
 export const analytics = isSupported().then(yes => yes ? getAnalytics(app) : null);
