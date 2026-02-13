@@ -144,6 +144,14 @@ const App: React.FC = () => {
       },
       sociodemographicData,
     }));
+
+    // Solicitar permissão de notificações para novos usuários
+    NotificationService.init().then(async (service) => {
+      const token = await service.initializeNotificationsForNewUser();
+      if (token && firebaseUser) {
+        await service.saveTokenToFirestore(firebaseUser.uid, token);
+      }
+    });
   };
 
   const handleAdminLoginSuccess = () => {

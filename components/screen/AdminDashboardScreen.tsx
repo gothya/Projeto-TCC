@@ -10,7 +10,7 @@ import { ChevronDownIcon } from "../icons/ChevronDownIcon";
 import { ChevronUpIcon } from "../icons/ChevronUpIcon";
 import { PANAS_ITEMS } from "../data/PanasItems";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../services/firebase";
+import { db, auth } from "../../services/firebase";
 import { BADGE_DEFINITIONS } from "../data/BadgeDefinitions";
 
 // PANAS GROUPS
@@ -206,7 +206,7 @@ export const AdminDashboardScreen: React.FC<{
     let totalAnswered = 0;
 
     allUsers.forEach(user => {
-      user.pings.forEach(day => {
+      (user.pings || []).forEach(day => {
         if (day.statuses) {
           day.statuses.forEach(status => {
             if (status !== "pending") {
@@ -243,11 +243,11 @@ export const AdminDashboardScreen: React.FC<{
     allUsers.forEach(user => {
       // Gamification
       if (user.user) {
-        totalLevel += user.user.level;
-        if (user.user.level > maxLevel) maxLevel = user.user.level;
+        totalLevel += user.user.level || 0;
+        if ((user.user.level || 0) > maxLevel) maxLevel = user.user.level || 0;
       }
 
-      user.responses.forEach(r => {
+      (user.responses || []).forEach(r => {
         // SAM
         if (r.sam) {
           samTotals.valence += r.sam.pleasure;
@@ -387,7 +387,7 @@ export const AdminDashboardScreen: React.FC<{
     let totalAnswered = user.responses.length;
 
     // Calculate issued pings (completed + missed)
-    user.pings.forEach(d => {
+    (user.pings || []).forEach(d => {
       if (d.statuses) {
         d.statuses.forEach(s => {
           if (s === "completed" || s === "missed") totalIssued++;
@@ -533,7 +533,7 @@ export const AdminDashboardScreen: React.FC<{
       responseMap.set(`${r.pingDay}-${r.pingIndex}`, { r, index: idx });
     });
 
-    user.pings.forEach((dayObj, dayIdx) => {
+    (user.pings || []).forEach((dayObj, dayIdx) => {
       dayObj.statuses.forEach((status, pingIdx) => {
         if (status === "completed" || status === "missed") {
           const key = `${dayIdx}-${pingIdx}`;
@@ -582,9 +582,51 @@ export const AdminDashboardScreen: React.FC<{
   const selectedResponse = selectedItem?.data; // Compatible with existing code expecting 'selectedResponse'
 
 
-  const triggerPing = () => {
-    setToast(`Notificações enviadas para ${activeUsersCount} usuários!`);
-    setTimeout(() => setToast(null), 3000);
+  const [isSendingPing, setIsSendingPing] = useState(false);
+
+  const triggerPing = async () => {
+    if (!auth.currentUser) {
+      setToast("Erro: Você precisa estar logado.");
+      return;
+    }
+
+    if (!confirm("Tem certeza que deseja enviar uma notificação para TODOS os usuários?")) {
+      return;
+    }
+
+    setIsSendingPing(true);
+    setToast("Enviando comando para o servidor...");
+
+    try {
+      const token = await auth.currentUser.getIdToken();
+
+      const response = await fetch('/api/send-broadcast', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: "Hora do Ping! 🔔",
+          body: "Acesse o app para registrar como você está se sentindo agora."
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setToast(`Sucesso! Enviado para ${data.sentCount} dispositivos.`);
+      } else {
+        throw new Error(data.error || "Falha ao enviar");
+      }
+
+    } catch (error) {
+      console.error("Erro ao disparar ping:", error);
+      setToast(`Erro ao enviar: ${error instanceof Error ? error.message : "Erro desconhecido"}`);
+    } finally {
+      setIsSendingPing(false);
+      setTimeout(() => setToast(null), 5000);
+    }
   };
 
   const ScaleVisual = ({ value, max }: { value: number | undefined, max: number }) => (
@@ -716,12 +758,12 @@ export const AdminDashboardScreen: React.FC<{
           <div className="text-right">
             <h4 className="text-gray-500 text-[10px] uppercase font-bold mb-1">Leaderboard (Top 3) e XP</h4>
             <div className="text-xs text-gray-300 space-y-1">
-              {[...allUsers].sort((a, b) => b.user.points - a.user.points).slice(0, 3).map((u, i) => (
-                <div key={u.user.nickname} className="flex justify-end gap-2 items-center">
-                  <span className={`${i === 0 ? 'text-yellow-400 font-bold' : ''}`}>{i + 1}. {u.user.nickname}</span>
+              {[...allUsers].filter(u => u.user).sort((a, b) => (b.user?.points || 0) - (a.user?.points || 0)).slice(0, 3).map((u, i) => (
+                <div key={u.user?.nickname || i} className="flex justify-end gap-2 items-center">
+                  <span className={`${i === 0 ? 'text-yellow-400 font-bold' : ''}`}>{i + 1}. {u.user?.nickname || 'N/A'}</span>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-purple-300 bg-purple-900/30 px-1.5 py-0.5 rounded text-[10px]">Lvl {u.user.level}</span>
-                    <span className="text-gray-500 text-[10px]">{u.user.points} XP</span>
+                    <span className="font-bold text-purple-300 bg-purple-900/30 px-1.5 py-0.5 rounded text-[10px]">Lvl {u.user?.level || 0}</span>
+                    <span className="text-gray-500 text-[10px]">{u.user?.points || 0} XP</span>
                   </div>
                 </div>
               ))}
@@ -1194,10 +1236,25 @@ export const AdminDashboardScreen: React.FC<{
           <div className="space-y-4">
             <button
               onClick={triggerPing}
-              className="w-full py-4 px-6 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-[0_0_15px_rgba(147,51,234,0.3)] transition-all transform hover:-translate-y-1 flex items-center justify-center"
+              disabled={isSendingPing}
+              className={`w-full py-4 px-6 text-white font-bold rounded-xl shadow-[0_0_15px_rgba(147,51,234,0.3)] transition-all transform hover:-translate-y-1 flex items-center justify-center
+                ${isSendingPing ? 'bg-purple-800 cursor-wait opacity-70' : 'bg-purple-600 hover:bg-purple-500'}
+              `}
             >
-              <BellIcon className="w-6 h-6 mr-3" />
-              Disparar Pings Agora (Todos os {activeUsersCount} usuários)
+              {isSendingPing ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <BellIcon className="w-6 h-6 mr-3" />
+                  Disparar Pings Agora (Todos os {activeUsersCount} usuários)
+                </>
+              )}
             </button>
           </div>
         </div>

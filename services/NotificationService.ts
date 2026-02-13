@@ -1,6 +1,6 @@
 import { db, messaging } from "./firebase";
 import { getToken, onMessage, Messaging } from "firebase/messaging";
-import { doc, updateDoc, setDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 
 export class NotificationService {
     private static instance: NotificationService;
@@ -28,6 +28,20 @@ export class NotificationService {
             }
         }
         return NotificationService.instance;
+    }
+
+    public async initializeNotificationsForNewUser(): Promise<string | null> {
+        if (!this.messagingInstance) return null;
+
+        if (Notification.permission === "default") {
+            return await this.requestPermission();
+        } else if (Notification.permission === "granted") {
+            const token = await getToken(this.messagingInstance, {
+                vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+            });
+            return token || null;
+        }
+        return null;
     }
 
     public async requestPermission(): Promise<string | null> {
