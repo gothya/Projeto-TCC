@@ -149,6 +149,46 @@ export const DashboardScreen: React.FC<{
     }
   }, [highlightedPing]);
 
+  // Listener for Notification Clicks (Deep Linking)
+  useEffect(() => {
+    const handleOpenIntent = () => {
+      if (highlightedPing && !instrumentFlow) {
+        console.log("Opening ping via notification interaction");
+        startInstrumentFlow();
+
+        // Clean up URL param if present
+        const url = new URL(window.location.href);
+        if (url.searchParams.get('open_ping')) {
+          url.searchParams.delete('open_ping');
+          window.history.replaceState({}, '', url);
+        }
+      }
+    };
+
+    // 1. Check URL param on mount
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('open_ping') === 'true') {
+      setTimeout(handleOpenIntent, 1000);
+    }
+
+    // 2. Listen for SW messages
+    const messageHandler = (event: MessageEvent) => {
+      if (event.data?.action === 'open_ping') {
+        handleOpenIntent();
+      }
+    };
+    navigator.serviceWorker?.addEventListener('message', messageHandler);
+
+    // 3. Listen for Foreground intent
+    const customEventHandler = () => handleOpenIntent();
+    window.addEventListener('open_ping_intent', customEventHandler);
+
+    return () => {
+      navigator.serviceWorker?.removeEventListener('message', messageHandler);
+      window.removeEventListener('open_ping_intent', customEventHandler);
+    };
+  }, [highlightedPing, instrumentFlow, startInstrumentFlow]);
+
   const LEVEL_THRESHOLDS = [
     0, 160, 320, 480, 640, 800, 960, 1120, 1280, 1440, 1600, 1760, 1920, 2080,
     2240, 2400, 2560, 2720, 2880, 3040, 3200,

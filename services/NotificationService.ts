@@ -84,7 +84,13 @@ export class NotificationService {
                 // Simple alert for verification (or custom toast later)
                 // alert(`New Message: ${title} - ${body}`);
                 // Using the Notification API to show a system notification even in foreground if allowed
-                new Notification(title, { body, icon: '/vite.svg' });
+                const n = new Notification(title, { body, icon: '/vite.svg' });
+                n.onclick = (event) => {
+                    event.preventDefault();
+                    window.focus();
+                    window.dispatchEvent(new CustomEvent('open_ping_intent'));
+                    n.close();
+                };
             }
         });
     }
