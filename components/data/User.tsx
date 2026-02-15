@@ -6,4 +6,5 @@ export type User = {
   currentStreak: number;
   completedDays: number;
   avatar?: string | null;
+  tokenNotifications?: string | null;
 };

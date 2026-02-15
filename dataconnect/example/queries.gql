@@ -1,0 +1,47 @@
+query ListAllMissions @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public as it only retrieves public mission information.") {
+  missions {
+    id
+    title
+    description
+    pointsReward
+    experienceReward
+    dueDate
+  }
+}
+
+query GetUserAchievements @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users as it filters by auth.uid.") {
+  user(key: {id_expr: "auth.uid"}) {
+    username
+    achievements_via_UserAchievement {
+      id
+      name
+      description
+      iconUrl
+      _metadata {
+        distance
+      }
+    }
+  }
+}
+
+mutation CreateNewUser($username: String!, $email: String!) @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users as it inserts a new user with default values and filters by auth.uid.") {
+  user_insert(data: {
+    id_expr: "auth.uid",
+    username: $username,
+    email: $email,
+    createdAt_expr: "request.time",
+    level: 1,
+    points: 0
+  })
+}
+
+mutation SubmitMission($missionId: UUID!, $submittedData: String!, $notes: String) @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users as it inserts a new submission with default values and filters by auth.uid.") {
+  submission_insert(data: {
+    userId_expr: "auth.uid",
+    missionId: $missionId,
+    submittedData: $submittedData,
+    notes: $notes,
+    status: "PENDING",
+    createdAt_expr: "request.time"
+  })
+}

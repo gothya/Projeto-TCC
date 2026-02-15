@@ -1,0 +1,41 @@
+type User @table {
+  username: String!
+  email: String!
+  createdAt: Timestamp!
+  level: Int!
+  points: Int!
+  avatarUrl: String
+  bio: String
+}
+
+type Mission @table {
+  title: String!
+  description: String!
+  pointsReward: Int!
+  experienceReward: Int!
+  createdAt: Timestamp!
+  dueDate: Timestamp
+  locationHint: String
+  dataSchema: String
+}
+
+type Submission @table {
+  user: User!
+  mission: Mission!
+  createdAt: Timestamp!
+  status: String!
+  submittedData: String!
+  notes: String
+}
+
+type Achievement @table {
+  name: String!
+  description: String!
+  iconUrl: String!
+}
+
+type UserAchievement @table(key: ["user", "achievement"]) {
+  user: User!
+  achievement: Achievement!
+  unlockedAt: Timestamp!
+}

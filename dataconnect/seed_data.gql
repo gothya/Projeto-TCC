@@ -1,0 +1,95 @@
+mutation SeedData @transaction @auth(level: USER, insecureReason: "This is a seed mutation for initial data population and is intended for use by an authenticated user.") {
+  achievement_insertMany(data: [
+    {
+      id: "a0000000-0000-4000-8000-000000000001",
+      name: "First Step",
+      description: "Complete your first mission!",
+      iconUrl: "https://example.com/icons/first_step.png"
+    },
+    {
+      id: "a0000000-0000-4000-8000-000000000002",
+      name: "Explorer",
+      description: "Discover 5 new locations.",
+      iconUrl: "https://example.com/icons/explorer.png"
+    },
+    {
+      id: "a0000000-0000-4000-8000-000000000003",
+      name: "Master Crafter",
+      description: "Craft 10 unique items.",
+      iconUrl: "https://example.com/icons/crafter.png"
+    }
+  ])
+  mission_insertMany(data: [
+    {
+      id: "m0000000-0000-4000-8000-000000000001",
+      title: "The Lost Artifact",
+      description: "Find the ancient artifact hidden in the forgotten ruins.",
+      experienceReward: 100,
+      pointsReward: 50,
+      createdAt_expr: "request.time",
+      dueDate_time: {now: true, add: {days: 7}},
+      locationHint: "Near the old oak tree"
+    },
+    {
+      id: "m0000000-0000-4000-8000-000000000002",
+      title: "Gather Rare Herbs",
+      description: "Collect 10 rare glowing herbs from the dark forest.",
+      experienceReward: 75,
+      pointsReward: 30,
+      createdAt_expr: "request.time",
+      dueDate_time: {now: true, add: {days: 3}}
+    }
+  ])
+  user_insertMany(data: [
+    {
+      id: "u0000000-0000-4000-8000-000000000001",
+      username: "PlayerOne",
+      email: "playerone@example.com",
+      createdAt_expr: "request.time",
+      level: 1,
+      points: 0,
+      avatarUrl: "https://example.com/avatars/player1.png"
+    },
+    {
+      id: "u0000000-0000-4000-8000-000000000002",
+      username: "ExplorerSam",
+      email: "explorersam@example.com",
+      createdAt_expr: "request.time",
+      level: 2,
+      points: 150
+    }
+  ])
+  userAchievement_insertMany(data: [
+    {
+      userId: "u0000000-0000-4000-8000-000000000001",
+      achievementId: "a0000000-0000-4000-8000-000000000001",
+      unlockedAt_expr: "request.time"
+    },
+    {
+      userId: "u0000000-0000-4000-8000-000000000002",
+      achievementId: "a0000000-0000-4000-8000-000000000001",
+      unlockedAt_expr: "request.time"
+    },
+    {
+      userId: "u0000000-0000-4000-8000-000000000002",
+      achievementId: "a0000000-0000-4000-8000-000000000002",
+      unlockedAt_expr: "request.time"
+    }
+  ])
+  submission_insertMany(data: [
+    {
+      userId: "u0000000-0000-4000-8000-000000000001",
+      missionId: "m0000000-0000-4000-8000-000000000001",
+      createdAt_expr: "request.time",
+      status: "COMPLETED",
+      submittedData: "{\"artifactFound\": true, \"location\": \"old oak tree\"}"
+    },
+    {
+      userId: "u0000000-0000-4000-8000-000000000002",
+      missionId: "m0000000-0000-4000-8000-000000000002",
+      createdAt_expr: "request.time",
+      status: "PENDING_REVIEW",
+      submittedData: "{\"herbsCollected\": 8}"
+    }
+  ])
+}

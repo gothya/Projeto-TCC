@@ -22,6 +22,7 @@ import { CheckCircleIcon } from "../icons/CheckCircleIcon";
 import { XCircleIcon } from "../icons/XCircleIcon";
 import { StarIcon } from "../icons/StarIcon";
 import { PodiumItem } from "../PodiumItem";
+import { auth } from "firebase-admin";
 
 export const DashboardScreen: React.FC<{
   gameState: GameState;
@@ -53,6 +54,7 @@ export const DashboardScreen: React.FC<{
   const requestNotificationPermission = async () => {
     const service = await NotificationService.init();
     const token = await service.requestPermission();
+
     if (token) {
       setNotificationPermission("granted");
       if (authUser) {

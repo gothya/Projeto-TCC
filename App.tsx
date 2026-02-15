@@ -134,21 +134,23 @@ const App: React.FC = () => {
     nickname: string,
     sociodemographicData: SociodemographicData
   ) => {
-    setGameState((prev) => ({
-      ...prev,
-      hasOnboarded: true,
-      studyStartDate: new Date().toISOString(),
-      user: {
-        ...prev.user,
-        nickname,
-      },
-      sociodemographicData,
-    }));
-
     // Solicitar permissão de notificações para novos usuários
     NotificationService.init().then(async (service) => {
       const token = await service.initializeNotificationsForNewUser();
       if (token && firebaseUser) {
+
+        setGameState((prev) => ({
+          ...prev,
+          hasOnboarded: true,
+          studyStartDate: new Date().toISOString(),
+          user: {
+            ...prev.user,
+            nickname,
+            tokenNotifications: token
+          },
+          sociodemographicData,
+        }));
+
         await service.saveTokenToFirestore(firebaseUser.uid, token);
       }
     });
