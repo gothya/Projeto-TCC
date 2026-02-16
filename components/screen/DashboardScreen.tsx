@@ -23,6 +23,10 @@ import { XCircleIcon } from "../icons/XCircleIcon";
 import { StarIcon } from "../icons/StarIcon";
 import { PodiumItem } from "../PodiumItem";
 import { auth } from "firebase-admin";
+import { getMessaging, getToken } from "firebase/messaging";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import viteConfig from "@/vite.config";
+import { sendPushNotification } from "@/functions";
 
 export const DashboardScreen: React.FC<{
   gameState: GameState;
@@ -120,7 +124,11 @@ export const DashboardScreen: React.FC<{
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const startInstrumentFlow = useCallback(() => {
+  const messaging = getMessaging();
+  const functions = getFunctions();
+  const sendPush = httpsCallable(functions, 'sendPushNotification');
+
+  const startInstrumentFlow = useCallback(async () => {
     if (!highlightedPing) return;
     const isEndOfDay = (highlightedPing.ping + 1) % 7 === 0;
 
@@ -339,7 +347,25 @@ export const DashboardScreen: React.FC<{
     setIsProfileMenuOpen(false);
   };
 
-  const handleTimerEnd = useCallback(() => {
+  const handleTimerEnd = useCallback(async () => {
+    try {
+      const currentToken = await getToken(getMessaging(), {
+        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
+      })
+
+      if (currentToken) {
+        const response = await sendPush({
+          token: currentToken,
+          title: "Teste de Push",
+          body: "Isso foi enviado ao clicar no botão!"
+        });
+        console.log("Push notification sent successfully:", response, new Date().toISOString());
+      }
+    }
+    catch (error) {
+      console.error("Error fetching FCM token:", error);
+    }
+
     if (highlightedPing && !instrumentFlow) {
       startInstrumentFlow();
     }

@@ -145,8 +145,7 @@ const App: React.FC = () => {
           studyStartDate: new Date().toISOString(),
           user: {
             ...prev.user,
-            nickname,
-            tokenNotifications: token
+            nickname
           },
           sociodemographicData,
         }));

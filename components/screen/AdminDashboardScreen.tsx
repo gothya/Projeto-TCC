@@ -585,6 +585,7 @@ export const AdminDashboardScreen: React.FC<{
   const [isSendingPing, setIsSendingPing] = useState(false);
 
   const triggerPing = async () => {
+    
     if (!auth.currentUser) {
       setToast("Erro: Você precisa estar logado.");
       return;

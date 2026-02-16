@@ -57,7 +57,6 @@ export class NotificationService {
                 const token = await getToken(this.messagingInstance, {
                     vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
                 });
-                // console.log("FCM Token:", token);
                 return token;
             } else {
                 console.log("Notification permission denied.");
