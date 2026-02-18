@@ -24,6 +24,7 @@ import { NotificationService } from "@/src/services/NotificationService";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getMessaging, getToken } from "firebase/messaging";
+import UserService from "../service/user/UserService";
 
 export const DashboardPage: React.FC<{
   gameState: GameState;
@@ -212,7 +213,7 @@ export const DashboardPage: React.FC<{
 
     const { day, ping } = instrumentFlow.ping;
 
-    setGameState((prev) => {
+    setGameState(async (prev) => {
       const newPings = prev.pings.map((dayObj) => ({
         ...dayObj,
         statuses: [...dayObj.statuses],
@@ -245,10 +246,22 @@ export const DashboardPage: React.FC<{
         },
       };
 
-      console.log('newLevel', newLevel);
-      console.log('newXp', newXp);
-
       localStorage.setItem('gameState', JSON.stringify(newGameState));
+
+      // Atualiza usuário no banco
+      const userService = new UserService();
+      await userService.updateUser({
+        ...prev,
+        pings: newPings,
+        responses: [...prev.responses, finalResponseData],
+        user: {
+          ...prev.user,
+          points: newXp,
+          level: newLevel,
+        },
+      } as GameState).catch((error) => {
+        console.error("Error updating user in Firestore:", error);
+      });
 
       return {
         ...prev,
@@ -261,6 +274,7 @@ export const DashboardPage: React.FC<{
         },
       };
     });
+
     setInstrumentFlow(null);
   };
 

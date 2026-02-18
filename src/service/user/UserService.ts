@@ -1,6 +1,6 @@
 import { GameState } from "@/src/components/data/GameState";
 import { db } from "@/src/services/firebase";
-import { collection, doc, getDoc, getDocs, query, setDoc, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, setDoc, where, updateDoc } from "firebase/firestore";
 
 export default class UserService {
 
@@ -52,5 +52,15 @@ export default class UserService {
         const docRef = doc(db, "users", initialState.firebaseId);
         await setDoc(docRef, initialState);
         console.log("✅ Usuário criado no Firestore!");
+    }
+
+    // Atualiza o documento usando o UID que o Auth gerou
+    async updateUser(newState: GameState) {
+        if (!newState.firebaseId) {
+            throw new Error("Firebase ID is required. Autentique o usuário primeiro.");
+        }
+        const docRef = doc(db, "users", newState.firebaseId);
+        await updateDoc(docRef, newState);
+        console.log("✅ Usuário atualizado no Firestore!");
     }
 }
