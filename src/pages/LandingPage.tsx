@@ -1,9 +1,9 @@
 import React from "react";
-import { PlexusFace } from "./PlexusFace";
-import { UserIcon } from "./icons/UserIcon";
-import { ChartBarIcon } from "./icons/ChartBarIcon";
+import { PlexusFace } from "../components/PlexusFace";
+import { UserIcon } from "../components/icons/UserIcon";
+import { ChartBarIcon } from "../components/icons/ChartBarIcon";
 
-export const LandingScreen: React.FC<{
+export const LandingPage: React.FC<{
   onUserSelect: () => void;
   onAdminSelect: () => void;
 }> = ({ onUserSelect, onAdminSelect }) => {

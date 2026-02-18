@@ -12,4 +12,5 @@ export type GameState = {
   responses: InstrumentResponse[];
   pings: { statuses: PingStatus[] }[];
   sociodemographicData: SociodemographicData | null;
+  firebaseId?: string;
 };

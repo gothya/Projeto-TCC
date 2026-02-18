@@ -30,9 +30,8 @@ import { sendPushNotification } from "@/functions";
 
 export const DashboardScreen: React.FC<{
   gameState: GameState;
-  setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   onLogout: () => void;
-}> = ({ gameState, setGameState, onLogout }) => {
+}> = ({ gameState, onLogout }) => {
   const { user, pings } = gameState;
   const [highlightedPing, setHighlightedPing] = useState<{
     day: number;
@@ -41,13 +40,10 @@ export const DashboardScreen: React.FC<{
   const [isRcleModalOpen, setIsRcleModalOpen] = useState(false);
   const [isPerformanceModalOpen, setIsPerformanceModalOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [isSociodemographicModalOpen, setIsSociodemographicModalOpen] =
-    useState(false);
-  const [instrumentFlow, setInstrumentFlow] =
-    useState<InstrumentFlowState>(null);
-
+  const [isSociodemographicModalOpen, setIsSociodemographicModalOpen] = useState(false);
+  const [instrumentFlow, setInstrumentFlow] = useState<InstrumentFlowState>(null);
+  const [, setGameState] = useState<GameState>(localStorage.getItem("gameState") ? JSON.parse(localStorage.getItem("gameState") as string) : gameState);
   const { user: authUser } = useAuth(); // Get the authenticated user for UID
-
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -495,14 +491,14 @@ export const DashboardScreen: React.FC<{
             </button>
           )}
           <CountdownTimer onTimerEnd={handleTimerEnd} />
-          <button
+          {/* <button
             className="p-2 rounded-full bg-slate-800/50 hover:bg-slate-700/50 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={startInstrumentFlow}
             disabled={!highlightedPing || !!instrumentFlow}
             aria-label="Responder próximo ping"
           >
             <BellIcon className="w-6 h-6 text-cyan-400" />
-          </button>
+          </button> */}
         </div>
       </header>
 

@@ -24,6 +24,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            if (!currentUser){
+                console.log("User is not authenticated");
+            }
             setUser(currentUser);
             setLoading(false);
         });
@@ -33,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const handleSignInAnonymously = async () => {
         try {
-            await signInAnonymously(auth);
+            return await signInAnonymously(auth);
         } catch (error) {
             console.error("Error signing in anonymously:", error);
         }
