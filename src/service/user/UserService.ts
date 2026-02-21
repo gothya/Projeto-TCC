@@ -44,6 +44,19 @@ export default class UserService {
         return querySnapshot.empty ? undefined : (querySnapshot.docs[0].data() as GameState);
     }
 
+    // Busca por Nicknamee senha
+    async getUserByNicknameAndPassword(nickname: string, password: string) {
+        console.log("🔍 Buscando nickname:", nickname, "e senha:", password);
+        const usersRef = collection(db, "users");
+        const q = query(
+            usersRef, 
+            where("user.nickname", "==", nickname.trim()),
+            where("user.password", "==", password.trim()));
+        const querySnapshot = await getDocs(q);
+
+        return querySnapshot.empty ? undefined : (querySnapshot.docs[0].data() as GameState);
+    }
+
     // Cria o documento usando o UID que o Auth gerou
     async createUser(initialState: GameState) {
         if (!initialState.firebaseId) {

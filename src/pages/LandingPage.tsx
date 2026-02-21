@@ -2,11 +2,21 @@ import React from "react";
 import { PlexusFace } from "../components/PlexusFace";
 import { UserIcon } from "../components/icons/UserIcon";
 import { ChartBarIcon } from "../components/icons/ChartBarIcon";
+import { useNavigate } from "react-router-dom";
 
 export const LandingPage: React.FC<{
-  onUserSelect: () => void;
-  onAdminSelect: () => void;
-}> = ({ onUserSelect, onAdminSelect }) => {
+}> = ({ }) => {
+
+  const navigate = useNavigate();
+
+  const goToAdminPage = () => {
+    navigate("/admin");
+  }
+
+  const goToLoginPage = () => {
+    navigate("/login");
+  }
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 relative overflow-hidden">
       {/* Background Decoration */}
@@ -31,7 +41,7 @@ export const LandingPage: React.FC<{
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full px-4">
           <button
-            onClick={onUserSelect}
+            onClick={goToLoginPage}
             className="group relative overflow-hidden rounded-2xl bg-slate-800/50 border border-cyan-400/30 p-8 hover:bg-slate-800/80 transition-all duration-300 hover:shadow-glow-blue hover:-translate-y-1"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -45,7 +55,7 @@ export const LandingPage: React.FC<{
           </button>
 
           <button
-            onClick={onAdminSelect}
+            onClick={goToAdminPage}
             className="group relative overflow-hidden rounded-2xl bg-slate-800/50 border border-purple-400/30 p-8 hover:bg-slate-800/80 transition-all duration-300 hover:shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:-translate-y-1"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-purple-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>

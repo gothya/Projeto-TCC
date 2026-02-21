@@ -24,6 +24,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            console.log('currentUser', currentUser);
             if (!currentUser){
                 console.log("User is not authenticated");
             }
@@ -44,6 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const handleLogout = async () => {
         try {
+            localStorage.removeItem("gameState");
             await signOut(auth);
         } catch (error) {
             console.error("Error signing out:", error);

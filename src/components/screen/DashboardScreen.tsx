@@ -369,15 +369,15 @@ export const DashboardScreen: React.FC<{
 
   const notificationTimes = ["9h", "11h", "13h", "15h", "17h", "19h", "21h"];
 
-  const completedPings = pings
+  const completedPings = pings ? pings
     .flatMap(d => d.statuses)
-    .filter((p, index) => (index + 1) % 7 !== 0 && p === "completed").length;
-  const missedPings = pings
+    .filter((p, index) => (index + 1) % 7 !== 0 && p === "completed").length : [];
+  const missedPings = pings ? pings
     .flatMap(d => d.statuses)
-    .filter((p, index) => (index + 1) % 7 !== 0 && p === "missed").length;
-  const completedStars = pings
+    .filter((p, index) => (index + 1) % 7 !== 0 && p === "missed").length : 0;
+  const completedStars = pings ? pings
     .flatMap(d => d.statuses)
-    .filter((p, index) => (index + 1) % 7 === 0 && p === "completed").length;
+    .filter((p, index) => (index + 1) % 7 === 0 && p === "completed").length : 0;
 
   const { level, points: totalXp } = user;
   const currentLevelXpStart = LEVEL_THRESHOLDS[level - 1] ?? 0;

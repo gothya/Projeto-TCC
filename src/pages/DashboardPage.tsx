@@ -24,13 +24,14 @@ import { NotificationService } from "@/src/services/NotificationService";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getMessaging, getToken } from "firebase/messaging";
+import { useNavigate } from "react-router-dom";
 import UserService from "../service/user/UserService";
 
 export const DashboardPage: React.FC<{
   gameState: GameState;
   onLogout: () => void;
 }> = ({ gameState, onLogout }) => {
-  const { user, pings } = gameState;
+  const { user, pings = [] } = gameState;
   const [highlightedPing, setHighlightedPing] = useState<{
     day: number;
     ping: number;
@@ -40,11 +41,13 @@ export const DashboardPage: React.FC<{
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isSociodemographicModalOpen, setIsSociodemographicModalOpen] = useState(false);
   const [instrumentFlow, setInstrumentFlow] = useState<InstrumentFlowState>(null);
-  const { user: authUser } = useAuth();
+  const { user: authUser, logout } = useAuth();
   const [, setGameState] = useState(gameState);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  const navigate = useNavigate();
 
   const [notificationPermission, setNotificationPermission] = useState(
     Notification.permission
@@ -57,7 +60,7 @@ export const DashboardPage: React.FC<{
     if (token) {
       setNotificationPermission("granted");
       if (authUser) {
-        await service.saveTokenToFirestore(authUser.uid, token);
+        await service.saveTokenToFirestore(authuser?.uid, token);
       }
       alert("Notificações ativadas com sucesso!");
     } else {
@@ -73,17 +76,21 @@ export const DashboardPage: React.FC<{
 
   // Fetch Leaderboard Real-time
   useEffect(() => {
-    const q = query(collection(db, "users"), orderBy("user.points", "desc")); // Assuming structure is doc.data().user.points
+
+    if (!localStorage.getItem("gameState"))
+      navigate("/login");
+
+    const q = query(collection(db, "users"), orderBy("user?.points", "desc")); // Assuming structure is doc.data().user?.points
     // But wait, GameState is { user: { points... } }.
-    // Firestore queries on nested fields work: "user.points"
+    // Firestore queries on nested fields work: "user?.points"
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const players: { nickname: string, points: number }[] = [];
       snapshot.forEach((doc) => {
         const data = doc.data() as GameState;
         players.push({
-          nickname: data.user.nickname,
-          points: data.user.points
+          nickname: data.user?.nickname,
+          points: data.user?.points
         });
       });
       setLeaderboardData(players);
@@ -396,17 +403,17 @@ export const DashboardPage: React.FC<{
 
   const notificationTimes = ["9h", "11h", "13h", "15h", "17h", "19h", "21h"];
 
-  const completedPings = pings
+  const completedPings = pings ? pings
     .flatMap(d => d.statuses)
-    .filter((p, index) => (index + 1) % 7 !== 0 && p === "completed").length;
-  const missedPings = pings
+    .filter((p, index) => (index + 1) % 7 !== 0 && p === "completed").length : 0;
+  const missedPings = pings ? pings
     .flatMap(d => d.statuses)
-    .filter((p, index) => (index + 1) % 7 !== 0 && p === "missed").length;
-  const completedStars = pings
+    .filter((p, index) => (index + 1) % 7 !== 0 && p === "missed").length : 0;
+  const completedStars = pings ? pings
     .flatMap(d => d.statuses)
-    .filter((p, index) => (index + 1) % 7 === 0 && p === "completed").length;
+    .filter((p, index) => (index + 1) % 7 === 0 && p === "completed").length : 0;
 
-  const { level, points: totalXp } = user;
+  const { level, points: totalXp } = user ? user : { level: 0, points: 0 };
   const currentLevelXpStart = LEVEL_THRESHOLDS[level - 1] ?? 0;
   const nextLevelXpTarget =
     LEVEL_THRESHOLDS[level] ?? LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
@@ -422,16 +429,21 @@ export const DashboardPage: React.FC<{
   const pingIconClasses = "transition-transform duration-150 ease-in-out";
 
   // Use real data
-  const allPlayers = leaderboardData.length > 0 ? leaderboardData : [{ nickname: user.nickname, points: user.points }];
+  const allPlayers = leaderboardData.length > 0 ? leaderboardData : [{ nickname: user?.nickname, points: user?.points }];
 
   // Fallback if empty (shouldn't happen if user exists)
   // const allPlayers = [
   //   ...MOCK_PLAYERS,
-  //   { nickname: user.nickname, points: user.points },
+  //   { nickname: user?.nickname, points: user?.points },
   // ].sort((a, b) => b.points - a.points);
 
   const topThree = allPlayers.slice(0, 3);
   const restOfPlayers = allPlayers.slice(3);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  }
 
   return (
     <div className="p-4 sm:p-6 max-w-4xl mx-auto animate-fade-in">
@@ -465,9 +477,9 @@ export const DashboardPage: React.FC<{
               className="relative group w-16 h-16 rounded-full bg-slate-800 border-2 border-cyan-400 flex items-center justify-center overflow-hidden cursor-pointer transition-all hover:border-cyan-300 hover:shadow-glow-blue-sm"
               aria-label="Menu do perfil"
             >
-              {user.avatar ? (
+              {user?.avatar ? (
                 <img
-                  src={user.avatar}
+                  src={user?.avatar}
                   alt="Avatar do usuário"
                   className="w-full h-full object-cover"
                 />
@@ -492,7 +504,7 @@ export const DashboardPage: React.FC<{
                   setIsProfileMenuOpen(false);
                 }}
                 onLogout={onLogout}
-                hasAvatar={!!user.avatar}
+                hasAvatar={!!user?.avatar}
               />
             )}
           </div>
@@ -504,8 +516,8 @@ export const DashboardPage: React.FC<{
             className="hidden"
           />
           <div>
-            <h1 className="text-xl font-bold text-cyan-400">{user.nickname}</h1>
-            <p className="text-gray-400">Nível {user.level} - Mente Curiosa</p>
+            <h1 className="text-xl font-bold text-cyan-400">{user?.nickname}</h1>
+            <p className="text-gray-400">Nível {user?.level} - Mente Curiosa</p>
           </div>
         </div>
         <div className="flex items-center space-x-4">
@@ -526,6 +538,12 @@ export const DashboardPage: React.FC<{
           >
             <BellIcon className="w-6 h-6 text-cyan-400" />
           </button>
+          <button
+              onClick={handleLogout}
+              className="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 px-3 py-1 rounded hover:bg-cyan-500/30 transition-colors"
+            >
+              Sair
+            </button>
         </div>
       </header>
 
@@ -618,27 +636,27 @@ export const DashboardPage: React.FC<{
               <PodiumItem
                 player={topThree[1]}
                 rank={2}
-                isCurrentUser={topThree[1].nickname === user.nickname}
+                isCurrentUser={topThree[1].nickname === user?.nickname}
               />
             )}
             {topThree[0] && (
               <PodiumItem
                 player={topThree[0]}
                 rank={1}
-                isCurrentUser={topThree[0].nickname === user.nickname}
+                isCurrentUser={topThree[0].nickname === user?.nickname}
               />
             )}
             {topThree[2] && (
               <PodiumItem
                 player={topThree[2]}
                 rank={3}
-                isCurrentUser={topThree[2].nickname === user.nickname}
+                isCurrentUser={topThree[2].nickname === user?.nickname}
               />
             )}
           </div>
           <ul className="space-y-2">
             {restOfPlayers.map((player, index) => {
-              const isCurrentUser = player.nickname === user.nickname;
+              const isCurrentUser = player.nickname === user?.nickname;
               const rank = index + 4;
               const userHighlight = isCurrentUser
                 ? "bg-cyan-500/20 border-cyan-400 text-cyan-200 font-bold"
@@ -673,7 +691,7 @@ export const DashboardPage: React.FC<{
                 {time}
               </div>
             ))}
-            {pings.map((day, dayIndex) => (
+            {pings && pings.map((day, dayIndex) => (
               <React.Fragment key={dayIndex}>
                 {day.statuses.map((status, pingIndex) => {
                   const isLastColumn =
