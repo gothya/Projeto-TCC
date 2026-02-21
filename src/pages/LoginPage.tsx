@@ -66,6 +66,11 @@ export const LoginPage: React.FC<{}> = ({ }) => {
                     >
                         Entrar
                     </button>
+                    <span
+                        className="cursor-pointer text-sky-600 hover:text-sky-400"
+                        onClick={() => navigate("/onboarding")}>
+                        Não tenho uma conta
+                    </span>
                 </div>
             </div>
         </div>
