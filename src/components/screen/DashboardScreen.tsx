@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { GameState } from "../data/GameState";
 import { InstrumentFlowState } from "../states/InstrumentFlowState";
 import { InstrumentResponse } from "../data/InstrumentResponse";
@@ -25,8 +25,6 @@ import { PodiumItem } from "../PodiumItem";
 import { auth } from "firebase-admin";
 import { getMessaging, getToken } from "firebase/messaging";
 import { getFunctions, httpsCallable } from "firebase/functions";
-import viteConfig from "@/vite.config";
-import { sendPushNotification } from "@/functions";
 
 export const DashboardScreen: React.FC<{
   gameState: GameState;
@@ -34,10 +32,18 @@ export const DashboardScreen: React.FC<{
   onLogout: () => void;
 }> = ({ gameState, setGameState, onLogout }) => {
   const { user, pings } = gameState;
-  const [highlightedPing, setHighlightedPing] = useState<{
-    day: number;
-    ping: number;
-  } | null>(null);
+
+  const highlightedPing = useMemo(() => {
+    for (let day = 0; day < pings.length; day++) {
+      for (let ping = 0; ping < pings[day].statuses.length; ping++) {
+        if (pings[day].statuses[ping] === "pending") {
+          return { day, ping };
+        }
+      }
+    }
+    return null;
+  }, [pings]);
+
   const [isRcleModalOpen, setIsRcleModalOpen] = useState(false);
   const [isPerformanceModalOpen, setIsPerformanceModalOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -96,20 +102,6 @@ export const DashboardScreen: React.FC<{
 
     return () => unsubscribe();
   }, []);
-
-  useEffect(() => {
-    const findNextPendingPing = () => {
-      for (let day = 0; day < pings.length; day++) {
-        for (let ping = 0; ping < pings[day].statuses.length; ping++) {
-          if (pings[day].statuses[ping] === "pending") {
-            return { day, ping };
-          }
-        }
-      }
-      return null;
-    };
-    setHighlightedPing(findNextPendingPing());
-  }, [pings]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -272,7 +264,7 @@ export const DashboardScreen: React.FC<{
       };
     });
     setInstrumentFlow(null);
-  }, [instrumentFlow]);
+  }, [instrumentFlow, setGameState]);
 
   // 5 Minute Timeout for Active Ping
   useEffect(() => {
@@ -511,8 +503,8 @@ export const DashboardScreen: React.FC<{
           <Card>
             <div className="p-2 text-center">
               <h2 className="text-lg font-semibold text-cyan-400 mb-4">
-                "Psylogos, uma inteligência buscando compreender o coração da
-                Humanidade."
+                &quot;Psylogos, uma inteligência buscando compreender o coração da
+                Humanidade.&quot;
               </h2>
               <div className="w-64 h-64 mx-auto cursor-grab active:cursor-grabbing">
                 <PlexusFace />
