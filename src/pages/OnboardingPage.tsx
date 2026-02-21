@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import CryptoJS from 'crypto-js';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { GameState } from '../components/data/GameState';
 import { ConsentScreen } from '../components/screen/ConsentScreen';
 import { SociodemographicQuestionnaireScreen } from '../components/screen/SociodemographicQuestionnaireScreen';
-import UserService from '../service/user/UserService';
-import { GameState } from '../components/data/GameState';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import CryptoJS from 'crypto-js';
+import UserService from '../service/user/UserService';
 
 const INITIAL_GAME_STATE: GameState = {
   user: {
@@ -179,6 +179,11 @@ export const OnboardingPage: React.FC<{
                         >
                             Próximo
                         </button>
+                        <span 
+                            className="cursor-pointer text-sky-600 hover:text-sky-400"
+                            onClick={() => navigate("/login")}>
+                                Voltar
+                        </span>
                     </div>
                 </div>
             </div>
