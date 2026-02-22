@@ -40,7 +40,7 @@ export const SAMComponent: React.FC<{
         {/* Figure Section - Maximized */}
         <div className="relative group shrink-0 flex-1 flex items-center justify-center min-h-0">
           <div className="absolute inset-0 bg-gradient-to-b from-cyan-900/10 to-transparent rounded-full opacity-0 pointer-events-none"></div>
-          <div className="relative w-48 h-48 sm:w-60 sm:h-60 md:w-72 md:h-72 bg-slate-800 rounded-full p-4 border-2 border-cyan-400/30 shadow-[0_0_30px_rgba(34,211,238,0.1)] flex items-center justify-center transition-all duration-500">
+          <div className="relative w-36 h-36 sm:w-48 sm:h-48 md:w-60 md:h-60 bg-slate-800 rounded-full p-2 sm:p-4 border-2 border-cyan-400/30 shadow-[0_0_30px_rgba(34,211,238,0.1)] flex items-center justify-center transition-all duration-500">
             {responses[type] > 0 ? (
               <SAMDynamicFigure type={type} value={responses[type]} />
             ) : (
@@ -52,8 +52,8 @@ export const SAMComponent: React.FC<{
         </div>
 
         {/* Controls Section - Moved to Bottom Base */}
-        <div className="w-full max-w-2xl flex flex-col items-center animate-slide-up bg-slate-900/40 p-4 rounded-3xl border border-white/5 mt-2">
-          <h3 className="text-lg sm:text-2xl font-bold text-cyan-300 mb-3 text-center tracking-wide drop-shadow-sm">
+        <div className="w-full max-w-2xl flex flex-col items-center animate-slide-up bg-slate-900/40 p-2 sm:p-4 rounded-2xl sm:rounded-3xl border border-white/5 mt-1 sm:mt-2">
+          <h3 className="text-sm sm:text-2xl font-bold text-cyan-300 mb-1 sm:mb-3 text-center tracking-wide drop-shadow-sm">
             {label}
           </h3>
 
@@ -88,7 +88,7 @@ export const SAMComponent: React.FC<{
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       {/* Header - Fixed */}
       <div className="flex-none flex justify-between items-center text-sm text-gray-400 border-b border-gray-700 pb-2 mb-2">
         <span>Passo {currentStep + 1} de {steps.length}</span>
@@ -100,7 +100,7 @@ export const SAMComponent: React.FC<{
       </div>
 
       {/* Main Content - Scrollable */}
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-2">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-1 sm:py-2">
         <SAMSlider
           label={currentStepData.label}
           type={currentStepData.type}
@@ -108,7 +108,7 @@ export const SAMComponent: React.FC<{
       </div>
 
       {/* Footer - Fixed */}
-      <div className="flex-none flex justify-end pt-4 mt-auto border-t border-gray-800/50">
+      <div className="flex-none flex justify-end pt-2 sm:pt-4 mt-auto border-t border-gray-800/50">
         {currentStep > 0 && (
           <button
             onClick={() => setCurrentStep(p => p - 1)}

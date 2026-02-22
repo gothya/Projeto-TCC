@@ -35,15 +35,15 @@ export const EndOfDayLogComponent: React.FC<{
   };
 
   return (
-    <div className="">
-      <div className="max-h-[60vh] overflow-y-auto pr-4 space-y-6">
+    <div className="flex flex-col h-full min-h-0">
+      <div className="flex-1 min-h-0 overflow-y-auto pr-2 sm:pr-4 space-y-4 sm:space-y-6">
         <FormField label="Como você avalia a qualidade do seu sono na noite passada? (1=Péssima, 5=Excelente)">
           <div className="flex justify-start space-x-2 sm:space-x-4">
             {[1, 2, 3, 4, 5].map((v) => (
               <button
                 key={v}
                 onClick={() => setSleepQuality(v)}
-                className={`w-10 h-10 text-lg font-bold rounded-full border-2 transition-colors transform hover:scale-110 ${sleepQuality === v
+                className={`w-8 h-8 sm:w-10 sm:h-10 text-sm sm:text-lg font-bold rounded-full border-2 transition-colors transform hover:scale-110 ${sleepQuality === v
                   ? "bg-cyan-400 border-cyan-300 text-brand-dark"
                   : "border-gray-500 hover:border-cyan-400 text-gray-300"
                   }`}
@@ -69,7 +69,7 @@ export const EndOfDayLogComponent: React.FC<{
           {screenTimeLog.map((entry, index) => (
             <div
               key={entry.id}
-              className="grid grid-cols-1 md:grid-cols-3 gap-2 p-2 mb-2 border border-cyan-400/10 rounded-lg"
+              className="grid grid-cols-1 md:grid-cols-3 gap-1 sm:gap-2 p-1 sm:p-2 mb-1 sm:mb-2 border border-cyan-400/10 rounded-lg"
             >
               <select
                 value={entry.platform}
@@ -139,12 +139,12 @@ export const EndOfDayLogComponent: React.FC<{
           </button>
         </div>
       </div>
-      <div className="flex justify-end pt-6">
+      <div className="flex justify-end pt-2 sm:pt-6 flex-shrink-0 mt-auto border-t border-gray-800/50">
         <button
           onClick={() =>
             onComplete({ sleepQuality, stressfulEvents, screenTimeLog })
           }
-          className="px-8 py-3 font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-colors shadow-glow-blue"
+          className="px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-colors shadow-glow-blue"
         >
           Salvar Relatório
         </button>

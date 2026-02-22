@@ -66,22 +66,22 @@ export const InstrumentModal: React.FC<{
   };
 
   return (
-    <Modal onClose={onCancel} className="max-w-4xl h-[85vh] flex flex-col">
-      <div className="p-4 sm:p-8 flex flex-col flex-grow min-h-0">
-        <div className="mb-4">
-          <div className="flex justify-between items-start mb-2">
+    <Modal onClose={onCancel} className="max-w-4xl max-h-[85vh] flex flex-col mt-[-10vh]">
+      <div className="p-3 sm:p-8 flex flex-col flex-grow min-h-0">
+        <div className="mb-2 sm:mb-4">
+          <div className="flex justify-between items-start mb-1 sm:mb-2">
             <div>
-              <h2 className="text-xl font-bold text-cyan-400">
+              <h2 className="text-lg sm:text-xl font-bold text-cyan-400">
                 {stepTitles[flow.step]}
               </h2>
               {flow.step === "sam" && (
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-xs sm:text-sm text-gray-400 mt-1">
                   O nível 9 é o de maior alegria, a escala começa na tristeza e
                   vai até a alegria.
                 </p>
               )}
             </div>
-            <span className="text-sm font-semibold text-gray-400">
+            <span className="text-xs sm:text-sm font-semibold text-gray-400">
               Passo {currentStepIndex + 1}{" "}
               <span className="font-normal text-gray-500">de</span> {totalSteps}
             </span>

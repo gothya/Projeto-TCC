@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { initializeAuth, indexedDBLocalPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getAnalytics, isSupported } from "firebase/analytics";
 import { getMessaging, isSupported as isMessagingSupported } from "firebase/messaging";
@@ -35,7 +35,9 @@ console.log("FULL CONFIG DEBUG:", {
 const app = initializeApp(firebaseConfig);
 
 // Export services
-export const auth = getAuth(app);
+export const auth = initializeAuth(app, {
+  persistence: [indexedDBLocalPersistence, browserLocalPersistence]
+});
 export const db = getFirestore(app);
 export const messaging = isMessagingSupported().then(yes => yes ? getMessaging(app) : null);
 

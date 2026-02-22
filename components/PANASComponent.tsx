@@ -31,7 +31,9 @@ export const PANASComponent: React.FC<{
   );
 
   // Check if all items in current step have been answered (> 0)
-  const canProceed = currentItems.every((item) => responses[item] > 0);
+  const allAnswered = currentItems.every((item) => responses[item] > 0);
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+  const canProceed = allAnswered && hasScrolledToBottom;
 
   const handleNext = () => {
     if (currentStep < totalSteps - 1) {
@@ -49,9 +51,22 @@ export const PANASComponent: React.FC<{
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  const checkScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+      // If content is smaller than container, or scrolled to bottom (with 10px margin of error)
+      if (scrollHeight <= clientHeight || scrollTop + clientHeight >= scrollHeight - 10) {
+        setHasScrolledToBottom(true);
+      }
+    }
+  };
+
   useEffect(() => {
+    setHasScrolledToBottom(false);
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      // Check immediately if we need to scroll at all
+      setTimeout(checkScroll, 100);
     }
   }, [currentStep]);
 
@@ -82,12 +97,12 @@ export const PANASComponent: React.FC<{
   };
 
   return (
-    <div className="h-full flex flex-col animate-fade-in space-y-4">
-      <div className="flex-shrink-0 text-center space-y-2">
-        <h2 className="text-xl font-bold text-cyan-300">
+    <div className="h-full flex flex-col animate-fade-in space-y-2 sm:space-y-4 min-h-0">
+      <div className="flex-shrink-0 text-center space-y-1 sm:space-y-2">
+        <h2 className="text-lg sm:text-xl font-bold text-cyan-300">
           Passo {currentStep + 1} de {totalSteps}
         </h2>
-        <p className="text-gray-300 text-sm px-4">{question}</p>
+        <p className="text-gray-300 text-xs sm:text-sm px-2 sm:px-4">{question}</p>
 
         <div className="flex gap-1 justify-center mt-2">
           {Array.from({ length: totalSteps }).map((_, idx) => (
@@ -96,10 +111,14 @@ export const PANASComponent: React.FC<{
         </div>
       </div>
 
-      <div ref={scrollContainerRef} className="flex-grow space-y-6 overflow-y-auto px-1 py-2">
+      <div
+        ref={scrollContainerRef}
+        onScroll={checkScroll}
+        className="flex-grow space-y-4 sm:space-y-6 overflow-y-auto px-1 py-1 sm:py-2"
+      >
         {currentItems.map((item) => (
-          <div key={item} className="space-y-2 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-            <h3 className="text-lg font-medium text-center text-gray-200">{item}</h3>
+          <div key={item} className="space-y-1 sm:space-y-2 bg-slate-800/40 p-3 sm:p-4 rounded-xl border border-slate-700/50">
+            <h3 className="text-base sm:text-lg font-medium text-center text-gray-200">{item}</h3>
 
             <VolumeSlider
               value={responses[item]}
@@ -114,11 +133,11 @@ export const PANASComponent: React.FC<{
         ))}
       </div>
 
-      <div className="flex justify-between pt-2 flex-shrink-0">
+      <div className="flex justify-between pt-1 sm:pt-2 flex-shrink-0">
         <button
           onClick={handleBack}
           disabled={currentStep === 0}
-          className={`px-6 py-3 font-medium text-gray-300 transition-colors hover:text-white
+          className={`px-4 sm:px-6 py-2 sm:py-3 font-medium text-gray-300 transition-colors hover:text-white text-sm sm:text-base
             ${currentStep === 0 ? "invisible" : ""}
           `}
         >
@@ -128,7 +147,11 @@ export const PANASComponent: React.FC<{
         <button
           onClick={handleNext}
           disabled={!canProceed}
-          className="px-8 py-3 font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-colors shadow-glow-blue disabled:bg-gray-600 disabled:cursor-not-allowed disabled:shadow-none"
+          className={`px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base font-bold text-brand-dark rounded-lg transition-all duration-300
+            ${canProceed
+              ? "bg-cyan-400 hover:bg-cyan-300 shadow-glow-blue"
+              : "bg-gray-600/50 cursor-not-allowed text-gray-400"
+            }`}
         >
           {currentStep === totalSteps - 1 ? "Concluir" : "Próximo"}
         </button>

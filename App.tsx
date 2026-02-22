@@ -5,9 +5,9 @@ import { LandingScreen } from "./components/LandingScreen";
 import { AdminDashboardScreen } from "./components/screen/AdminDashboardScreen";
 import { AdminLoginScreen } from "./components/screen/AdminLoginScreen";
 import { OnboardingScreen } from "./components/screen/OnboardingScreen";
-import { DashboardScreen } from "./components/screen/DashboardScreen";
+import { ParticipantMainScreen } from "./components/screen/ParticipantMainScreen";
 import { useAuth } from "./contexts/AuthContext";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "./services/firebase";
 import { NotificationService } from "./services/NotificationService";
 
@@ -44,6 +44,8 @@ const INITIAL_GAME_STATE: GameState = {
   sociodemographicData: null,
 };
 
+const LS_UID_KEY = "psylogos_participant_uid";
+
 type ViewState = "LANDING" | "USER" | "ADMIN_LOGIN" | "ADMIN_DASHBOARD";
 
 // --- START: Main App Component ---
@@ -53,6 +55,7 @@ const App: React.FC = () => {
   const { user: firebaseUser, signInAnonymously: authSignInAnonymously, loading: authLoading } = useAuth();
   const [gameState, setGameState] = useState<GameState>(INITIAL_GAME_STATE);
   const [dataLoading, setDataLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   // Load GameState from Firestore when user authenticates
   useEffect(() => {
@@ -72,23 +75,21 @@ const App: React.FC = () => {
 
     async function loadData() {
       if (!firebaseUser) {
-        // Reset to initial if logged out, or keep basic state
-        // setGameState(INITIAL_GAME_STATE); 
         return;
       }
 
       setDataLoading(true);
       try {
-        const docRef = doc(db, "users", firebaseUser.uid);
+        const currentUid = firebaseUser.uid;
+        const docRef = doc(db, "users", currentUid);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
+          // Found data for current UID — normal flow
           const data = docSnap.data() as GameState;
 
           // Migrations / Default values check
           if (!data.responses) data.responses = [];
-
-          // Migration: Convert old nested array to new object structure if needed
           if (!data.pings || !Array.isArray(data.pings)) {
             data.pings = INITIAL_GAME_STATE.pings;
           } else if (data.pings.length > 0 && Array.isArray(data.pings[0])) {
@@ -96,10 +97,54 @@ const App: React.FC = () => {
           }
 
           setGameState(data);
+          setDataLoaded(true);
+          // Keep localStorage in sync
+          localStorage.setItem(LS_UID_KEY, currentUid);
         } else {
-          // New User: Save initial state
-          await setDoc(docRef, INITIAL_GAME_STATE);
-          setGameState(INITIAL_GAME_STATE);
+          // No data for current UID — check localStorage for a previous UID
+          const previousUid = localStorage.getItem(LS_UID_KEY);
+
+          if (previousUid && previousUid !== currentUid) {
+            // Try to recover data from the old UID
+            const oldDocRef = doc(db, "users", previousUid);
+            const oldDocSnap = await getDoc(oldDocRef);
+
+            if (oldDocSnap.exists()) {
+              // Found old data! Migrate to new UID
+              const oldData = oldDocSnap.data() as GameState;
+              console.log("Recovering participant data from previous session...");
+
+              // Migrations
+              if (!oldData.responses) oldData.responses = [];
+              if (!oldData.pings || !Array.isArray(oldData.pings)) {
+                oldData.pings = INITIAL_GAME_STATE.pings;
+              } else if (oldData.pings.length > 0 && Array.isArray(oldData.pings[0])) {
+                oldData.pings = (oldData.pings as any).map((dayArr: any) => ({ statuses: dayArr }));
+              }
+
+              // Copy data to new UID document
+              await setDoc(docRef, oldData);
+              // Remove old document to avoid duplicates
+              await deleteDoc(oldDocRef);
+
+              setGameState(oldData);
+              setDataLoaded(true);
+              localStorage.setItem(LS_UID_KEY, currentUid);
+              console.log("Participant data recovered successfully!");
+            } else {
+              // Old UID doc also doesn't exist — truly new user
+              await setDoc(docRef, INITIAL_GAME_STATE);
+              setGameState(INITIAL_GAME_STATE);
+              setDataLoaded(true);
+              localStorage.setItem(LS_UID_KEY, currentUid);
+            }
+          } else {
+            // No previous UID saved — truly new user
+            await setDoc(docRef, INITIAL_GAME_STATE);
+            setGameState(INITIAL_GAME_STATE);
+            setDataLoaded(true);
+            localStorage.setItem(LS_UID_KEY, currentUid);
+          }
         }
       } catch (error) {
         console.error("Error loading game state:", error);
@@ -111,9 +156,19 @@ const App: React.FC = () => {
     loadData();
   }, [firebaseUser]);
 
-  // Sync GameState to Firestore on changes
+  // Auto-redirect: se já existe sessão ativa e dados carregados, ir direto para USER
   useEffect(() => {
-    if (!firebaseUser || dataLoading) return;
+    if (firebaseUser && !dataLoading && gameState.hasOnboarded && view === "LANDING") {
+      setView("USER");
+    }
+  }, [firebaseUser, dataLoading, gameState.hasOnboarded, view]);
+
+  // Sync GameState to Firestore on changes
+  // IMPORTANT: Only save AFTER data has been loaded from Firestore at least once.
+  // This prevents a race condition where INITIAL_GAME_STATE (hasOnboarded=false)
+  // would overwrite the real user data before loadData() finishes.
+  useEffect(() => {
+    if (!firebaseUser || !dataLoaded) return;
 
     const saveState = async () => {
       try {
@@ -127,30 +182,36 @@ const App: React.FC = () => {
     // Debounce could be added here, but for now direct save is safer for data integrity
     const timeoutId = setTimeout(saveState, 1000);
     return () => clearTimeout(timeoutId);
-  }, [gameState, firebaseUser, dataLoading]);
+  }, [gameState, firebaseUser, dataLoaded]);
 
 
   const completeOnboarding = (
     nickname: string,
     sociodemographicData: SociodemographicData
   ) => {
-    // Solicitar permissão de notificações para novos usuários
+    // 1. Completar onboarding SEMPRE, independente de notificações
+    setGameState((prev) => ({
+      ...prev,
+      hasOnboarded: true,
+      studyStartDate: new Date().toISOString(),
+      user: {
+        ...prev.user,
+        nickname,
+      },
+      sociodemographicData,
+    }));
+
+    // 2. Solicitar notificação em paralelo (não bloqueia o onboarding)
     NotificationService.init().then(async (service) => {
       const token = await service.initializeNotificationsForNewUser();
       if (token && firebaseUser) {
-
         setGameState((prev) => ({
           ...prev,
-          hasOnboarded: true,
-          studyStartDate: new Date().toISOString(),
           user: {
             ...prev.user,
-            nickname,
-            tokenNotifications: token
+            tokenNotifications: token,
           },
-          sociodemographicData,
         }));
-
         await service.saveTokenToFirestore(firebaseUser.uid, token);
       }
     });
@@ -201,10 +262,11 @@ const App: React.FC = () => {
         return !gameState.hasOnboarded ? (
           <OnboardingScreen onComplete={completeOnboarding} />
         ) : (
-          <DashboardScreen
+          <ParticipantMainScreen
             gameState={gameState}
             setGameState={setGameState}
             onLogout={() => setView("LANDING")}
+            authUser={firebaseUser}
           />
         );
       default:
