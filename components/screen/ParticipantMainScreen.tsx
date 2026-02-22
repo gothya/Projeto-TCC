@@ -268,10 +268,39 @@ export const ParticipantMainScreen: React.FC<{
             const file = event.target.files[0];
             const reader = new FileReader();
             reader.onloadend = () => {
-                setGameState((prev) => ({
-                    ...prev,
-                    user: { ...prev.user, avatar: reader.result as string },
-                }));
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement("canvas");
+                    const MAX_WIDTH = 256;
+                    const MAX_HEIGHT = 256;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height = Math.round((height * MAX_WIDTH) / width);
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width = Math.round((width * MAX_HEIGHT) / height);
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext("2d");
+                    if (ctx) {
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.7);
+                        setGameState((prev) => ({
+                            ...prev,
+                            user: { ...prev.user, avatar: compressedDataUrl },
+                        }));
+                    }
+                };
+                img.src = reader.result as string;
             };
             reader.readAsDataURL(file);
         }
@@ -287,7 +316,7 @@ export const ParticipantMainScreen: React.FC<{
     };
 
     return (
-        <div className="min-h-screen bg-brand-dark bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(0,128,128,0.3),rgba(255,255,255,0))] text-gray-200 font-sans pb-16">
+        <div className="min-h-screen overflow-x-hidden bg-brand-dark bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(0,128,128,0.3),rgba(255,255,255,0))] text-gray-200 font-sans pb-16">
 
             {/* Global Modals */}
             {instrumentFlow && (

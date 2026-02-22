@@ -33,11 +33,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 // Verify Firebase ID Token for manual admin trigger
                 try {
                     const decodedToken = await admin.auth().verifyIdToken(token);
-                    // Block anonymous users
-                    if (decodedToken.firebase?.sign_in_provider === 'anonymous') {
+                    const adminEmail = process.env.VITE_ADMIN_EMAIL;
+
+                    // Strictly block any user who isn't the designated admin
+                    if (!adminEmail || decodedToken.email !== adminEmail) {
                         return res.status(403).json({ error: 'Forbidden: Admin access required' });
                     }
-                    console.log(`Broadcast initiated by: ${decodedToken.email || decodedToken.uid}`);
+                    console.log(`Broadcast initiated by ADMIN: ${decodedToken.email}`);
                 } catch (authError) {
                     console.error('Auth Error:', authError);
                     return res.status(401).json({ error: 'Unauthorized: Invalid token' });

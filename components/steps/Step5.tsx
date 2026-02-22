@@ -49,8 +49,8 @@ export const Step5 = ({
       <p className="text-gray-400 text-xs mb-4">
         Assinale a frequência com que utiliza para cada finalidade
       </p>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+      <div className="overflow-x-auto pb-2">
+        <table className="w-full text-left text-sm min-w-[700px] xl:min-w-full">
           <thead>
             <tr className="border-b border-cyan-400/20">
               <th className="p-2">Finalidade</th>
@@ -77,7 +77,7 @@ export const Step5 = ({
                         label=""
                         checked={
                           formData[
-                            purpose.name as keyof SociodemographicData
+                          purpose.name as keyof SociodemographicData
                           ] === freq
                         }
                         onChange={handleRadioChange}

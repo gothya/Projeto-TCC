@@ -172,8 +172,10 @@ const App: React.FC = () => {
 
     const saveState = async () => {
       try {
+        // Strip out any undefined or complex objects (React events, functions, etc)
+        const sanitizedData = JSON.parse(JSON.stringify(gameState));
         const docRef = doc(db, "users", firebaseUser.uid);
-        await setDoc(docRef, gameState, { merge: true });
+        await setDoc(docRef, sanitizedData, { merge: true });
       } catch (error) {
         console.error("Error saving game state:", error);
       }
@@ -280,7 +282,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-brand-dark bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(0,128,128,0.3),rgba(255,255,255,0))] text-gray-200 font-sans">
+    <div className="min-h-screen overflow-x-hidden bg-brand-dark bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(0,128,128,0.3),rgba(255,255,255,0))] text-gray-200 font-sans">
       {renderView()}
     </div>
   );

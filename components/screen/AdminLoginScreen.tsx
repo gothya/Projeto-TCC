@@ -13,11 +13,19 @@ export const AdminLoginScreen: React.FC<{
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await signInWithEmailAndPassword(auth, username, password);
+      const userCredential = await signInWithEmailAndPassword(auth, username, password);
+
+      // Strict Admin Check
+      if (userCredential.user.email !== import.meta.env.VITE_ADMIN_EMAIL) {
+        await auth.signOut();
+        throw new Error("unauthorized_admin");
+      }
+
       onLoginSuccess();
     } catch (err: any) {
       console.error("Admin auth failed:", err);
       let msg = "Erro ao autenticar.";
+      if (err.message === "unauthorized_admin") msg = "Acesso Negado: Esta conta não possui privilégios de administrador.";
       if (err.code === 'auth/invalid-email') msg = "E-mail inválido.";
       if (err.code === 'auth/user-not-found') msg = "Usuário não encontrado.";
       if (err.code === 'auth/wrong-password') msg = "Senha incorreta.";

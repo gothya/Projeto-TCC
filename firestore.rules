@@ -3,17 +3,11 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId} {
       // 1. Participant Access: Can read/write ONLY their own document
-      allow create: if request.auth != null; // Allow creation if authenticated (anon or email)
-      allow update, delete: if request.auth != null && request.auth.uid == userId;
-      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create, update, delete: if request.auth != null && request.auth.uid == userId;
 
-      // 2. Admin Access:
-      // Option A (Simple): Allow read ONLY if the user has a specific verified email (Hardcoded for single admin TCC)
-      // Replace 'SEU_EMAIL_DE_ADMIN@GMAIL.COM' with your actual admin email in the condition below if you want stricter security,
-      // OR use a specific UID.
-      // For now, we allow read if auth.token.email is verified or present, preventing Anonymous users from reading ALL.
-      // Anonymous users have 'provider_id' as 'anonymous'.
-      allow read: if request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous';
+      // 2. Read Access: Participants can read their own data; Admin can read all data.
+      // This locks down database reading to the sole researcher.
+      allow read: if request.auth != null && (request.auth.uid == userId || request.auth.token.email == 'gothya@gmail.com');
     }
   }
 }
