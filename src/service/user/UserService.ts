@@ -5,9 +5,9 @@ import { collection, doc, getDoc, getDocs, query, setDoc, where, updateDoc } fro
 export default class UserService {
 
     /**
- * Busca todos os usuários da coleção 'users'
- * @returns Um array de GameState contendo todos os usuários
- */
+     * Busca todos os usuários da coleção 'users'
+     * @returns Um array de GameState contendo todos os usuários
+     */
     async getAllUsers(): Promise<GameState[]> {
         try {
             const usersRef = collection(db, "users");
@@ -49,7 +49,7 @@ export default class UserService {
         console.log("🔍 Buscando nickname:", nickname, "e senha:", password);
         const usersRef = collection(db, "users");
         const q = query(
-            usersRef, 
+            usersRef,
             where("user.nickname", "==", nickname.trim()),
             where("user.password", "==", password.trim()));
         const querySnapshot = await getDocs(q);

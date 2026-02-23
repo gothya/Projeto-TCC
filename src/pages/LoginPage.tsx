@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import UserService from '../service/user/UserService';
 import CryptoJS from 'crypto-js';
 import { useNavigate } from "react-router-dom";
+import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { GoogleLoginButton } from '../components/auth/GoogleLoginButton';
 
 export const LoginPage: React.FC<{}> = ({ }) => {
 
@@ -10,6 +12,20 @@ export const LoginPage: React.FC<{}> = ({ }) => {
 
     const [nickname, setNickname] = useState("");
     const [password, setPassword] = useState("");
+
+    const handleGoogleLogin = async () => {
+        const auth = getAuth();
+        const provider = new GoogleAuthProvider();
+
+        try {
+            const result = await signInWithPopup(auth, provider);
+            const user = result.user;
+            console.log("Logado via Google:", user.displayName);
+            navigate("/dashboard");
+        } catch (error) {
+            console.error("Erro no login social:", error);
+        }
+    };
 
     const handleLogin = async () => {
         const userService = new UserService();
@@ -66,6 +82,7 @@ export const LoginPage: React.FC<{}> = ({ }) => {
                     >
                         Entrar
                     </button>
+                    <GoogleLoginButton />
                     <span
                         className="cursor-pointer text-sky-600 hover:text-sky-400"
                         onClick={() => navigate("/onboarding")}>
