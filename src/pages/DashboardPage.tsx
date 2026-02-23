@@ -1,5 +1,3 @@
-import { GameState } from "@/src/components/data/GameState";
-import { InstrumentResponse } from "@/src/components/data/InstrumentResponse";
 import { InstrumentFlowState } from "@/src/components/states/InstrumentFlowState";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 // import { MOCK_PLAYERS } from "../data/MockPlayers"; // Removed mock
@@ -19,6 +17,8 @@ import { SociodemographicModal } from "@/src/components/modal/SociodemographicMo
 import { PlexusFace } from "@/src/components/PlexusFace";
 import { PodiumItem } from "@/src/components/PodiumItem";
 import { useAuth } from "@/src/contexts/AuthContext";
+import { auth } from "@/src/services/firebase";
+import { signOut } from "firebase/auth";
 import { db } from "@/src/services/firebase";
 import { NotificationService } from "@/src/services/NotificationService";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
@@ -30,7 +30,7 @@ import UserService from "../service/user/UserService";
 export const DashboardPage: React.FC<{
   gameState: GameState;
   onLogout: () => void;
-}> = ({ gameState, onLogout }) => {
+}> = ({ gameState }) => {
   const { user, pings = [] } = gameState;
   const [highlightedPing, setHighlightedPing] = useState<{
     day: number;
@@ -76,10 +76,6 @@ export const DashboardPage: React.FC<{
 
   // Fetch Leaderboard Real-time
   useEffect(() => {
-
-    if (!localStorage.getItem("gameState"))
-      navigate("/login");
-
     const q = query(collection(db, "users"), orderBy("user?.points", "desc")); // Assuming structure is doc.data().user?.points
     // But wait, GameState is { user: { points... } }.
     // Firestore queries on nested fields work: "user?.points"
@@ -441,8 +437,7 @@ export const DashboardPage: React.FC<{
   const restOfPlayers = allPlayers.slice(3);
 
   const handleLogout = async () => {
-    await logout();
-    navigate("/login");
+    await signOut(auth);
   }
 
   return (

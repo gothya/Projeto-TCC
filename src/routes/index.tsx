@@ -1,22 +1,48 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import NotFound from '../pages/404Page';
-import { DashboardPage } from '../pages/DashboardPage';
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
 import { LandingPage } from '../pages/LandingPage';
-import { OnboardingPage } from '../pages/OnboardingPage';
 import { LoginPage } from '../pages/LoginPage';
+import { OnboardingPage } from '../pages/OnboardingPage';
+import { DashboardPage } from '../pages/DashboardPage';
+import NotFound from '../pages/404Page';
+import { PublicRoute } from '../components/auth/PublicRoute';
+import { ProtectedRoute } from '../components/auth/ProtectedRoute';
 
 export function AppRoutes() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/onboarding" element={<OnboardingPage />} />
-        <Route path="/dashboard" element={<DashboardPage gameState={JSON.parse(localStorage.getItem('gameState') || '{}')} />} />
+    <Routes>
+      {/* Rotas Públicas */}
+      <Route path="/" element={<LandingPage />} />
+      
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <LoginPage />
+          </PublicRoute>
+        }
+      />
 
-        {/* Rota 404 - Para caminhos inexistentes */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+      <Route
+        path="/onboarding"
+        element={
+          <ProtectedRoute>
+            <OnboardingPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardPage gameState={JSON.parse(localStorage.getItem('gameState') || '{}')} />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Rota 404 - Para caminhos inexistentes */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
