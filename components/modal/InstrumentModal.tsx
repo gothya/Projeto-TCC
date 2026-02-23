@@ -76,8 +76,7 @@ export const InstrumentModal: React.FC<{
               </h2>
               {flow.step === "sam" && (
                 <p className="text-xs sm:text-sm text-gray-400 mt-1">
-                  O nível 9 é o de maior alegria, a escala começa na tristeza e
-                  vai até a alegria.
+                  Responda à escala de 1 a 9 para cada dimensão.
                 </p>
               )}
             </div>

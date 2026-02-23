@@ -13,8 +13,8 @@ export const SAMComponent: React.FC<{
   });
 
   const steps: { label: string; type: "pleasure" | "arousal" | "dominance" }[] = [
-    { label: "Prazer / Valência", type: "pleasure" },
-    { label: "Excitação / Ativação", type: "arousal" },
+    { label: "Valência", type: "pleasure" },
+    { label: "Ativação", type: "arousal" },
     { label: "Dominância", type: "dominance" },
   ];
 

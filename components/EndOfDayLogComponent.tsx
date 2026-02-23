@@ -20,7 +20,6 @@ export const EndOfDayLogComponent: React.FC<{
         id: `${Date.now()}`,
         platform: "",
         otherPlatformDetail: "",
-        startTime: "",
         duration: "",
       },
     ]);
@@ -69,7 +68,7 @@ export const EndOfDayLogComponent: React.FC<{
           {screenTimeLog.map((entry, index) => (
             <div
               key={entry.id}
-              className="grid grid-cols-1 md:grid-cols-3 gap-1 sm:gap-2 p-1 sm:p-2 mb-1 sm:mb-2 border border-cyan-400/10 rounded-lg"
+              className="grid grid-cols-1 md:grid-cols-2 gap-1 sm:gap-2 p-1 sm:p-2 mb-1 sm:mb-2 border border-cyan-400/10 rounded-lg"
             >
               <select
                 value={entry.platform}
@@ -98,36 +97,19 @@ export const EndOfDayLogComponent: React.FC<{
                       e.target.value
                     )
                   }
-                  className="form-input"
+                  className="form-input md:col-span-2"
                   placeholder="Especifique"
                 />
               )}
 
-              <select
-                value={entry.startTime}
-                onChange={(e) =>
-                  updateScreenTimeEntry(index, "startTime", e.target.value)
-                }
-                className="form-input bg-slate-800"
-              >
-                <option value="" disabled hidden>
-                  Horário
-                </option>
-                {Array.from({ length: 24 }).map((_, i) => (
-                  <option key={i} value={`${i}h`} className="text-black">
-                    {`${i}h`}
-                  </option>
-                ))}
-              </select>
               <input
-                type="number"
-                min="0"
+                type="text"
                 value={entry.duration}
                 onChange={(e) =>
                   updateScreenTimeEntry(index, "duration", e.target.value)
                 }
                 className="form-input"
-                placeholder="Duração (min)"
+                placeholder="Duração (Ex. 1h15m)"
               />
             </div>
           ))}

@@ -56,7 +56,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </div>
             </div>
 
-            {/* Header Actions (Top Right) */}
+            {/* Header Actions (Top Right) & User Info (Top Left) */}
+            <div className="absolute top-2 left-2 sm:top-4 sm:left-4 z-20 flex flex-col items-start gap-0.5">
+                <p className="text-cyan-400 font-mono font-bold tracking-widest uppercase text-sm md:text-lg lg:text-xl drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]">
+                    Nível {user.level}
+                </p>
+                <p className="text-gray-300 font-mono font-medium text-[10px] md:text-xs lg:text-sm tracking-wider uppercase opacity-80">
+                    Mente Curiosa
+                </p>
+            </div>
             <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-20 flex flex-col items-end gap-1 sm:gap-2">
                 {notificationPermission === "default" && (
                     <button
@@ -81,21 +89,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </div>
             </div>
 
-            <div className="flex-1 flex flex-col items-center justify-center z-10 pt-12 pb-4 sm:pt-16 sm:pb-8">
-                {/* Titulo e Nivel */}
-                <div className="text-center mb-2 sm:mb-6 md:mb-10">
-                    <p className="text-cyan-400 font-bold tracking-widest uppercase text-sm md:text-lg lg:text-xl mb-1 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]">
-                        Nível {user.level}
-                    </p>
-                    <p className="text-gray-300 font-medium text-xs md:text-sm lg:text-base tracking-wider uppercase">
-                        Mente Curiosa
-                    </p>
-                </div>
-
+            <div className="flex-1 flex flex-col items-center justify-center z-10 pt-20 pb-4 sm:pt-24 sm:pb-8">
                 {/* Central Avatar */}
                 <button
                     onClick={onAvatarClick}
-                    className="relative group w-24 h-24 sm:w-32 sm:h-32 md:w-48 md:h-48 lg:w-64 lg:h-64 rounded-full bg-slate-800 border-4 md:border-8 border-cyan-400 flex items-center justify-center overflow-hidden cursor-pointer transition-all hover:border-cyan-200 hover:shadow-[0_0_40px_rgba(34,211,238,0.6)] mb-2 sm:mb-4 md:mb-8"
+                    className="relative group w-40 h-40 sm:w-48 sm:h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 rounded-full bg-slate-800 border-4 md:border-8 border-cyan-400 flex items-center justify-center overflow-hidden cursor-pointer transition-all hover:border-cyan-200 hover:shadow-[0_0_40px_rgba(34,211,238,0.6)] mb-4 sm:mb-6 md:mb-10"
                     aria-label="Menu do perfil"
                 >
                     {user.avatar ? (
@@ -105,7 +103,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                             className="w-full h-full object-cover"
                         />
                     ) : (
-                        <UserIcon className="w-16 h-16 md:w-32 md:h-32 lg:w-40 lg:h-40 text-cyan-400" />
+                        <UserIcon className="w-24 h-24 md:w-40 md:h-40 lg:w-56 lg:h-56 text-cyan-400" />
                     )}
                 </button>
 
@@ -114,8 +112,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </h1>
 
                 {/* HUD Diário: Pings de Hoje */}
-                <div className="w-full px-4 sm:px-6 md:px-10 lg:px-16 mb-4 sm:mb-8 md:mb-12">
-                    <h3 className="text-[10px] sm:text-xs md:text-sm lg:text-base text-center text-gray-400 uppercase tracking-widest mb-2 sm:mb-4 md:mb-6">Progresso de Hoje</h3>
+                <div className="w-full px-4 sm:px-6 md:px-10 lg:px-16 mb-2 sm:mb-4 md:mb-6">
+                    <div className="flex justify-between items-end px-2 mb-2">
+                        <h3 className="text-[10px] sm:text-xs md:text-sm lg:text-base text-gray-400 uppercase tracking-widest leading-none">Progresso de Hoje</h3>
+                        <div className="flex items-center gap-1">
+                            <span className="text-sm sm:text-base leading-none">🔥</span>
+                            <span className="text-orange-400 font-bold text-[10px] sm:text-xs md:text-sm uppercase tracking-wider leading-none">
+                                Sequência: {currentStreak}
+                            </span>
+                        </div>
+                    </div>
                     <div className="flex justify-between items-center bg-slate-900/60 backdrop-blur-md p-2 sm:p-4 md:p-6 rounded-2xl md:rounded-3xl border border-white/5 shadow-xl">
                         {todayPings.map((status, index) => {
                             const isHighlighted = highlightedPing?.day === validTodayIndex && highlightedPing?.ping === index;
@@ -147,16 +153,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     </div>
                 </div>
 
-                {/* XP Progress and Streak */}
+                {/* XP Progress Only */}
                 <div className="w-full px-4 sm:px-6 md:px-10 lg:px-16 mt-auto">
                     <div className="bg-slate-900/80 backdrop-blur-md p-3 sm:p-5 md:p-8 rounded-2xl md:rounded-3xl border border-cyan-500/20 shadow-xl">
                         <div className="flex justify-between items-end mb-2 sm:mb-3 md:mb-5">
-                            <div className="flex items-center gap-1 sm:gap-2 md:gap-4">
-                                <span className="text-lg sm:text-xl md:text-3xl">🔥</span>
-                                <span className="text-orange-400 font-bold text-xs sm:text-sm md:text-lg lg:text-xl tracking-wide">
-                                    Sequência: {currentStreak} pings
-                                </span>
-                            </div>
+                            <span className="text-gray-400 uppercase font-bold text-[10px] md:text-sm tracking-widest">Experiência</span>
                             <span className="text-cyan-300 font-mono text-xs md:text-sm lg:text-base font-bold">
                                 {totalXp} XP
                             </span>

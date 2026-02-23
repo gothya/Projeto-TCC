@@ -74,7 +74,7 @@ const App: React.FC = () => {
     }
 
     async function loadData() {
-      if (!firebaseUser) {
+      if (!firebaseUser || (firebaseUser.email && firebaseUser.email === import.meta.env.VITE_ADMIN_EMAIL)) {
         return;
       }
 
