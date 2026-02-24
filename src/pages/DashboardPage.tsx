@@ -236,6 +236,7 @@ export const DashboardPage: React.FC<{
 
     const { day, ping } = instrumentFlow.ping;
 
+    // 🔹 1. Criar novo estado
     const newPings = participante.pings.map((dayObj) => ({
       ...dayObj,
       statuses: [...dayObj.statuses],
@@ -269,11 +270,15 @@ export const DashboardPage: React.FC<{
       },
     };
 
-    // 🔥 Atualiza estado local
-    updateParticipante(newState);
+    try {
+      await UserService.updateUser(newState);
+      updateParticipante(newState);
+      setInstrumentFlow(null);
 
-    // 🔥 Atualiza Firestore
-    await UserService.updateUser(newState);
+    }
+    catch (error) {
+      console.error("Erro ao finalizar instrumento:", error);
+    }
   };
 
   const handleMissedPing = useCallback(() => {
