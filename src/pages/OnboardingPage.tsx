@@ -6,6 +6,7 @@ import { SociodemographicQuestionnaireScreen } from '../components/screen/Sociod
 import { useAuth } from '@/src/contexts/AuthContext';
 import userService from '@/src/service/user/UserService'; // Importando a instância (letra minúscula)
 import { auth } from '../services/firebase';
+import { useEffect } from "react";
 
 const INITIAL_GAME_STATE: GameState = {
     user: {
@@ -36,6 +37,24 @@ export const OnboardingPage: React.FC = () => {
     const navigate = useNavigate();
 
     const [step, setStep] = useState(1);
+
+    useEffect(() => {
+        async function checkIfAlreadyOnboarded() {
+            if (!user) return;
+
+            try {
+                const existingUser = await userService.getParticipantById(user.uid);
+
+                if (existingUser?.hasOnboarded) {
+                    navigate("/dashboard");
+                }
+            } catch (error) {
+                console.error("Erro ao verificar onboarding:", error);
+            }
+        }
+
+        checkIfAlreadyOnboarded();
+    }, [user, navigate]);
 
     const handleConsent = (agreed: boolean) => {
         if (agreed) {

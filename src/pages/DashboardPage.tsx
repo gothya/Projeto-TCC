@@ -82,9 +82,6 @@ export const DashboardPage: React.FC<{
       const players: { nickname: string, points: number }[] = [];
       snapshot.forEach((doc) => {
         const data = doc.data() as GameState;
-
-        console.log('new player', data);
-
         players.push({
           nickname: data.user?.nickname,
           points: data.user?.points
@@ -98,9 +95,6 @@ export const DashboardPage: React.FC<{
 
   useEffect(() => {
     if (!participante) return;
-
-    console.log('pings atualizados e user exists', pings);
-
     const findNextPendingPing = () => {
       for (let day = 0; day < pings.length; day++) {
         for (let ping = 0; ping < pings[day].statuses.length; ping++) {
@@ -319,6 +313,15 @@ export const DashboardPage: React.FC<{
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, [instrumentFlow, handleMissedPing]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!participante) return;
+
+    if (participante.user?.nickname === "Iniciante") {
+      navigate("/onboarding");
+    }
+  }, [participante, loading, navigate]);
 
   const handleInstrumentStep = (stepData: Partial<InstrumentResponse>) => {
     if (!instrumentFlow) return;
