@@ -3,6 +3,8 @@ import { GameState } from "../data/GameState";
 import { InstrumentFlowState } from "../states/InstrumentFlowState";
 import { InstrumentResponse } from "../data/InstrumentResponse";
 import { NotificationService } from "../../services/NotificationService";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "../../services/firebase";
 import { InstrumentModal } from "../modal/InstrumentModal";
 import { RcleModal } from "../modal/RcleModal";
 import { SociodemographicModal } from "../modal/SociodemographicModal";
@@ -154,52 +156,65 @@ export const ParticipantMainScreen: React.FC<{
         if (!instrumentFlow) return;
         const { day, ping } = instrumentFlow.ping;
 
-        setGameState((prev) => {
-            const newPings = prev.pings.map((dayObj) => ({
-                ...dayObj,
-                statuses: [...dayObj.statuses],
-            }));
-            newPings[day].statuses[ping] = "completed";
+        // Compute new state using current gameState prop
+        const newPings = gameState.pings.map((dayObj) => ({
+            ...dayObj,
+            statuses: [...dayObj.statuses],
+        }));
+        newPings[day].statuses[ping] = "completed";
 
-            let newStreak = prev.user.currentStreak || 0;
-            let newResponseRate = prev.user.responseRate || 0;
-            let newCompletedDays = prev.user.completedDays || 0;
+        let newStreak = gameState.user.currentStreak || 0;
+        let newResponseRate = gameState.user.responseRate || 0;
+        let newCompletedDays = gameState.user.completedDays || 0;
 
-            const isEndOfDay = ping === 6;
-            if (isEndOfDay) newCompletedDays += 1;
-            newStreak += 1;
+        const isEndOfDay = ping === 6;
+        if (isEndOfDay) newCompletedDays += 1;
+        newStreak += 1;
 
-            // Update total pings answered to calculate response rate later (placeholder logic)
-            const totalRespondedGlobally = newPings.flatMap(d => d.statuses).filter(s => s === "completed").length;
-            const totalPossibleGlobally = 49; // 7 days * 7 pings
-            newResponseRate = Number((totalRespondedGlobally / totalPossibleGlobally).toFixed(2));
+        const totalRespondedGlobally = newPings.flatMap(d => d.statuses).filter(s => s === "completed").length;
+        const totalPossibleGlobally = 49;
+        newResponseRate = Number((totalRespondedGlobally / totalPossibleGlobally).toFixed(2));
 
-            const newXp = newPings.reduce((acc, dayObj, dayIndex) => {
-                return acc + dayObj.statuses.reduce((dayAcc, status, pingIndex) => {
-                    if (status === "completed") {
-                        const isStar = pingIndex === 6;
-                        return dayAcc + (isStar ? 100 : 50);
-                    }
-                    return dayAcc;
-                }, 0);
+        const newXp = newPings.reduce((acc, dayObj) => {
+            return acc + dayObj.statuses.reduce((dayAcc, status, pingIndex) => {
+                if (status === "completed") {
+                    return dayAcc + (pingIndex === 6 ? 100 : 50);
+                }
+                return dayAcc;
             }, 0);
+        }, 0);
 
-            const newLevel = calculateLevel(newXp);
+        const newLevel = calculateLevel(newXp);
 
-            return {
-                ...prev,
-                pings: newPings,
-                responses: [...prev.responses, finalResponseData],
-                user: {
-                    ...prev.user,
-                    points: newXp,
-                    level: newLevel,
-                    currentStreak: newStreak,
-                    responseRate: newResponseRate,
-                    completedDays: newCompletedDays
-                },
-            };
-        });
+        const newState = {
+            ...gameState,
+            pings: newPings,
+            responses: [...gameState.responses, finalResponseData],
+            user: {
+                ...gameState.user,
+                points: newXp,
+                level: newLevel,
+                currentStreak: newStreak,
+                responseRate: newResponseRate,
+                completedDays: newCompletedDays
+            },
+        };
+
+        // 1. Update React state
+        setGameState(newState);
+
+        // 2. Immediately persist to Firestore (outside setState — state updaters must be pure)
+        if (authUser) {
+            console.log("Saving ping response to Firestore for user:", authUser.uid);
+            const sanitized = JSON.parse(JSON.stringify(newState));
+            const docRef = doc(db, "users", authUser.uid);
+            setDoc(docRef, sanitized, { merge: true })
+                .then(() => console.log("Ping response saved successfully."))
+                .catch((err) => console.error("Error saving ping response to Firestore:", err));
+        } else {
+            console.error("Cannot save ping: authUser is null!");
+        }
+
         setInstrumentFlow(null);
     };
 

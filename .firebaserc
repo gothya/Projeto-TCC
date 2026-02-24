@@ -1,5 +1,7 @@
 {
   "projects": {
     "default": "psylogos-enigma-da-mente"
-  }
+  },
+  "targets": {},
+  "etags": {}
 }

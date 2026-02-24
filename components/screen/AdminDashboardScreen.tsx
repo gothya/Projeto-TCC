@@ -47,8 +47,20 @@ export const AdminDashboardScreen: React.FC<{
         querySnapshot.forEach((doc) => {
           // We assume the doc data matches GameState structure
           const data = doc.data() as GameState;
-          if (!data.responses) data.responses = [];
-          if (!data.pings) data.pings = [];
+
+          if (!data.responses) {
+            data.responses = [];
+          } else if (!Array.isArray(data.responses)) {
+            // Fix for Firestore sometimes saving arrays as maps { "0": {...}, "1": {...} }
+            data.responses = Object.values(data.responses);
+          }
+
+          if (!data.pings) {
+            data.pings = [];
+          } else if (!Array.isArray(data.pings)) {
+            data.pings = Object.values(data.pings);
+          }
+
           usersData.push(data);
         });
         setAllUsers(usersData);
@@ -95,19 +107,40 @@ export const AdminDashboardScreen: React.FC<{
   const activeUsersCount = allUsers.length;
 
   // --- EXCEL EXPORT LOGIC ---
-  const downloadExcel = () => {
-    if (allUsers.length === 0) {
+  const downloadExcel = async () => {
+    setToast("Buscando dados atualizados...");
+    let exportUsers: GameState[] = [];
+    try {
+      const querySnapshot = await getDocs(collection(db, "users"));
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data() as GameState;
+        if (!data.responses) data.responses = [];
+        else if (!Array.isArray(data.responses)) data.responses = Object.values(data.responses);
+        if (!data.pings) data.pings = [];
+        else if (!Array.isArray(data.pings)) data.pings = Object.values(data.pings);
+        (data as any).id = docSnap.id;
+        exportUsers.push(data);
+      });
+    } catch (err) {
+      console.error("Error fetching users for export:", err);
+      setToast("Erro ao buscar dados do Firebase.");
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
+    if (exportUsers.length === 0) {
       setToast("Nenhum dado disponível para exportar.");
       setTimeout(() => setToast(null), 3000);
       return;
     }
 
+
     // 1. Sheet: Sociodemográfico
-    const socioData = allUsers.map(user => {
+    const socioData = exportUsers.map(user => {
       // @ts-ignore - we know it has sociodemographicData but TS may complain depending on type definition strictness
       const socio = user.sociodemographicData || {} as any;
       return {
-        Participant_ID: user.id || "N/A",
+        Participant_ID: (user as any).id || "N/A",
         Nickname: user.user?.nickname || "Unknown",
         Study_Start_Date: user.studyStartDate || "N/A",
         Level: user.user?.level || 0,
@@ -138,13 +171,14 @@ export const AdminDashboardScreen: React.FC<{
     // 3. Sheet: Ping Final de Dia
     const endOfDayData: any[] = [];
 
-    allUsers.forEach(user => {
+    exportUsers.forEach(user => {
       (user.responses || []).forEach(r => {
+        if (!r) return; // Guard against null entries in sparse Firestore arrays
         const dateStr = r.timestamp ? new Date(r.timestamp).toLocaleString("pt-BR") : "N/A";
 
         // Base response info
         const baseRow: any = {
-          Participant_ID: user.id || "N/A",
+          Participant_ID: (user as any).id || "N/A",
           Nickname: user.user?.nickname || "Unknown",
           Response_Date_Time: dateStr,
           Ping_Day_Index: r.pingDay ?? "-",
@@ -260,6 +294,7 @@ export const AdminDashboardScreen: React.FC<{
       }
 
       (user.responses || []).forEach(r => {
+        if (!r) return; // Guard against null entries in sparse Firestore arrays
         // SAM
         if (r.sam) {
           samTotals.valence += r.sam.pleasure;
@@ -350,6 +385,7 @@ export const AdminDashboardScreen: React.FC<{
     let panasStats = { totalPA: 0, totalNA: 0, count: 0 };
 
     user.responses.forEach(r => {
+      if (!r) return; // Guard against null/sparse Firestore array entries
       // SAM
       if (r.sam) {
         samTotals.valence += r.sam.pleasure;
@@ -420,6 +456,7 @@ export const AdminDashboardScreen: React.FC<{
     const stressLogs: { date: string, text: string }[] = [];
 
     user.responses.forEach(r => {
+      if (!r) return; // Guard against null/sparse Firestore array entries
       // Screen Time
       if (r.screenTimeLog) {
         r.screenTimeLog.forEach(entry => {

@@ -199,8 +199,7 @@ export const PlexusFace = () => {
       onMouseLeave={handleMouseLeave}
       viewBox="0 0 250 270"
       xmlns="http://www.w3.org/2000/svg"
-      className="opacity-0 animate-fadeIn"
-      style={{ animationFillMode: "forwards", animationDelay: "0.2s" }}
+      style={{ opacity: 0, animation: "fadeIn 0.8s ease-out 0.2s forwards" }}
     >
       <style>
         {`
@@ -244,9 +243,8 @@ export const PlexusFace = () => {
         {triangles.map((tri, i) => (
           <polygon
             key={i}
-            points={`${points[tri[0]].x},${points[tri[0]].y} ${
-              points[tri[1]].x
-            },${points[tri[1]].y} ${points[tri[2]].x},${points[tri[2]].y}`}
+            points={`${points[tri[0]].x},${points[tri[0]].y} ${points[tri[1]].x
+              },${points[tri[1]].y} ${points[tri[2]].x},${points[tri[2]].y}`}
             fill="rgba(0, 255, 255, 0.05)"
             stroke="url(#gradient)"
             strokeWidth="0.3"

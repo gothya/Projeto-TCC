@@ -27,10 +27,8 @@ type SociodemographicData = {
 export const OnboardingScreen: React.FC<{
   onComplete: (nickname: string, data: SociodemographicData) => void;
 }> = ({ onComplete }) => {
-  const [step, setStep] = useState(0); // 0: Consent, 1: Questionnaire, 2: Nickname
+  const [step, setStep] = useState(0); // 0: Consent, 1: Nickname, 2: Questionnaire
   const [nickname, setNickname] = useState("");
-  const [sociodemographicData, setSociodemographicData] =
-    useState<SociodemographicData | null>(null);
 
   const handleConsent = (agreed: boolean) => {
     if (agreed) {
@@ -42,22 +40,21 @@ export const OnboardingScreen: React.FC<{
     }
   };
 
-  const handleQuestionnaireComplete = (data: SociodemographicData) => {
-    setSociodemographicData(data);
-    setStep(2);
+  const handleNicknameSubmit = () => {
+    if (nickname.trim().length > 2) {
+      setStep(2);
+    }
   };
 
-  const handleNicknameSubmit = () => {
-    if (nickname.trim().length > 2 && sociodemographicData) {
-      onComplete(nickname, sociodemographicData);
-    }
+  const handleQuestionnaireComplete = (data: SociodemographicData) => {
+    onComplete(nickname, data);
   };
 
   if (step === 0) {
     return <ConsentScreen onConsent={handleConsent} />;
   }
 
-  if (step === 1) {
+  if (step === 2) {
     return (
       <SociodemographicQuestionnaireScreen
         onComplete={handleQuestionnaireComplete}
@@ -93,7 +90,7 @@ export const OnboardingScreen: React.FC<{
           disabled={nickname.trim().length <= 2}
           className="w-full px-6 py-3 font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-all duration-300 shadow-glow-blue disabled:bg-gray-600 disabled:cursor-not-allowed disabled:shadow-none"
         >
-          Iniciar Jornada
+          Próxima Etapa
         </button>
       </div>
     </div>

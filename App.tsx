@@ -52,7 +52,7 @@ type ViewState = "LANDING" | "USER" | "ADMIN_LOGIN" | "ADMIN_DASHBOARD";
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>("LANDING");
-  const { user: firebaseUser, signInAnonymously: authSignInAnonymously, loading: authLoading } = useAuth();
+  const { user: firebaseUser, signInAnonymously: authSignInAnonymously, logout: authLogout, loading: authLoading } = useAuth();
   const [gameState, setGameState] = useState<GameState>(INITIAL_GAME_STATE);
   const [dataLoading, setDataLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -98,56 +98,19 @@ const App: React.FC = () => {
 
           setGameState(data);
           setDataLoaded(true);
-          // Keep localStorage in sync
           localStorage.setItem(LS_UID_KEY, currentUid);
         } else {
-          // No data for current UID — check localStorage for a previous UID
-          const previousUid = localStorage.getItem(LS_UID_KEY);
-
-          if (previousUid && previousUid !== currentUid) {
-            // Try to recover data from the old UID
-            const oldDocRef = doc(db, "users", previousUid);
-            const oldDocSnap = await getDoc(oldDocRef);
-
-            if (oldDocSnap.exists()) {
-              // Found old data! Migrate to new UID
-              const oldData = oldDocSnap.data() as GameState;
-              console.log("Recovering participant data from previous session...");
-
-              // Migrations
-              if (!oldData.responses) oldData.responses = [];
-              if (!oldData.pings || !Array.isArray(oldData.pings)) {
-                oldData.pings = INITIAL_GAME_STATE.pings;
-              } else if (oldData.pings.length > 0 && Array.isArray(oldData.pings[0])) {
-                oldData.pings = (oldData.pings as any).map((dayArr: any) => ({ statuses: dayArr }));
-              }
-
-              // Copy data to new UID document
-              await setDoc(docRef, oldData);
-              // Remove old document to avoid duplicates
-              await deleteDoc(oldDocRef);
-
-              setGameState(oldData);
-              setDataLoaded(true);
-              localStorage.setItem(LS_UID_KEY, currentUid);
-              console.log("Participant data recovered successfully!");
-            } else {
-              // Old UID doc also doesn't exist — truly new user
-              await setDoc(docRef, INITIAL_GAME_STATE);
-              setGameState(INITIAL_GAME_STATE);
-              setDataLoaded(true);
-              localStorage.setItem(LS_UID_KEY, currentUid);
-            }
-          } else {
-            // No previous UID saved — truly new user
-            await setDoc(docRef, INITIAL_GAME_STATE);
-            setGameState(INITIAL_GAME_STATE);
-            setDataLoaded(true);
-            localStorage.setItem(LS_UID_KEY, currentUid);
-          }
+          // No data for current UID — create initial document for new user
+          await setDoc(docRef, INITIAL_GAME_STATE);
+          setGameState(INITIAL_GAME_STATE);
+          setDataLoaded(true);
+          localStorage.setItem(LS_UID_KEY, currentUid);
+          console.log("New participant document created in Firestore.");
         }
       } catch (error) {
-        console.error("Error loading game state:", error);
+        console.error("Error loading game state from Firestore:", error);
+        // On read error, still set dataLoaded to allow the app to function
+        setDataLoaded(true);
       } finally {
         setDataLoading(false);
       }
@@ -187,21 +150,36 @@ const App: React.FC = () => {
   }, [gameState, firebaseUser, dataLoaded]);
 
 
-  const completeOnboarding = (
+  const completeOnboarding = async (
     nickname: string,
     sociodemographicData: SociodemographicData
   ) => {
-    // 1. Completar onboarding SEMPRE, independente de notificações
-    setGameState((prev) => ({
-      ...prev,
+    const newState = {
+      ...gameState,
       hasOnboarded: true,
       studyStartDate: new Date().toISOString(),
       user: {
-        ...prev.user,
+        ...gameState.user,
         nickname,
       },
       sociodemographicData,
-    }));
+    };
+
+    // 1. Update React state
+    setGameState(newState);
+
+    // 2. IMMEDIATELY save to Firestore — do not rely on the debounced useEffect,
+    //    which could be missed if the session ends within the 1-second window.
+    if (firebaseUser) {
+      try {
+        const sanitizedData = JSON.parse(JSON.stringify(newState));
+        const docRef = doc(db, "users", firebaseUser.uid);
+        await setDoc(docRef, sanitizedData, { merge: true });
+        console.log("Onboarding data saved to Firestore immediately.");
+      } catch (error) {
+        console.error("Error saving onboarding data:", error);
+      }
+    }
 
     // 2. Solicitar notificação em paralelo (não bloqueia o onboarding)
     NotificationService.init().then(async (service) => {
@@ -221,6 +199,15 @@ const App: React.FC = () => {
 
   const handleAdminLoginSuccess = () => {
     setView("ADMIN_DASHBOARD");
+  };
+
+  const handleLogout = async () => {
+    await authLogout();
+    // Clear local storage for next anonymous user
+    localStorage.removeItem(LS_UID_KEY);
+    setGameState(INITIAL_GAME_STATE);
+    setDataLoaded(false);
+    setView("LANDING");
   };
 
   const handleUserEnter = async () => {
@@ -251,13 +238,13 @@ const App: React.FC = () => {
         return (
           <AdminLoginScreen
             onLoginSuccess={handleAdminLoginSuccess}
-            onBack={() => setView("LANDING")}
+            onBack={handleLogout}
           />
         );
       case "ADMIN_DASHBOARD":
         return (
           <AdminDashboardScreen
-            onLogout={() => setView("LANDING")}
+            onLogout={handleLogout}
           />
         );
       case "USER":
@@ -267,7 +254,7 @@ const App: React.FC = () => {
           <ParticipantMainScreen
             gameState={gameState}
             setGameState={setGameState}
-            onLogout={() => setView("LANDING")}
+            onLogout={handleLogout}
             authUser={firebaseUser}
           />
         );
