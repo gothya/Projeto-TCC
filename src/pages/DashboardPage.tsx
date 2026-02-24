@@ -1,6 +1,7 @@
+import { GameState } from "@/src/components/data/GameState";
+import { InstrumentResponse } from "@/src/components/data/InstrumentResponse";
 import { InstrumentFlowState } from "@/src/components/states/InstrumentFlowState";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-// import { MOCK_PLAYERS } from "../data/MockPlayers"; // Removed mock
 import { Card } from "@/src/components/Card";
 import { CountdownTimer } from "@/src/components/CountdownTimer";
 import { EmotionExplorerBadge } from "@/src/components/EmotionExplorerBadge";
@@ -17,21 +18,21 @@ import { SociodemographicModal } from "@/src/components/modal/SociodemographicMo
 import { PlexusFace } from "@/src/components/PlexusFace";
 import { PodiumItem } from "@/src/components/PodiumItem";
 import { useAuth } from "@/src/contexts/AuthContext";
-import { auth } from "@/src/services/firebase";
-import { signOut } from "firebase/auth";
 import { db } from "@/src/services/firebase";
-import { NotificationService } from "@/src/services/NotificationService";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getMessaging, getToken } from "firebase/messaging";
 import { useNavigate } from "react-router-dom";
+import { useParticipante } from "../hooks/useParticipante";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import UserService from "../service/user/UserService";
 
+
 export const DashboardPage: React.FC<{
-  gameState: GameState;
-  onLogout: () => void;
-}> = ({ gameState }) => {
-  const { user, pings = [] } = gameState;
+
+}> = () => {
+  const { participante, loading, updateParticipante } = useParticipante();
+
   const [highlightedPing, setHighlightedPing] = useState<{
     day: number;
     ping: number;
@@ -42,10 +43,10 @@ export const DashboardPage: React.FC<{
   const [isSociodemographicModalOpen, setIsSociodemographicModalOpen] = useState(false);
   const [instrumentFlow, setInstrumentFlow] = useState<InstrumentFlowState>(null);
   const { user: authUser, logout } = useAuth();
-  const [, setGameState] = useState(gameState);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const pings = participante?.pings ?? [];
 
   const navigate = useNavigate();
 
@@ -54,19 +55,19 @@ export const DashboardPage: React.FC<{
   );
 
   const requestNotificationPermission = async () => {
-    const service = await NotificationService.init();
-    const token = await service.requestPermission();
+    // const service = await NotificationService.init();
+    // const token = await service.requestPermission();
 
-    if (token) {
-      setNotificationPermission("granted");
-      if (authUser) {
-        await service.saveTokenToFirestore(authuser?.uid, token);
-      }
-      alert("Notificações ativadas com sucesso!");
-    } else {
-      setNotificationPermission("denied");
-      alert("Não foi possível ativar as notificações. Verifique as permissões do navegador.");
-    }
+    // if (token) {
+    //   setNotificationPermission("granted");
+    //   if (authUser) {
+    //     await service.saveTokenToFirestore(authuser?.uid, token);
+    //   }
+    //   alert("Notificações ativadas com sucesso!");
+    // } else {
+    //   setNotificationPermission("denied");
+    //   alert("Não foi possível ativar as notificações. Verifique as permissões do navegador.");
+    // }
   };
 
 
@@ -76,14 +77,14 @@ export const DashboardPage: React.FC<{
 
   // Fetch Leaderboard Real-time
   useEffect(() => {
-    const q = query(collection(db, "users"), orderBy("user?.points", "desc")); // Assuming structure is doc.data().user?.points
-    // But wait, GameState is { user: { points... } }.
-    // Firestore queries on nested fields work: "user?.points"
-
+    const q = query(collection(db, "participantes"), orderBy("user.points", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const players: { nickname: string, points: number }[] = [];
       snapshot.forEach((doc) => {
         const data = doc.data() as GameState;
+
+        console.log('new player', data);
+
         players.push({
           nickname: data.user?.nickname,
           points: data.user?.points
@@ -96,6 +97,10 @@ export const DashboardPage: React.FC<{
   }, []);
 
   useEffect(() => {
+    if (!participante) return;
+
+    console.log('pings atualizados e user exists', pings);
+
     const findNextPendingPing = () => {
       for (let day = 0; day < pings.length; day++) {
         for (let ping = 0; ping < pings[day].statuses.length; ping++) {
@@ -108,6 +113,25 @@ export const DashboardPage: React.FC<{
     };
     setHighlightedPing(findNextPendingPing());
   }, [pings]);
+
+  /**
+   * ------------------------------------------------
+   * UseEffect que carrega os dados do usuário logado
+   * ------------------------------------------------
+   */
+  // useEffect(() => {
+  //   async function fetchUserData() {
+  //     if (!authUser) return;
+
+  //     const userRef = doc(db, "participantes", authUser.uid);
+  //     const userSnap = await getDoc(userRef);
+
+  //     if (userSnap.exists()) {
+  //       setUser(userSnap.data());
+  //     }
+  //   }
+  //   fetchUserData();
+  // }, [authUser]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -211,94 +235,75 @@ export const DashboardPage: React.FC<{
     return 1;
   };
 
-  const handleInstrumentFlowFinish = (finalResponseData: InstrumentResponse) => {
-    if (!instrumentFlow) return;
+  const handleInstrumentFlowFinish = async (
+    finalResponseData: InstrumentResponse
+  ) => {
+    if (!instrumentFlow || !participante) return;
 
     const { day, ping } = instrumentFlow.ping;
 
-    setGameState(async (prev) => {
-      const newPings = prev.pings.map((dayObj) => ({
-        ...dayObj,
-        statuses: [...dayObj.statuses],
-      }));
-      newPings[day].statuses[ping] = "completed";
+    const newPings = participante.pings.map((dayObj) => ({
+      ...dayObj,
+      statuses: [...dayObj.statuses],
+    }));
 
-      const newXp = newPings.reduce((acc, dayObj, dayIndex) => {
-        return acc + dayObj.statuses.reduce((dayAcc, status, pingIndex) => {
+    newPings[day].statuses[ping] = "completed";
+
+    const newXp = newPings.reduce((acc, dayObj) => {
+      return (
+        acc +
+        dayObj.statuses.reduce((dayAcc, status, pingIndex) => {
           if (status === "completed") {
-            // Check if it's a star (last item of the day)
-            // Flattened index conceptually: dayIndex * 7 + pingIndex
-            // But simpler logic: pingIndex === 6 is the star for that day
             const isStar = pingIndex === 6;
             return dayAcc + (isStar ? 100 : 50);
           }
           return dayAcc;
-        }, 0);
-      }, 0);
+        }, 0)
+      );
+    }, 0);
 
-      const newLevel = calculateLevel(newXp);
+    const newLevel = calculateLevel(newXp);
 
-      const newGameState: GameState = {
-        ...prev,
-        pings: newPings,
-        responses: [...prev.responses, finalResponseData],
-        user: {
-          ...prev.user,
-          points: newXp,
-          level: newLevel,
-        },
-      };
+    const newState = {
+      ...participante,
+      pings: newPings,
+      responses: [...participante.responses, finalResponseData],
+      user: {
+        ...participante.user,
+        points: newXp,
+        level: newLevel,
+      },
+    };
 
-      localStorage.setItem('gameState', JSON.stringify(newGameState));
+    // 🔥 Atualiza estado local
+    updateParticipante(newState);
 
-      // Atualiza usuário no banco
-      const userService = new UserService();
-      await userService.updateUser({
-        ...prev,
-        pings: newPings,
-        responses: [...prev.responses, finalResponseData],
-        user: {
-          ...prev.user,
-          points: newXp,
-          level: newLevel,
-        },
-      } as GameState).catch((error) => {
-        console.error("Error updating user in Firestore:", error);
-      });
-
-      return {
-        ...prev,
-        pings: newPings,
-        responses: [...prev.responses, finalResponseData],
-        user: {
-          ...prev.user,
-          points: newXp,
-          level: newLevel,
-        },
-      };
-    });
-
-    setInstrumentFlow(null);
+    // 🔥 Atualiza Firestore
+    await UserService.updateUser(newState);
   };
 
   const handleMissedPing = useCallback(() => {
-    if (!instrumentFlow) return;
+    if (!instrumentFlow || !participante) return;
+
     const { day, ping } = instrumentFlow.ping;
 
-    setGameState((prev) => {
-      const newPings = prev.pings.map((dayObj) => ({
-        ...dayObj,
-        statuses: [...dayObj.statuses],
-      }));
-      newPings[day].statuses[ping] = "missed";
+    const newPings = participante.pings.map((dayObj) => ({
+      ...dayObj,
+      statuses: [...dayObj.statuses],
+    }));
 
-      return {
-        ...prev,
-        pings: newPings,
-      };
-    });
+    newPings[day].statuses[ping] = "missed";
+
+    const newState = {
+      ...participante,
+      pings: newPings,
+    };
+
+    // 🔥 Atualiza estado local
+    updateParticipante(newState);
+
     setInstrumentFlow(null);
-  }, [instrumentFlow]);
+  }, [instrumentFlow, participante, updateParticipante]);
 
   // 5 Minute Timeout for Active Ping
   useEffect(() => {
@@ -350,26 +355,54 @@ export const DashboardPage: React.FC<{
     }
   };
 
-  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (!participante) return;
+
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setGameState((prev) => ({
-          ...prev,
-          user: { ...prev.user, avatar: reader.result as string },
-        }));
+
+      reader.onloadend = async () => {
+        const newState = {
+          ...participante,
+          user: {
+            ...participante.user,
+            avatar: reader.result as string,
+          },
+        };
+
+        // 🔥 Atualiza estado local
+        updateParticipante(newState);
+
+        // 🔥 (Recomendado) Salva no Firestore
+        await UserService.updateUser(newState);
       };
+
       reader.readAsDataURL(file);
     }
+
     setIsProfileMenuOpen(false);
   };
 
-  const handleRemoveAvatar = () => {
-    setGameState((prev) => ({
-      ...prev,
-      user: { ...prev.user, avatar: null },
-    }));
+  const handleRemoveAvatar = async () => {
+    if (!participante) return;
+
+    const newState = {
+      ...participante,
+      user: {
+        ...participante.user,
+        avatar: null,
+      },
+    };
+
+    // 🔥 Atualiza estado local
+    updateParticipante(newState);
+
+    // 🔥 Persistir no Firestore (IMPORTANTE)
+    await UserService.updateUser(newState);
+
     setIsProfileMenuOpen(false);
   };
 
@@ -409,7 +442,7 @@ export const DashboardPage: React.FC<{
     .flatMap(d => d.statuses)
     .filter((p, index) => (index + 1) % 7 === 0 && p === "completed").length : 0;
 
-  const { level, points: totalXp } = user ? user : { level: 0, points: 0 };
+  const { level, points: totalXp } = participante ? participante?.user : { level: 0, points: 0 };
   const currentLevelXpStart = LEVEL_THRESHOLDS[level - 1] ?? 0;
   const nextLevelXpTarget =
     LEVEL_THRESHOLDS[level] ?? LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
@@ -425,7 +458,7 @@ export const DashboardPage: React.FC<{
   const pingIconClasses = "transition-transform duration-150 ease-in-out";
 
   // Use real data
-  const allPlayers = leaderboardData.length > 0 ? leaderboardData : [{ nickname: user?.nickname, points: user?.points }];
+  const allPlayers = leaderboardData.length > 0 ? leaderboardData : [{ nickname: participante?.nickname, points: participante?.points }];
 
   // Fallback if empty (shouldn't happen if user exists)
   // const allPlayers = [
@@ -437,7 +470,8 @@ export const DashboardPage: React.FC<{
   const restOfPlayers = allPlayers.slice(3);
 
   const handleLogout = async () => {
-    await signOut(auth);
+    await logout();
+    navigate("/login");
   }
 
   return (
@@ -452,16 +486,16 @@ export const DashboardPage: React.FC<{
       {isRcleModalOpen && (
         <RcleModal onClose={() => setIsRcleModalOpen(false)} />
       )}
-      {isSociodemographicModalOpen && gameState.sociodemographicData && (
+      {isSociodemographicModalOpen && participante.sociodemographicData && (
         <SociodemographicModal
           onClose={() => setIsSociodemographicModalOpen(false)}
-          data={gameState.sociodemographicData}
+          data={participante.sociodemographicData}
         />
       )}
       {isPerformanceModalOpen && (
         <PerformanceModal
           onClose={() => setIsPerformanceModalOpen(false)}
-          gameState={gameState}
+          gameState={participante}
         />
       )}
       <header className="flex items-center justify-between mb-8">
@@ -472,9 +506,9 @@ export const DashboardPage: React.FC<{
               className="relative group w-16 h-16 rounded-full bg-slate-800 border-2 border-cyan-400 flex items-center justify-center overflow-hidden cursor-pointer transition-all hover:border-cyan-300 hover:shadow-glow-blue-sm"
               aria-label="Menu do perfil"
             >
-              {user?.avatar ? (
+              {participante?.user ? (
                 <img
-                  src={user?.avatar}
+                  src={participante?.user?.avatar}
                   alt="Avatar do usuário"
                   className="w-full h-full object-cover"
                 />
@@ -498,8 +532,7 @@ export const DashboardPage: React.FC<{
                   setIsSociodemographicModalOpen(true);
                   setIsProfileMenuOpen(false);
                 }}
-                onLogout={onLogout}
-                hasAvatar={!!user?.avatar}
+                hasAvatar={!!participante?.avatar}
               />
             )}
           </div>
@@ -511,8 +544,8 @@ export const DashboardPage: React.FC<{
             className="hidden"
           />
           <div>
-            <h1 className="text-xl font-bold text-cyan-400">{user?.nickname}</h1>
-            <p className="text-gray-400">Nível {user?.level} - Mente Curiosa</p>
+            <h1 className="text-xl font-bold text-cyan-400">{participante?.user?.nickname}</h1>
+            <p className="text-gray-400">Nível {participante?.user?.level} - Mente Curiosa</p>
           </div>
         </div>
         <div className="flex items-center space-x-4">
@@ -534,11 +567,11 @@ export const DashboardPage: React.FC<{
             <BellIcon className="w-6 h-6 text-cyan-400" />
           </button>
           <button
-              onClick={handleLogout}
-              className="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 px-3 py-1 rounded hover:bg-cyan-500/30 transition-colors"
-            >
-              Sair
-            </button>
+            onClick={handleLogout}
+            className="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 px-3 py-1 rounded hover:bg-cyan-500/30 transition-colors"
+          >
+            Sair
+          </button>
         </div>
       </header>
 
@@ -631,27 +664,27 @@ export const DashboardPage: React.FC<{
               <PodiumItem
                 player={topThree[1]}
                 rank={2}
-                isCurrentUser={topThree[1].nickname === user?.nickname}
+                isCurrentUser={topThree[1].nickname === participante?.user?.nickname}
               />
             )}
             {topThree[0] && (
               <PodiumItem
                 player={topThree[0]}
                 rank={1}
-                isCurrentUser={topThree[0].nickname === user?.nickname}
+                isCurrentUser={topThree[0].nickname === participante?.user?.nickname}
               />
             )}
             {topThree[2] && (
               <PodiumItem
                 player={topThree[2]}
                 rank={3}
-                isCurrentUser={topThree[2].nickname === user?.nickname}
+                isCurrentUser={topThree[2].nickname === participante?.user?.nickname}
               />
             )}
           </div>
           <ul className="space-y-2">
             {restOfPlayers.map((player, index) => {
-              const isCurrentUser = player.nickname === user?.nickname;
+              const isCurrentUser = player.nickname === participante?.user?.nickname;
               const rank = index + 4;
               const userHighlight = isCurrentUser
                 ? "bg-cyan-500/20 border-cyan-400 text-cyan-200 font-bold"

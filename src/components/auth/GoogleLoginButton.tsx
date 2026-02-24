@@ -8,7 +8,7 @@ export const GoogleLoginButton = () => {
 
   const handleLogin = async () => {
     const provider = new GoogleAuthProvider();
-    
+
     try {
       // 1. Abre o popup do Google para autenticação
       const result = await signInWithPopup(auth, provider);
@@ -16,7 +16,7 @@ export const GoogleLoginButton = () => {
 
       // 2. Referência ao documento na coleção 'users' usando o UID como ID do documento
       // Isso substitui a busca por nickname manual
-      const userRef = doc(db, "users", firebaseUser.uid);
+      const userRef = doc(db, "participantes", firebaseUser.uid);
       const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {
@@ -40,17 +40,20 @@ export const GoogleLoginButton = () => {
           displayName: firebaseUser.displayName,
           createdAt: new Date().toISOString()
         });
-        console.log("Novo perfil de pesquisa criado para o UID:", firebaseUser.uid);
-      } else {
-        console.log("Usuário já existente, carregando dados de pesquisa.");
+        navigate("/onboarding")
+      } 
+      else {
+        const data = userSnap.data();
+        console.log("Usuário já existente, carregando dados de pesquisa.", data);
+        localStorage.setItem('gameState', JSON.stringify(data));
       }
 
       // O AuthProvider (onAuthStateChanged) detectará a mudança automaticamente
-      console.log("redirecionando o usuário");
       navigate("/dashboard");
-    } catch (error: any) {
+    } 
+    catch (error: any) {
       console.error("Erro no Google Auth ou Firestore:", error.code, error.message);
-      
+
       if (error.code === "permission-denied") {
         alert("Erro de permissão no banco de dados. Verifique as Rules do Firestore.");
       } else {
@@ -83,9 +86,9 @@ export const GoogleLoginButton = () => {
       onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#202124")}
       onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#131314")}
     >
-      <img 
-        src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg" 
-        alt="Google logo" 
+      <img
+        src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg"
+        alt="Google logo"
         style={{ width: "18px", height: "18px" }}
       />
       Entrar com Google

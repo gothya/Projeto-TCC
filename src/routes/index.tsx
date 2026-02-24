@@ -36,7 +36,7 @@ export function AppRoutes() {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <DashboardPage gameState={JSON.parse(localStorage.getItem('gameState') || '{}')} />
+            <DashboardPage />
           </ProtectedRoute>
         }
       />

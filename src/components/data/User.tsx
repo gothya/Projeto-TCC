@@ -1,10 +1,10 @@
 export type User = {
-  nickname: string;
-  points: number;
-  level: number;
-  responseRate: number;
-  currentStreak: number;
-  completedDays: number;
-  avatar?: string | null;
-  password: string;
+  email: string;           // 📧 Novo identificador principal
+  nickname?: string;       // 👤 Opcional, caso queira exibir um nome social
+  points: number;          // 🏆 Pontos acumulados
+  level: number;           // 🆙 Nível atual
+  responseRate: number;    // 📈 Taxa de resposta
+  currentStreak: number;   // 🔥 Sequência atual
+  completedDays: number;   // 📅 Dias finalizados
+  avatar?: string | null;  // 🖼️ URL da foto (pode vir do Google)
 };
