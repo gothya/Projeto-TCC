@@ -467,13 +467,6 @@ export const DashboardPage: React.FC<{
 
   // Use real data
   const allPlayers = leaderboardData.length > 0 ? leaderboardData : [{ nickname: participante?.nickname, points: participante?.points }];
-
-  // Fallback if empty (shouldn't happen if user exists)
-  // const allPlayers = [
-  //   ...MOCK_PLAYERS,
-  //   { nickname: user?.nickname, points: user?.points },
-  // ].sort((a, b) => b.points - a.points);
-
   const topThree = allPlayers.slice(0, 3);
   const restOfPlayers = allPlayers.slice(3);
 
