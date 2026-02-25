@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { PlexusFace } from "../PlexusFace";
 
 export const RecoveryLoginScreen: React.FC<{
-    onRecover: (code: string) => Promise<boolean>;
+    onRecover: (code: string) => Promise<boolean | string>;
     onCancel: () => void;
 }> = ({ onRecover, onCancel }) => {
     const [code, setCode] = useState("");
@@ -13,9 +13,9 @@ export const RecoveryLoginScreen: React.FC<{
         if (!code.trim()) return;
         setLoading(true);
         setError(null);
-        const success = await onRecover(code.trim().toUpperCase());
-        if (!success) {
-            setError("Código inválido ou participante não encontrado.");
+        const result = await onRecover(code.trim().toUpperCase());
+        if (result !== true) {
+            setError(typeof result === "string" ? result : "Código inválido ou participante não encontrado.");
             setLoading(false);
         }
     };

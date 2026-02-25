@@ -33,9 +33,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const handleSignInAnonymously = async () => {
         try {
-            await signInAnonymously(auth);
+            const result = await signInAnonymously(auth);
+            return result.user;
         } catch (error) {
             console.error("Error signing in anonymously:", error);
+            throw error; // Re-throw to allow callers to handle it
         }
     };
 

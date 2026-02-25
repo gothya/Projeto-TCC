@@ -252,12 +252,18 @@ const App: React.FC = () => {
 
   const handleUserEnter = async () => {
     if (!firebaseUser) {
-      await authSignInAnonymously();
+      try {
+        await authSignInAnonymously();
+      } catch (error: any) {
+        console.error("Failed to sign in anonymously:", error);
+        alert(`Authentication failed. Se você está acessando por um domínio novo (ex: preview do Vercel), adicione-o no Firebase Console (Authentication > Settings > Authorized domains). Erro: ${error.message}`);
+        return; // Do not proceed to USER view if auth fails
+      }
     }
     setView("USER");
   };
 
-  const handleRecoverAccount = async (code: string): Promise<boolean> => {
+  const handleRecoverAccount = async (code: string): Promise<boolean | string> => {
     try {
       const q = query(collection(db, "users"), where("user.accessCode", "==", code));
       const querySnapshot = await getDocs(q);
@@ -269,9 +275,14 @@ const App: React.FC = () => {
 
         // Sign in anonymously to ensure we have a current uid if dropped
         if (!firebaseUser) {
-          await authSignInAnonymously();
-          // wait a tiny bit to let auth propagate if needed
-          await new Promise(r => setTimeout(r, 1000));
+          try {
+            await authSignInAnonymously();
+            // wait a tiny bit to let auth propagate if needed
+            await new Promise(r => setTimeout(r, 1000));
+          } catch (authError: any) {
+            console.error("Autenticação falhou na recuperação:", authError);
+            throw new Error(`Authentication failed (${authError.message}) - check Authorized Domains in Firebase.`);
+          }
         }
 
         const uidToSave = firebaseUser ? firebaseUser.uid : auth.currentUser?.uid;
@@ -289,8 +300,12 @@ const App: React.FC = () => {
         return true;
       }
       return false;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error recovering account:", error);
+      // Retornar a mensagem de erro específica se for falha de autenticação
+      if (error instanceof Error && error.message.includes('Authentication failed')) {
+        return error.message;
+      }
       return false;
     }
   };
