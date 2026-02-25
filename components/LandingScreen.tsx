@@ -6,7 +6,8 @@ import { ChartBarIcon } from "./icons/ChartBarIcon";
 export const LandingScreen: React.FC<{
   onUserSelect: () => void;
   onAdminSelect: () => void;
-}> = ({ onUserSelect, onAdminSelect }) => {
+  onRecoverSelect?: () => void;
+}> = ({ onUserSelect, onAdminSelect, onRecoverSelect }) => {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 relative overflow-hidden">
       {/* Background Decoration */}
@@ -58,6 +59,18 @@ export const LandingScreen: React.FC<{
             </p>
           </button>
         </div>
+
+        {onRecoverSelect && (
+          <div className="mt-8 flex flex-col items-center">
+            <p className="text-gray-400 text-sm mb-3">Já participava e perdeu o acesso?</p>
+            <button
+              onClick={onRecoverSelect}
+              className="px-6 py-2 border border-cyan-500/30 text-cyan-300 rounded-full hover:bg-cyan-500/10 transition-colors text-sm"
+            >
+              Recuperar com Código
+            </button>
+          </div>
+        )}
 
         <p className="mt-12 text-xs text-gray-500">
           Desenvolvido para fins de pesquisa científica - UniCEUB

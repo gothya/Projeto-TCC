@@ -7,4 +7,5 @@ export type User = {
   completedDays: number;
   avatar?: string | null;
   tokenNotifications?: string | null;
+  accessCode?: string;
 };

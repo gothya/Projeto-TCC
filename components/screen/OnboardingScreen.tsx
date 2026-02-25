@@ -25,10 +25,12 @@ type SociodemographicData = {
 };
 
 export const OnboardingScreen: React.FC<{
-  onComplete: (nickname: string, data: SociodemographicData) => void;
+  onComplete: (nickname: string, data: SociodemographicData, accessCode: string) => void;
 }> = ({ onComplete }) => {
-  const [step, setStep] = useState(0); // 0: Consent, 1: Nickname, 2: Questionnaire
+  const [step, setStep] = useState(0); // 0: Consent, 1: Nickname, 2: Questionnaire, 3: Access Code
   const [nickname, setNickname] = useState("");
+  const [sociodemographicData, setSociodemographicData] = useState<SociodemographicData | null>(null);
+  const [accessCode, setAccessCode] = useState("");
 
   const handleConsent = (agreed: boolean) => {
     if (agreed) {
@@ -47,7 +49,16 @@ export const OnboardingScreen: React.FC<{
   };
 
   const handleQuestionnaireComplete = (data: SociodemographicData) => {
-    onComplete(nickname, data);
+    setSociodemographicData(data);
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase() + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
+    setAccessCode(code);
+    setStep(3);
+  };
+
+  const handleFinalize = () => {
+    if (sociodemographicData) {
+      onComplete(nickname, sociodemographicData, accessCode);
+    }
   };
 
   if (step === 0) {
@@ -59,6 +70,35 @@ export const OnboardingScreen: React.FC<{
       <SociodemographicQuestionnaireScreen
         onComplete={handleQuestionnaireComplete}
       />
+    );
+  }
+
+  if (step === 3) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center animate-fade-in">
+        <div className="w-full max-w-md p-8 space-y-6 bg-slate-900/50 backdrop-blur-md rounded-2xl border border-cyan-400/20 shadow-glow-blue pointer-events-auto">
+          <h2 className="text-2xl font-bold text-cyan-400">Código de Recuperação</h2>
+          <p className="text-gray-300">
+            Atenção! Guarde este código de acesso. Ele será necessário caso você precise recuperar sua conta em outro dispositivo ou limpe o cache do seu navegador.
+          </p>
+
+          <div className="bg-slate-800 p-4 rounded-xl border border-yellow-500/50 flex flex-col items-center justify-center space-y-2">
+            <span className="text-sm text-yellow-500 uppercase font-bold tracking-widest">Seu Código Restrito</span>
+            <span className="text-3xl font-mono text-white font-black">{accessCode}</span>
+          </div>
+
+          <div className="text-[10px] text-gray-500 bg-slate-800/50 p-3 rounded-lg text-left italic">
+            * Dica: Tire um print da tela, anote em um papel ou envie para você mesmo. O estudo é anônimo e este código é a <b>única</b> forma de linkar seus dados antigos.
+          </div>
+
+          <button
+            onClick={handleFinalize}
+            className="w-full px-6 py-3 mt-4 font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-all duration-300 shadow-glow-blue"
+          >
+            Eu guardei este código! (Continuar)
+          </button>
+        </div>
+      </div>
     );
   }
 

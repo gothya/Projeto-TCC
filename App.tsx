@@ -7,9 +7,10 @@ import { AdminLoginScreen } from "./components/screen/AdminLoginScreen";
 import { OnboardingScreen } from "./components/screen/OnboardingScreen";
 import { ParticipantMainScreen } from "./components/screen/ParticipantMainScreen";
 import { useAuth } from "./contexts/AuthContext";
-import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
-import { db } from "./services/firebase";
+import { doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { db, auth } from "./services/firebase";
 import { NotificationService } from "./services/NotificationService";
+import { RecoveryLoginScreen } from "./components/screen/RecoveryLoginScreen";
 
 const INITIAL_GAME_STATE: GameState = {
   user: {
@@ -46,7 +47,7 @@ const INITIAL_GAME_STATE: GameState = {
 
 const LS_UID_KEY = "psylogos_participant_uid";
 
-type ViewState = "LANDING" | "USER" | "ADMIN_LOGIN" | "ADMIN_DASHBOARD";
+type ViewState = "LANDING" | "USER" | "ADMIN_LOGIN" | "ADMIN_DASHBOARD" | "RECOVERY_LOGIN";
 
 // --- START: Main App Component ---
 
@@ -89,7 +90,12 @@ const App: React.FC = () => {
           const data = docSnap.data() as GameState;
 
           // Migrations / Default values check
-          if (!data.responses) data.responses = [];
+          if (!data.responses) {
+            data.responses = [];
+          } else if (!Array.isArray(data.responses)) {
+            data.responses = Object.values(data.responses);
+          }
+
           if (!data.pings || !Array.isArray(data.pings)) {
             data.pings = INITIAL_GAME_STATE.pings;
           } else if (data.pings.length > 0 && Array.isArray(data.pings[0])) {
@@ -100,12 +106,44 @@ const App: React.FC = () => {
           setDataLoaded(true);
           localStorage.setItem(LS_UID_KEY, currentUid);
         } else {
-          // No data for current UID — create initial document for new user
-          await setDoc(docRef, INITIAL_GAME_STATE);
-          setGameState(INITIAL_GAME_STATE);
-          setDataLoaded(true);
-          localStorage.setItem(LS_UID_KEY, currentUid);
-          console.log("New participant document created in Firestore.");
+          // No data for current UID — check if there's a previous UID with data
+          const previousUid = localStorage.getItem(LS_UID_KEY);
+          if (previousUid && previousUid !== currentUid) {
+            // Try to recover data from the previous anonymous session
+            const previousDocRef = doc(db, "users", previousUid);
+            const previousDocSnap = await getDoc(previousDocRef);
+            if (previousDocSnap.exists()) {
+              const previousData = previousDocSnap.data() as GameState;
+              if (!previousData.responses) {
+                previousData.responses = [];
+              } else if (!Array.isArray(previousData.responses)) {
+                previousData.responses = Object.values(previousData.responses);
+              }
+              if (!previousData.pings || !Array.isArray(previousData.pings)) {
+                previousData.pings = INITIAL_GAME_STATE.pings;
+              }
+              // Migrate data to new UID
+              await setDoc(docRef, previousData, { merge: true });
+              setGameState(previousData);
+              setDataLoaded(true);
+              localStorage.setItem(LS_UID_KEY, currentUid);
+              console.log("Migrated participant data from previous UID to new UID.");
+            } else {
+              // Previous UID also has no data — create fresh document
+              await setDoc(docRef, INITIAL_GAME_STATE);
+              setGameState(INITIAL_GAME_STATE);
+              setDataLoaded(true);
+              localStorage.setItem(LS_UID_KEY, currentUid);
+              console.log("New participant document created in Firestore.");
+            }
+          } else {
+            // No previous UID — genuinely new user
+            await setDoc(docRef, INITIAL_GAME_STATE);
+            setGameState(INITIAL_GAME_STATE);
+            setDataLoaded(true);
+            localStorage.setItem(LS_UID_KEY, currentUid);
+            console.log("New participant document created in Firestore.");
+          }
         }
       } catch (error) {
         console.error("Error loading game state from Firestore:", error);
@@ -152,7 +190,8 @@ const App: React.FC = () => {
 
   const completeOnboarding = async (
     nickname: string,
-    sociodemographicData: SociodemographicData
+    sociodemographicData: SociodemographicData,
+    accessCode: string
   ) => {
     const newState = {
       ...gameState,
@@ -161,6 +200,7 @@ const App: React.FC = () => {
       user: {
         ...gameState.user,
         nickname,
+        accessCode
       },
       sociodemographicData,
     };
@@ -217,6 +257,44 @@ const App: React.FC = () => {
     setView("USER");
   };
 
+  const handleRecoverAccount = async (code: string): Promise<boolean> => {
+    try {
+      const q = query(collection(db, "users"), where("user.accessCode", "==", code));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        // Found user with this access code
+        const recoveredDoc = querySnapshot.docs[0];
+        const recoveredData = recoveredDoc.data() as GameState;
+
+        // Sign in anonymously to ensure we have a current uid if dropped
+        if (!firebaseUser) {
+          await authSignInAnonymously();
+          // wait a tiny bit to let auth propagate if needed
+          await new Promise(r => setTimeout(r, 1000));
+        }
+
+        const uidToSave = firebaseUser ? firebaseUser.uid : auth.currentUser?.uid;
+        if (!uidToSave) throw new Error("Could not authenticate");
+
+        // Clone recovered data to new UID doc
+        const docRef = doc(db, "users", uidToSave);
+        await setDoc(docRef, recoveredData, { merge: true });
+
+        // Update local state
+        setGameState(recoveredData);
+        setDataLoaded(true);
+        localStorage.setItem(LS_UID_KEY, uidToSave);
+        setView("USER");
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error recovering account:", error);
+      return false;
+    }
+  };
+
   const renderView = () => {
     if (authLoading || (firebaseUser && dataLoading && view === "USER")) {
       return (
@@ -232,6 +310,14 @@ const App: React.FC = () => {
           <LandingScreen
             onUserSelect={handleUserEnter}
             onAdminSelect={() => setView("ADMIN_LOGIN")}
+            onRecoverSelect={() => setView("RECOVERY_LOGIN")}
+          />
+        );
+      case "RECOVERY_LOGIN":
+        return (
+          <RecoveryLoginScreen
+            onRecover={handleRecoverAccount}
+            onCancel={() => setView("LANDING")}
           />
         );
       case "ADMIN_LOGIN":
@@ -263,6 +349,7 @@ const App: React.FC = () => {
           <LandingScreen
             onUserSelect={handleUserEnter}
             onAdminSelect={() => setView("ADMIN_LOGIN")}
+            onRecoverSelect={() => setView("RECOVERY_LOGIN")}
           />
         );
     }
