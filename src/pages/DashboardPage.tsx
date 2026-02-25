@@ -26,6 +26,7 @@ import { useNavigate } from "react-router-dom";
 import { useParticipante } from "../hooks/useParticipante";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import UserService from "../service/user/UserService";
+import { NotificationService } from "../services/NotificationService";
 
 
 export const DashboardPage: React.FC<{
@@ -108,25 +109,6 @@ export const DashboardPage: React.FC<{
     setHighlightedPing(findNextPendingPing());
   }, [pings]);
 
-  /**
-   * ------------------------------------------------
-   * UseEffect que carrega os dados do usuário logado
-   * ------------------------------------------------
-   */
-  // useEffect(() => {
-  //   async function fetchUserData() {
-  //     if (!authUser) return;
-
-  //     const userRef = doc(db, "participantes", authUser.uid);
-  //     const userSnap = await getDoc(userRef);
-
-  //     if (userSnap.exists()) {
-  //       setUser(userSnap.data());
-  //     }
-  //   }
-  //   fetchUserData();
-  // }, [authUser]);
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -138,6 +120,49 @@ export const DashboardPage: React.FC<{
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    async function handlePushPermission() {
+      if (!("Notification" in window)) return;
+
+      const currentPermission = Notification.permission;
+
+      // Se nunca decidiu ainda
+      if (currentPermission === "default") {
+        const permission = await Notification.requestPermission();
+
+        if (permission === "granted") {
+          await registerPushToken();
+        }
+      }
+
+      // Se já está granted
+      if (currentPermission === "granted") {
+        await registerPushToken();
+      }
+    }
+
+    handlePushPermission();
+  }, []);
+
+  const registerPushToken = async () => {
+    try {
+      const service = await NotificationService.init();
+      const token = await service.requestPermission();
+
+      if (token && participante?.firebaseId) {
+        await service.saveTokenToFirestore(participante.firebaseId, token);
+      }
+    } catch (error) {
+      console.error("Erro ao registrar push:", error);
+    }
+  };
+
+  const [pushStatus, setPushStatus] = useState(Notification.permission);
+
+  useEffect(() => {
+    setPushStatus(Notification.permission);
   }, []);
 
   const messaging = getMessaging();
@@ -550,6 +575,12 @@ export const DashboardPage: React.FC<{
           </div>
         </div>
         <div className="flex items-center space-x-4">
+          {pushStatus === "denied" && (
+            <div className="bg-red-500 text-white p-4 rounded-lg mb-4">
+              Você bloqueou as notificações.
+              Para ativar, vá nas configurações do navegador.
+            </div>
+          )}
           {notificationPermission === "default" && (
             <button
               onClick={requestNotificationPermission}
