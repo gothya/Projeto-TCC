@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { GameState } from '@/src/components/data/GameState';
 import { ConsentScreen } from '@/src/components/screen/ConsentScreen';
-import { SociodemographicQuestionnaireScreen } from '../components/screen/SociodemographicQuestionnaireScreen';
 import { useAuth } from '@/src/contexts/AuthContext';
-import userService from '@/src/service/user/UserService'; // Importando a instância (letra minúscula)
+import userService from '@/src/service/user/UserService';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { SociodemographicQuestionnaireScreen } from '../components/screen/SociodemographicQuestionnaireScreen';
 import { auth } from '../services/firebase';
-import { useEffect } from "react";
 
 const INITIAL_GAME_STATE: GameState = {
     user: {

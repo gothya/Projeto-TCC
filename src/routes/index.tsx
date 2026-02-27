@@ -1,12 +1,12 @@
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
+import { ProtectedRoute } from '../components/auth/ProtectedRoute';
+import { PublicRoute } from '../components/auth/PublicRoute';
+import NotFound from '../pages/404Page';
+import { AdminDashboardPage } from '../pages/AdminDashboardPage';
+import { DashboardPage } from '../pages/DashboardPage';
 import { LandingPage } from '../pages/LandingPage';
 import { LoginPage } from '../pages/LoginPage';
 import { OnboardingPage } from '../pages/OnboardingPage';
-import { DashboardPage } from '../pages/DashboardPage';
-import NotFound from '../pages/404Page';
-import { PublicRoute } from '../components/auth/PublicRoute';
-import { ProtectedRoute } from '../components/auth/ProtectedRoute';
 
 export function AppRoutes() {
   return (
@@ -37,6 +37,15 @@ export function AppRoutes() {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <AdminDashboardPage />
           </ProtectedRoute>
         }
       />
