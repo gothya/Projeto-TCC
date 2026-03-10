@@ -18,8 +18,12 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
     );
   }
 
-  // 2. Se o usuário JÁ está logado, redireciona para a área interna (Dashboard)
+  // 2. Se o usuário JÁ está logado, redireciona
   if (user) {
+    const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
+    if (user.email === adminEmail) {
+      return <Navigate to="/role-selection" replace />;
+    }
     return <Navigate to="/dashboard" replace />;
   }
 

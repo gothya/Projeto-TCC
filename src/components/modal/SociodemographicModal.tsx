@@ -31,6 +31,7 @@ export const SociodemographicModal: React.FC<{
         <div className="h-96 overflow-y-auto p-4 border border-cyan-400/30 rounded-lg bg-black/20 text-gray-300 text-sm">
           <dl>
             <DataRow label="Idade" value={`${data.age} anos`} />
+            <DataRow label="Estado (UF)" value={data.state} />
             <DataRow label="Gênero" value={data.gender} />
             <DataRow label="Estado Civil" value={data.maritalStatus} />
             <DataRow label="Escolaridade" value={data.education} />

@@ -7,6 +7,7 @@ import { DashboardPage } from '../pages/DashboardPage';
 import { LandingPage } from '../pages/LandingPage';
 import { LoginPage } from '../pages/LoginPage';
 import { OnboardingPage } from '../pages/OnboardingPage';
+import { RoleSelectionPage } from '../pages/RoleSelectionPage';
 
 export function AppRoutes() {
   return (
@@ -28,6 +29,15 @@ export function AppRoutes() {
         element={
           <ProtectedRoute>
             <OnboardingPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/role-selection"
+        element={
+          <ProtectedRoute>
+            <RoleSelectionPage />
           </ProtectedRoute>
         }
       />

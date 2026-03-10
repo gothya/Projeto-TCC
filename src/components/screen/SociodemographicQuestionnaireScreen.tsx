@@ -7,6 +7,7 @@ import { Step5 } from "../steps/Step5";
 
 type SociodemographicData = {
   age: number | string;
+  state: string;
   gender: string;
   maritalStatus: string;
   education: string;
@@ -33,6 +34,7 @@ export const SociodemographicQuestionnaireScreen: React.FC<{
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState<SociodemographicData>({
     age: "",
+    state: "",
     gender: "",
     maritalStatus: "",
     education: "",

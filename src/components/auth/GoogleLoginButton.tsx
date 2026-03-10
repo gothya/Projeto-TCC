@@ -49,7 +49,12 @@ export const GoogleLoginButton = () => {
       }
 
       // O AuthProvider (onAuthStateChanged) detectará a mudança automaticamente
-      navigate("/dashboard");
+      const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
+      if (firebaseUser.email === adminEmail) {
+        navigate("/role-selection");
+      } else {
+        navigate("/dashboard");
+      }
     } 
     catch (error: any) {
       console.error("Erro no Google Auth ou Firestore:", error.code, error.message);

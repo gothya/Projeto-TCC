@@ -3,6 +3,7 @@ import { CustomRadio } from "../form/CustomRadio";
 
 type SociodemographicData = {
   age: number | string;
+  state: string;
   gender: string;
   maritalStatus: string;
   education: string;
