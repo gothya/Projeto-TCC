@@ -5,7 +5,7 @@ import { Step3 } from "../steps/Step3";
 import { Step4 } from "../steps/Step4";
 import { Step5 } from "../steps/Step5";
 
-type SociodemographicData = {
+export type SociodemographicData = {
   age: number | string;
   state: string;
   gender: string;
@@ -29,30 +29,33 @@ type SociodemographicData = {
 
 export const SociodemographicQuestionnaireScreen: React.FC<{
   onComplete: (data: SociodemographicData) => void;
-}> = ({ onComplete }) => {
+  initialData?: SociodemographicData;
+}> = ({ onComplete, initialData }) => {
   const totalSteps = 5;
   const [step, setStep] = useState(0);
-  const [formData, setFormData] = useState<SociodemographicData>({
-    age: "",
-    state: "",
-    gender: "",
-    maritalStatus: "",
-    education: "",
-    occupation: "",
-    continuousMedication: "",
-    medicationDetails: "",
-    healthDiagnosis: "",
-    diagnosisDetails: "",
-    monthlyIncome: "",
-    platforms: [],
-    otherPlatform: "",
-    usagePeriod: "",
-    dailyUsage: "",
-    purpose_talk: "",
-    purpose_share: "",
-    purpose_watch: "",
-    purpose_search: "",
-  });
+  const [formData, setFormData] = useState<SociodemographicData>(
+    initialData || {
+      age: "",
+      state: "",
+      gender: "",
+      maritalStatus: "",
+      education: "",
+      occupation: "",
+      continuousMedication: "",
+      medicationDetails: "",
+      healthDiagnosis: "",
+      diagnosisDetails: "",
+      monthlyIncome: "",
+      platforms: [],
+      otherPlatform: "",
+      usagePeriod: "",
+      dailyUsage: "",
+      purpose_talk: "",
+      purpose_share: "",
+      purpose_watch: "",
+      purpose_search: "",
+    }
+  );
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

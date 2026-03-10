@@ -505,7 +505,33 @@ export const DashboardPage: React.FC<{
   const handleLogout = async () => {
     await logout();
     navigate("/login");
-  }
+  };
+
+  const handleUpdateNickname = async (newNickname: string) => {
+    if (!participante) return;
+    const newState = {
+      ...participante,
+      user: {
+        ...participante.user,
+        nickname: newNickname,
+      },
+      nickname: newNickname, 
+    };
+
+    updateParticipante(newState);
+    await UserService.updateUser(newState);
+  };
+
+  const handleUpdateSocio = async (newData: any) => {
+    if (!participante) return;
+    const newState = {
+      ...participante,
+      sociodemographicData: newData,
+    };
+
+    updateParticipante(newState);
+    await UserService.updateUser(newState);
+  };
 
   return (
     <div className="p-4 sm:p-6 max-w-4xl mx-auto animate-fade-in">
@@ -519,10 +545,13 @@ export const DashboardPage: React.FC<{
       {isRcleModalOpen && (
         <RcleModal onClose={() => setIsRcleModalOpen(false)} />
       )}
-      {isSociodemographicModalOpen && participante.sociodemographicData && (
+      {isSociodemographicModalOpen && participante.sociodemographicData && participante.user && (
         <SociodemographicModal
           onClose={() => setIsSociodemographicModalOpen(false)}
           data={participante.sociodemographicData}
+          nickname={participante.user.nickname}
+          onSaveNickname={handleUpdateNickname}
+          onSaveSocio={handleUpdateSocio}
         />
       )}
       {isPerformanceModalOpen && (
@@ -532,6 +561,7 @@ export const DashboardPage: React.FC<{
         />
       )}
       <header className="flex items-center justify-between mb-8">
+
         <div className="flex items-center space-x-4">
           <div className="relative" ref={profileMenuRef}>
             <button
