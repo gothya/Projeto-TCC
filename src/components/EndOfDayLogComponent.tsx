@@ -10,7 +10,7 @@ export const EndOfDayLogComponent: React.FC<{
   const [sleepQuality, setSleepQuality] = useState(0);
   const [stressfulEvents, setStressfulEvents] = useState("");
   const [screenTimeLog, setScreenTimeLog] = useState<ScreenTimeEntry[]>([
-    { id: "0", platform: "", otherPlatformDetail: "", startTime: "", duration: "" },
+    { id: "0", platform: "", otherPlatformDetail: "", hours: "", minutes: "", duration: "" },
   ]);
 
   const addScreenTimeEntry = () =>
@@ -20,10 +20,12 @@ export const EndOfDayLogComponent: React.FC<{
         id: `${Date.now()}`,
         platform: "",
         otherPlatformDetail: "",
-        startTime: "",
+        hours: "",
+        minutes: "",
         duration: "",
       },
     ]);
+
   const updateScreenTimeEntry = (
     index: number,
     field: keyof ScreenTimeEntry,
@@ -31,6 +33,14 @@ export const EndOfDayLogComponent: React.FC<{
   ) => {
     const newLog = [...screenTimeLog];
     newLog[index] = { ...newLog[index], [field]: value };
+
+    // Auto-calculate duration (total minutes) from hours + minutes
+    if (field === "hours" || field === "minutes") {
+      const h = parseInt(newLog[index].hours || "0", 10);
+      const m = parseInt(newLog[index].minutes || "0", 10);
+      newLog[index].duration = String(h * 60 + m);
+    }
+
     setScreenTimeLog(newLog);
   };
 
@@ -69,7 +79,7 @@ export const EndOfDayLogComponent: React.FC<{
           {screenTimeLog.map((entry, index) => (
             <div
               key={entry.id}
-              className="grid grid-cols-1 md:grid-cols-3 gap-2 p-2 mb-2 border border-cyan-400/10 rounded-lg"
+              className="grid grid-cols-1 gap-2 p-3 mb-2 border border-cyan-400/10 rounded-lg"
             >
               <select
                 value={entry.platform}
@@ -79,7 +89,7 @@ export const EndOfDayLogComponent: React.FC<{
                 className="form-input bg-slate-800"
               >
                 <option value="" disabled hidden>
-                  Escolha...
+                  Rede social...
                 </option>
                 <option className="text-black">Instagram</option>
                 <option className="text-black">Tiktok</option>
@@ -103,32 +113,33 @@ export const EndOfDayLogComponent: React.FC<{
                 />
               )}
 
-              <select
-                value={entry.startTime}
-                onChange={(e) =>
-                  updateScreenTimeEntry(index, "startTime", e.target.value)
-                }
-                className="form-input bg-slate-800"
-              >
-                <option value="" disabled hidden>
-                  Horário
-                </option>
-                {Array.from({ length: 24 }).map((_, i) => (
-                  <option key={i} value={`${i}h`} className="text-black">
-                    {`${i}h`}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="number"
-                min="0"
-                value={entry.duration}
-                onChange={(e) =>
-                  updateScreenTimeEntry(index, "duration", e.target.value)
-                }
-                className="form-input"
-                placeholder="Duração (min)"
-              />
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400 text-xs whitespace-nowrap">Tempo de uso:</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="24"
+                  value={entry.hours}
+                  onChange={(e) =>
+                    updateScreenTimeEntry(index, "hours", e.target.value)
+                  }
+                  className="form-input w-16 text-center"
+                  placeholder="0"
+                />
+                <span className="text-gray-400 text-sm">h</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  value={entry.minutes}
+                  onChange={(e) =>
+                    updateScreenTimeEntry(index, "minutes", e.target.value)
+                  }
+                  className="form-input w-16 text-center"
+                  placeholder="0"
+                />
+                <span className="text-gray-400 text-sm">min</span>
+              </div>
             </div>
           ))}
           <button
