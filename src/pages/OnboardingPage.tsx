@@ -1,10 +1,9 @@
 import { GameState } from '@/src/components/data/GameState';
-import { ConsentScreen } from '@/src/components/screen/ConsentScreen';
+import { OnboardingScreen } from '@/src/components/screen/OnboardingScreen';
 import { useAuth } from '@/src/contexts/AuthContext';
 import userService from '@/src/service/user/UserService';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SociodemographicQuestionnaireScreen } from '../components/screen/SociodemographicQuestionnaireScreen';
 import { auth } from '../services/firebase';
 
 const INITIAL_GAME_STATE: GameState = {
@@ -28,11 +27,8 @@ const INITIAL_GAME_STATE: GameState = {
 };
 
 export const OnboardingPage: React.FC = () => {
-    // Como agora exportamos 'new UserService()', não precisamos de 'new' aqui
     const { user, signInAnonymously } = useAuth();
     const navigate = useNavigate();
-
-    const [step, setStep] = useState(1);
 
     useEffect(() => {
         async function checkIfAlreadyOnboarded() {
@@ -52,15 +48,7 @@ export const OnboardingPage: React.FC = () => {
         checkIfAlreadyOnboarded();
     }, [user, navigate]);
 
-    const handleConsent = (agreed: boolean) => {
-        if (agreed) {
-            setStep(2);
-        } else {
-            alert("Para participar da pesquisa, você precisa concordar com os termos.");
-        }
-    };
-
-    const handleQuestionnaireComplete = async (data: any) => {
+    const handleOnboardingComplete = async (nickname: string, data: any) => {
         try {
             let currentUser = user;
 
@@ -85,11 +73,11 @@ export const OnboardingPage: React.FC = () => {
                     ...INITIAL_GAME_STATE.user,
                     email: userEmail,
                     avatar: userAvatar,
-                    nickname: userEmail ? userEmail.split('@')[0] : "Explorador Anônimo",
+                    nickname: nickname, // Custom nickname chosen by user
                 }
             };
 
-            // 3. Persistência: Usando o novo nome do método 'createUser'
+            // 3. Persistência
             await userService.createUser(gameState);
             localStorage.setItem("gameState", JSON.stringify(gameState));
 
@@ -104,12 +92,7 @@ export const OnboardingPage: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-brand-dark flex items-center justify-center p-4">
-            {step === 1 && <ConsentScreen onConsent={handleConsent} />}
-            {step === 2 && (
-                <SociodemographicQuestionnaireScreen
-                    onComplete={handleQuestionnaireComplete}
-                />
-            )}
+            <OnboardingScreen onComplete={handleOnboardingComplete} />
         </div>
     );
 };
