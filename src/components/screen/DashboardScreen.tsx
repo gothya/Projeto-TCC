@@ -17,7 +17,7 @@ import { BellIcon } from "../icons/BellIcon";
 import { NotificationService } from "../../services/NotificationService";
 import { Card } from "../Card";
 import { PlexusFace } from "../PlexusFace";
-import { EmotionExplorerBadge } from "../EmotionExplorerBadge";
+
 import { CheckCircleIcon } from "../icons/CheckCircleIcon";
 import { XCircleIcon } from "../icons/XCircleIcon";
 import { StarIcon } from "../icons/StarIcon";
@@ -537,14 +537,7 @@ export const DashboardScreen: React.FC<{
           </p>
         </Card>
 
-        <Card className="md:col-span-1">
-          <h3 className="card-title">Badges</h3>
-          <div className="flex justify-around items-center">
-            <EmotionExplorerBadge className="w-16 h-16" unlocked={true} />
-            <EmotionExplorerBadge className="w-16 h-16" />
-            <EmotionExplorerBadge className="w-16 h-16" />
-          </div>
-        </Card>
+
 
         <div className="md:col-span-3">
           <Card>

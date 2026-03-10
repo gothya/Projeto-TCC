@@ -18,10 +18,7 @@ const INITIAL_GAME_STATE: GameState = {
         completedDays: 0,
         avatar: null,
     },
-    badges: [
-        { id: "punctual", name: "Pontualidade", description: "Responder 80% das notificações em 10 minutos", unlocked: false },
-        { id: "week_streak", name: "Streak Semanal", description: "Completar todos os 7 dias", unlocked: false },
-    ],
+
     hasOnboarded: false,
     studyStartDate: new Date().toISOString(),
     responses: [],

@@ -1,4 +1,4 @@
-import { BADGE_DEFINITIONS } from "@/src/components/data/BadgeDefinitions";
+
 import { GameState } from "@/src/components/data/GameState";
 import { BellIcon } from "@/src/components/icons/BellIcon";
 import { ChartBarIcon } from "@/src/components/icons/ChartBarIcon";
@@ -999,26 +999,7 @@ export const AdminDashboardPage: React.FC<{
                                             <p className="text-[10px] text-gray-500 uppercase">XP Total</p>
                                         </div>
                                     </div>
-                                    <div className="bg-slate-700/50 rounded-lg p-3 flex flex-col gap-2">
-                                        <span className="text-xs text-gray-400">Insígnias Conquistadas</span>
-                                        <div className="flex flex-wrap gap-2 group relative">
-                                            {selectedUser.badges?.map((b, i) => {
-                                                const def = BADGE_DEFINITIONS.find(d => d.name === b.name) || BADGE_DEFINITIONS.find(d => d.id === b.id);
-                                                return (
-                                                    <div key={i} className="relative z-10 w-6 h-6 rounded-full bg-yellow-500/20 border border-yellow-500 flex items-center justify-center text-[10px] cursor-help transition-transform hover:scale-125 hover:z-20 group/badge shadow-sm">
-                                                        🏅
-                                                        {/* Tooltip */}
-                                                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-800 border border-yellow-500/50 rounded-lg p-3 shadow-xl opacity-0 invisible group-hover/badge:opacity-100 group-hover/badge:visible transition-all pointer-events-none z-50">
-                                                            <p className="text-yellow-400 font-bold text-xs mb-1">{def ? def.name : b.name}</p>
-                                                            <p className="text-[10px] text-gray-300 italic mb-2">"{def ? def.message : 'Badge conquistada!'}"</p>
-                                                            <p className="text-[9px] text-gray-500 uppercase border-t border-slate-700 pt-1">Req: {def ? def.requirement : '???'}</p>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                            {(!selectedUser.badges || selectedUser.badges.length === 0) && <span className="text-xs text-gray-500 italic">Nenhuma ainda.</span>}
-                                        </div>
-                                    </div>
+
                                 </div>
                             </div>
                         )}

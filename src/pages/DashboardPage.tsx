@@ -4,7 +4,7 @@ import { InstrumentFlowState } from "@/src/components/states/InstrumentFlowState
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Card } from "@/src/components/Card";
 import { CountdownTimer } from "@/src/components/CountdownTimer";
-import { EmotionExplorerBadge } from "@/src/components/EmotionExplorerBadge";
+
 import { BellIcon } from "@/src/components/icons/BellIcon";
 import { CheckCircleIcon } from "@/src/components/icons/CheckCircleIcon";
 import { StarIcon } from "@/src/components/icons/StarIcon";
@@ -642,14 +642,7 @@ export const DashboardPage: React.FC<{
           </p>
         </Card>
 
-        <Card className="md:col-span-1">
-          <h3 className="card-title">Badges</h3>
-          <div className="flex justify-around items-center">
-            <EmotionExplorerBadge className="w-16 h-16" unlocked={true} />
-            <EmotionExplorerBadge className="w-16 h-16" />
-            <EmotionExplorerBadge className="w-16 h-16" />
-          </div>
-        </Card>
+
 
         <div className="md:col-span-3">
           <Card>
