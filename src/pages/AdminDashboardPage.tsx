@@ -45,7 +45,12 @@ export const AdminDashboardPage: React.FC<{
                 const usersData: GameState[] = [];
                 querySnapshot.forEach((doc) => {
                     // We assume the doc data matches GameState structure
-                    usersData.push(doc.data() as GameState);
+                    const data = doc.data() as GameState;
+                    // Normalize: responses may be an object instead of array for some users
+                    if (!Array.isArray(data.responses)) {
+                        data.responses = [];
+                    }
+                    usersData.push(data);
                 });
                 setAllUsers(usersData);
             } catch (error) {
