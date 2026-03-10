@@ -306,7 +306,7 @@ export const DashboardPage: React.FC<{
     }
   };
 
-  const handleMissedPing = useCallback(() => {
+  const handleMissedPing = useCallback(async () => {
     if (!instrumentFlow || !participante) return;
 
     const { day, ping } = instrumentFlow.ping;
@@ -325,6 +325,13 @@ export const DashboardPage: React.FC<{
 
     // 🔥 Atualiza estado local
     updateParticipante(newState);
+
+    // 🔥 Persiste no Firestore
+    try {
+      await UserService.updateUser(newState);
+    } catch (error) {
+      console.error("Erro ao salvar ping perdido:", error);
+    }
 
     setInstrumentFlow(null);
   }, [instrumentFlow, participante, updateParticipante]);
