@@ -498,7 +498,7 @@ export const DashboardPage: React.FC<{
   const pingIconClasses = "transition-transform duration-150 ease-in-out";
 
   // Use real data
-  const allPlayers = leaderboardData.length > 0 ? leaderboardData : [{ nickname: participante?.nickname, points: participante?.points }];
+  const allPlayers = leaderboardData.length > 0 ? leaderboardData : [{ nickname: participante?.user?.nickname, points: participante?.user?.points }];
   const topThree = allPlayers.slice(0, 3);
   const restOfPlayers = allPlayers.slice(3);
 
@@ -515,7 +515,6 @@ export const DashboardPage: React.FC<{
         ...participante.user,
         nickname: newNickname,
       },
-      nickname: newNickname, 
     };
 
     updateParticipante(newState);

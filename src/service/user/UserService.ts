@@ -65,12 +65,18 @@ class UserService {
         const docRef = doc(db, this.collectionName, currentUser.uid);
 
         try {
-            await updateDoc(docRef, {
+            const updateData: any = {
                 pings: state.pings,
                 responses: state.responses,
                 "user.points": state.user.points,
                 "user.level": state.user.level,
-            });
+            };
+
+            if (state.user?.nickname) updateData["user.nickname"] = state.user.nickname;
+            if (state.user?.avatar || state.user?.avatar === null) updateData["user.avatar"] = state.user.avatar;
+            if (state.sociodemographicData) updateData.sociodemographicData = state.sociodemographicData;
+
+            await updateDoc(docRef, updateData);
 
             console.log("✅ Dados do participante atualizados com sucesso!");
         } catch (error) {
