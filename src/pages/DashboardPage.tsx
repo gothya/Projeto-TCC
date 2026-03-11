@@ -38,6 +38,7 @@ export const DashboardPage: React.FC<{
     day: number;
     ping: number;
   } | null>(null);
+  const [isBellVisible, setIsBellVisible] = useState(false);
   const [isRcleModalOpen, setIsRcleModalOpen] = useState(false);
   const [isPerformanceModalOpen, setIsPerformanceModalOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -299,7 +300,8 @@ export const DashboardPage: React.FC<{
       await UserService.updateUser(newState);
       updateParticipante(newState);
       setInstrumentFlow(null);
-
+      setIsBellVisible(false);
+      alert('funcionou');
     }
     catch (error) {
       console.error("Erro ao finalizar instrumento:", error);
@@ -447,6 +449,9 @@ export const DashboardPage: React.FC<{
   };
 
   const handleTimerEnd = useCallback(async () => {
+
+    setIsBellVisible(true);
+
     try {
       const currentToken = await getToken(getMessaging(), {
         vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
@@ -625,15 +630,17 @@ export const DashboardPage: React.FC<{
               Ativar Notificações
             </button>
           )}
-          {/* <CountdownTimer onTimerEnd={handleTimerEnd} /> */}
-          <button
-            className="p-2 rounded-full bg-slate-800/50 hover:bg-slate-700/50 disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={startInstrumentFlow}
-            disabled={!highlightedPing || !!instrumentFlow}
-            aria-label="Responder próximo ping"
-          >
-            <BellIcon className="w-6 h-6 text-cyan-400" />
-          </button>
+          <CountdownTimer onTimerEnd={handleTimerEnd} />
+          { isBellVisible &&
+            <button
+              className="p-2 rounded-full bg-slate-800/50 hover:bg-slate-700/50 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={startInstrumentFlow}
+              disabled={!highlightedPing || !!instrumentFlow}
+              aria-label="Responder próximo ping"
+            >
+              <BellIcon className="w-6 h-6 text-cyan-400" />
+            </button>
+          }
           {/* <button
             onClick={handleLogout}
             className="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 px-3 py-1 rounded hover:bg-cyan-500/30 transition-colors"

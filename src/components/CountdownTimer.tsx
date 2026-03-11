@@ -69,18 +69,19 @@ export const CountdownTimer: React.FC<{ onTimerEnd: () => void }> = ({
   }, []);
 
   return (
-    <div className="text-center w-36">
-      <div className="text-xs text-cyan-300/80">Próximo Ping</div>
-      <div className="font-mono text-lg text-cyan-400 tracking-widest">
-        {timeLeft}
-      </div>
-      <div className="w-full bg-gray-700 rounded-full h-1.5 mt-1">
-        <div
-          className="bg-green-500 h-1.5 rounded-full transition-all duration-1000 ease-linear"
-          style={{ width: `${progress}%` }}
-        ></div>
-      </div>
-    </div>
+    <></>
+    // <div className="text-center w-36">
+    //   <div className="text-xs text-cyan-300/80">Próximo Ping</div>
+    //   <div className="font-mono text-lg text-cyan-400 tracking-widest">
+    //     {timeLeft}
+    //   </div>
+    //   <div className="w-full bg-gray-700 rounded-full h-1.5 mt-1">
+    //     <div
+    //       className="bg-green-500 h-1.5 rounded-full transition-all duration-1000 ease-linear"
+    //       style={{ width: `${progress}%` }}
+    //     ></div>
+    //   </div>
+    // </div>
   );
 };
 
@@ -172,19 +173,20 @@ export const CountdownTimer: React.FC<{ onTimerEnd: () => void }> = ({
 //   }, [isTestMode]);
 
 //   return (
-//     <div className="text-center w-36">
-//       <div className="text-xs text-cyan-300/80">
-//         {isTestMode ? "MODO TESTE" : "Próximo Ping"}
-//       </div>
-//       <div className="font-mono text-lg text-cyan-400 tracking-widest">
-//         {timeLeft}
-//       </div>
-//       <div className="w-full bg-gray-700 rounded-full h-1.5 mt-1">
-//         <div
-//           className="bg-green-500 h-1.5 rounded-full transition-all duration-1000 ease-linear"
-//           style={{ width: `${progress}%` }}
-//         ></div>
-//       </div>
-//     </div>
+//     <></>
+//     // <div className="text-center w-36">
+//     //   <div className="text-xs text-cyan-300/80">
+//     //     {isTestMode ? "MODO TESTE" : "Próximo Ping"}
+//     //   </div>
+//     //   <div className="font-mono text-lg text-cyan-400 tracking-widest">
+//     //     {timeLeft}
+//     //   </div>
+//     //   <div className="w-full bg-gray-700 rounded-full h-1.5 mt-1">
+//     //     <div
+//     //       className="bg-green-500 h-1.5 rounded-full transition-all duration-1000 ease-linear"
+//     //       style={{ width: `${progress}%` }}
+//     //     ></div>
+//     //   </div>
+//     // </div>
 //   );
 // };
