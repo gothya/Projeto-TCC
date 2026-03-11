@@ -560,7 +560,6 @@ export const DashboardPage: React.FC<{
         />
       )}
       <header className="flex items-center justify-between mb-8">
-
         <div className="flex items-center space-x-4">
           <div className="relative" ref={profileMenuRef}>
             <button
@@ -580,6 +579,7 @@ export const DashboardPage: React.FC<{
             </button>
             {isProfileMenuOpen && (
               <ProfileMenu
+                onLogout={handleLogout}
                 onUpload={() => fileInputRef.current?.click()}
                 onRemove={handleRemoveAvatar}
                 onViewRcle={() => {
@@ -606,8 +606,8 @@ export const DashboardPage: React.FC<{
             className="hidden"
           />
           <div>
-            <h1 className="text-xl font-bold text-cyan-400">{participante?.user?.nickname}</h1>
-            <p className="text-gray-400">Nível {participante?.user?.level} - Mente Curiosa</p>
+            <h1 className="text-md lg:text-lg sm:text-sm font-bold text-cyan-400">{participante?.user?.nickname}</h1>
+            <p className="text-md lg:text-lg sm:text-sm font-bold text-gray-400">Nível {participante?.user?.level} - Mente Curiosa</p>
           </div>
         </div>
         <div className="flex items-center space-x-4">
@@ -625,7 +625,7 @@ export const DashboardPage: React.FC<{
               Ativar Notificações
             </button>
           )}
-          <CountdownTimer onTimerEnd={handleTimerEnd} />
+          {/* <CountdownTimer onTimerEnd={handleTimerEnd} /> */}
           <button
             className="p-2 rounded-full bg-slate-800/50 hover:bg-slate-700/50 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={startInstrumentFlow}
@@ -634,12 +634,12 @@ export const DashboardPage: React.FC<{
           >
             <BellIcon className="w-6 h-6 text-cyan-400" />
           </button>
-          <button
+          {/* <button
             onClick={handleLogout}
             className="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 px-3 py-1 rounded hover:bg-cyan-500/30 transition-colors"
           >
             Sair
-          </button>
+          </button> */}
         </div>
       </header>
 
