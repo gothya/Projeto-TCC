@@ -4,6 +4,7 @@ import { InstrumentFlowState } from "@/src/components/states/InstrumentFlowState
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Card } from "@/src/components/Card";
 import { CountdownTimer } from "@/src/components/CountdownTimer";
+import { evaluateFullJourneySchedule, getJourneyStartDate } from "@/src/utils/timeUtils";
 
 import { BellIcon } from "@/src/components/icons/BellIcon";
 import { CheckCircleIcon } from "@/src/components/icons/CheckCircleIcon";
@@ -44,6 +45,9 @@ export const DashboardPage: React.FC<{
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isSociodemographicModalOpen, setIsSociodemographicModalOpen] = useState(false);
   const [instrumentFlow, setInstrumentFlow] = useState<InstrumentFlowState>(null);
+  const [timerTargetDate, setTimerTargetDate] = useState<Date | null>(null);
+  const [timerLabel, setTimerLabel] = useState<string>("");
+  const [isActiveWindow, setIsActiveWindow] = useState(false);
   const { user: authUser, logout } = useAuth();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -96,19 +100,83 @@ export const DashboardPage: React.FC<{
   }, []);
 
   useEffect(() => {
-    if (!participante) return;
-    const findNextPendingPing = () => {
-      for (let day = 0; day < pings.length; day++) {
-        for (let ping = 0; ping < pings[day].statuses.length; ping++) {
-          if (pings[day].statuses[ping] === "pending") {
-            return { day, ping };
-          }
+    if (!participante || !participante.studyStartDate) return;
+
+    const journeyStart = getJourneyStartDate(participante.studyStartDate);
+
+    const evaluateSchedule = async () => {
+      // Don't evaluate if we are currently answering a ping
+      if (instrumentFlow) return;
+
+      const result = evaluateFullJourneySchedule(
+        journeyStart,
+        participante.pings,
+        new Date()
+      );
+
+      // 1. Handle Newly Missed Pings
+      if (result.newlyMissedPings.length > 0) {
+        console.log("Found missed pings:", result.newlyMissedPings);
+        
+        const newPings = participante.pings.map((dayObj) => ({
+          ...dayObj,
+          statuses: [...dayObj.statuses],
+        }));
+
+        result.newlyMissedPings.forEach(({day, ping}) => {
+          newPings[day].statuses[ping] = "missed";
+        });
+
+        const newState = {
+          ...participante,
+          pings: newPings,
+        };
+
+        updateParticipante(newState);
+        try {
+          await UserService.updateUser(newState);
+        } catch (error) {
+          console.error("Erro ao salvar pings perdidos:", error);
         }
+        return; // wait for next render with new state
       }
-      return null;
+
+      // 2. Journey Complete
+      if (result.isJourneyComplete) {
+         setTimerLabel("Jornada Concluída");
+         setTimerTargetDate(null);
+         setIsActiveWindow(false);
+         setHighlightedPing(null);
+         setIsBellVisible(false);
+         return;
+      }
+
+      // 3. Active Ping
+      if (result.currentActivePing) {
+         setHighlightedPing({ day: result.currentActivePing.day, ping: result.currentActivePing.ping });
+         setIsBellVisible(true);
+         setTimerLabel("Responder até:");
+         setTimerTargetDate(result.currentActivePing.expiresAt);
+         setIsActiveWindow(true);
+         return;
+      }
+
+      // 4. Future Ping
+      if (result.nextFuturePing) {
+         setHighlightedPing({ day: result.nextFuturePing.day, ping: result.nextFuturePing.ping });
+         setIsBellVisible(false);
+         setTimerLabel("Próximo Ping:");
+         setTimerTargetDate(result.nextFuturePing.startsAt);
+         setIsActiveWindow(false);
+      }
     };
-    setHighlightedPing(findNextPendingPing());
-  }, [pings]);
+
+    evaluateSchedule();
+
+    const intervalId = setInterval(evaluateSchedule, 5000); // Check every 5 seconds
+    return () => clearInterval(intervalId);
+
+  }, [participante, instrumentFlow, updateParticipante]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -338,24 +406,18 @@ export const DashboardPage: React.FC<{
     setInstrumentFlow(null);
   }, [instrumentFlow, participante, updateParticipante]);
 
-  // 5 Minute Timeout for Active Ping
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
-    if (instrumentFlow) {
-      timeoutId = setTimeout(() => {
-        handleMissedPing();
-      }, 5 * 60 * 1000); // 5 minutes
-    }
-
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [instrumentFlow, handleMissedPing]);
+  // Note: 5 Minute Timeout for Active Ping was removed
+  // The schedule evaluator completely handles missed pings on a fixed real-world timeline.
 
   useEffect(() => {
     if (loading) return;
-    if (!participante) return;
+    
+    // Se não há dados do participante no banco, forçamos o onboarding
+    if (!participante) {
+      console.log("Usuário autenticado, mas sem dados de participante. Redirecionando para onboarding.");
+      navigate("/onboarding");
+      return;
+    }
 
     if (participante.user?.nickname === "Iniciante") {
       navigate("/onboarding");
@@ -449,31 +511,28 @@ export const DashboardPage: React.FC<{
   };
 
   const handleTimerEnd = useCallback(async () => {
+    if (!isActiveWindow) {
+      // It was waiting for a future ping, which just started.
+      setIsBellVisible(true);
+      try {
+        const currentToken = await getToken(getMessaging(), {
+          vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
+        })
 
-    setIsBellVisible(true);
-
-    try {
-      const currentToken = await getToken(getMessaging(), {
-        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
-      })
-
-      if (currentToken) {
-        const response = await sendPush({
-          token: currentToken,
-          title: "Teste de Push",
-          body: "Isso foi enviado ao clicar no botão!"
-        });
-        console.log("Push notification sent successfully:", response, new Date().toISOString());
+        if (currentToken) {
+          const response = await sendPush({
+            token: currentToken,
+            title: "É hora do Ping!",
+            body: "Você tem 25 minutos para responder ao seu ping do Psylogos."
+          });
+          console.log("Push notification sent successfully:", response, new Date().toISOString());
+        }
+      }
+      catch (error) {
+        console.error("Error fetching FCM token:", error);
       }
     }
-    catch (error) {
-      console.error("Error fetching FCM token:", error);
-    }
-
-    if (highlightedPing && !instrumentFlow) {
-      startInstrumentFlow();
-    }
-  }, [highlightedPing, instrumentFlow, startInstrumentFlow]);
+  }, [isActiveWindow, sendPush]);
 
   const notificationTimes = ["9h", "11h", "13h", "15h", "17h", "19h", "21h"];
 
@@ -630,7 +689,13 @@ export const DashboardPage: React.FC<{
               Ativar Notificações
             </button>
           )}
-          <CountdownTimer onTimerEnd={handleTimerEnd} />
+          <CountdownTimer 
+            targetDate={timerTargetDate} 
+            label={timerLabel} 
+            onTimerEnd={handleTimerEnd} 
+            isActiveWindow={isActiveWindow} 
+          />
+
           { isBellVisible &&
             <button
               className="p-2 rounded-full bg-slate-800/50 hover:bg-slate-700/50 disabled:opacity-50 disabled:cursor-not-allowed"

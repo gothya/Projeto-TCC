@@ -1,10 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
-export const CountdownTimer: React.FC<{ onTimerEnd: () => void }> = ({
-  onTimerEnd,
-}) => {
+
+export const CountdownTimer: React.FC<{
+  targetDate: Date | null;
+  label: string;
+  onTimerEnd: () => void;
+  isActiveWindow?: boolean;
+}> = ({ targetDate, label, onTimerEnd, isActiveWindow = false }) => {
   const [timeLeft, setTimeLeft] = useState("");
   const [progress, setProgress] = useState(0);
-  const pingHours = [9, 11, 13, 15, 17, 19, 21];
 
   const onTimerEndRef = useRef(onTimerEnd);
   const triggeredRef = useRef(false);
@@ -14,30 +17,22 @@ export const CountdownTimer: React.FC<{ onTimerEnd: () => void }> = ({
   }, [onTimerEnd]);
 
   useEffect(() => {
+    // Reset trigger if target date changes significantly
+    triggeredRef.current = false;
+  }, [targetDate]);
+
+  useEffect(() => {
+    if (!targetDate) {
+      setTimeLeft("--:--:--");
+      setProgress(0);
+      return;
+    }
+
     const timer = setInterval(() => {
       const now = new Date();
-      let nextPingDate = new Date();
-      let prevPingDate = new Date();
+      const diff = targetDate.getTime() - now.getTime();
 
-      const nextPingHour = pingHours.find((h) => h > now.getHours());
-
-      if (nextPingHour !== undefined) {
-        nextPingDate.setHours(nextPingHour, 0, 0, 0);
-        const prevPingHourIndex = pingHours.indexOf(nextPingHour) - 1;
-        if (prevPingHourIndex >= 0) {
-          prevPingDate.setHours(pingHours[prevPingHourIndex], 0, 0, 0);
-        } else {
-          prevPingDate.setDate(now.getDate() - 1);
-          prevPingDate.setHours(pingHours[pingHours.length - 1], 0, 0, 0);
-        }
-      } else {
-        nextPingDate.setDate(now.getDate() + 1);
-        nextPingDate.setHours(pingHours[0], 0, 0, 0);
-        prevPingDate.setHours(pingHours[pingHours.length - 1], 0, 0, 0);
-      }
-
-      const diff = nextPingDate.getTime() - now.getTime();
-
+      // Trigger logic
       if (diff <= 1000 && !triggeredRef.current) {
         onTimerEndRef.current();
         triggeredRef.current = true;
@@ -45,12 +40,12 @@ export const CountdownTimer: React.FC<{ onTimerEnd: () => void }> = ({
         triggeredRef.current = false;
       }
 
-      const hours = Math.max(0, Math.floor(diff / (1000 * 60 * 60)));
-      const minutes = Math.max(
-        0,
-        Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      const displayDiff = Math.max(0, diff);
+      const hours = Math.floor(displayDiff / (1000 * 60 * 60));
+      const minutes = Math.floor(
+        (displayDiff % (1000 * 60 * 60)) / (1000 * 60)
       );
-      const seconds = Math.max(0, Math.floor((diff % (1000 * 60)) / 1000));
+      const seconds = Math.floor((displayDiff % (1000 * 60)) / 1000);
 
       setTimeLeft(
         `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
@@ -59,134 +54,42 @@ export const CountdownTimer: React.FC<{ onTimerEnd: () => void }> = ({
         )}:${String(seconds).padStart(2, "0")}`
       );
 
-      const totalDuration = nextPingDate.getTime() - prevPingDate.getTime();
-      const elapsedTime = now.getTime() - prevPingDate.getTime();
-      const progressPercentage = (elapsedTime / totalDuration) * 100;
-      setProgress(Math.min(100, progressPercentage));
+      // Simple visual progress: 
+      // If active window (25 mins max), show decaying progress.
+      // If waiting for next (hours), show fill progress.
+      // Easiest is to just bind it linearly to a fixed modulo or static visual if we lack prevDate.
+      // We will leave progress at 100% decaying for active, and 0->100% for future as an estimation.
+      
+      let progressPercentage = 0;
+      if (isActiveWindow) {
+          // Max window is 25 mins (1500000 ms)
+          progressPercentage = (displayDiff / 1500000) * 100;
+      } else {
+          // Assume average 2 hour wait (7200000 ms) between pings
+          progressPercentage = 100 - ((displayDiff / 7200000) * 100);
+          if (progressPercentage < 0) progressPercentage = 0;
+      }
+      setProgress(Math.min(100, Math.max(0, progressPercentage)));
+
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [targetDate, isActiveWindow]);
+
+  if (!targetDate) return null;
 
   return (
-    <></>
-    // <div className="text-center w-36">
-    //   <div className="text-xs text-cyan-300/80">Próximo Ping</div>
-    //   <div className="font-mono text-lg text-cyan-400 tracking-widest">
-    //     {timeLeft}
-    //   </div>
-    //   <div className="w-full bg-gray-700 rounded-full h-1.5 mt-1">
-    //     <div
-    //       className="bg-green-500 h-1.5 rounded-full transition-all duration-1000 ease-linear"
-    //       style={{ width: `${progress}%` }}
-    //     ></div>
-    //   </div>
-    // </div>
+    <div className="text-center w-36">
+      <div className="text-xs text-cyan-300/80">{label}</div>
+      <div className={`font-mono text-lg tracking-widest ${isActiveWindow ? "text-yellow-400 font-bold" : "text-cyan-400"}`}>
+        {timeLeft}
+      </div>
+      <div className="w-full bg-gray-700 rounded-full h-1.5 mt-1">
+        <div
+          className={`${isActiveWindow ? "bg-yellow-400" : "bg-green-500"} h-1.5 rounded-full transition-all duration-1000 ease-linear`}
+          style={{ width: `${progress}%` }}
+        ></div>
+      </div>
+    </div>
   );
-};
-
-// // VERSÃO DE TESTE COM 10 SEGUNDOS FIXOS
-// import React, { useState, useRef, useEffect } from "react";
-
-// export const CountdownTimer: React.FC<{ onTimerEnd: () => void }> = ({
-//   onTimerEnd,
-// }) => {
-//   const [timeLeft, setTimeLeft] = useState("");
-//   const [progress, setProgress] = useState(0);
-  
-//   // Referência para manter a função de término atualizada
-//   const onTimerEndRef = useRef(onTimerEnd);
-//   // Controla se o evento já foi disparado para não repetir
-//   const triggeredRef = useRef(false);
-//   // ARMAZENA O MOMENTO FINAL DO TESTE (Agora + 10s) APENAS UMA VEZ
-//   const testEndTimeRef = useRef<number>(Date.now() + 10 * 1000);
-
-//   const isTestMode = true; // Mantenha true para o teste de 10s
-
-//   useEffect(() => {
-//     onTimerEndRef.current = onTimerEnd;
-//   }, [onTimerEnd]);
-
-//   useEffect(() => {
-//     const timer = setInterval(() => {
-//       const now = new Date();
-//       let nextPingDate: Date;
-//       let prevPingDate: Date;
-
-//       if (isTestMode) {
-//         // Usa o tempo final fixado no início do componente
-//         nextPingDate = new Date(testEndTimeRef.current);
-//         // Define um início artificial de 1 minuto atrás para a barra de progresso
-//         prevPingDate = new Date(testEndTimeRef.current - 60 * 1000);
-//       } else {
-//         // Lógica real baseada no array de horas (pingHours)
-//         const pingHours = [9, 11, 13, 15, 17, 19, 21];
-//         const nextPingHour = pingHours.find((h) => h > now.getHours());
-//         nextPingDate = new Date();
-
-//         if (nextPingHour !== undefined) {
-//           nextPingDate.setHours(nextPingHour, 0, 0, 0);
-//           const prevIdx = pingHours.indexOf(nextPingHour) - 1;
-//           prevPingDate = new Date();
-//           if (prevIdx >= 0) prevPingDate.setHours(pingHours[prevIdx], 0, 0, 0);
-//           else {
-//             prevPingDate.setDate(now.getDate() - 1);
-//             prevPingDate.setHours(pingHours[pingHours.length - 1], 0, 0, 0);
-//           }
-//         } else {
-//           nextPingDate.setDate(now.getDate() + 1);
-//           nextPingDate.setHours(pingHours[0], 0, 0, 0);
-//           prevPingDate = new Date();
-//           prevPingDate.setHours(pingHours[pingHours.length - 1], 0, 0, 0);
-//         }
-//       }
-
-//       const diff = nextPingDate.getTime() - now.getTime();
-
-//       // LÓGICA DE DISPARO REVISADA
-//       // Se o tempo acabou (ou passou um pouco de zero) e ainda não disparamos
-//       if (diff <= 0 && !triggeredRef.current) {
-//         triggeredRef.current = true;
-//         console.log("!!! TIMER ZEROU !!! Chamando handleTimerEnd");
-//         onTimerEndRef.current();
-//       }
-
-//       // Cálculos de exibição (Garante que não mostre números negativos)
-//       const displayDiff = Math.max(0, diff);
-//       const hours = Math.floor(displayDiff / (1000 * 60 * 60));
-//       const minutes = Math.floor((displayDiff % (1000 * 60 * 60)) / (1000 * 60));
-//       const seconds = Math.floor((displayDiff % (1000 * 60)) / 1000);
-
-//       setTimeLeft(
-//         `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
-//       );
-
-//       // Progresso da barra
-//       const totalDuration = nextPingDate.getTime() - prevPingDate.getTime();
-//       const elapsedTime = now.getTime() - prevPingDate.getTime();
-//       const progressPercentage = (elapsedTime / totalDuration) * 100;
-//       setProgress(Math.min(100, progressPercentage));
-      
-//     }, 1000);
-
-//     return () => clearInterval(timer);
-//   }, [isTestMode]);
-
-//   return (
-//     <></>
-//     // <div className="text-center w-36">
-//     //   <div className="text-xs text-cyan-300/80">
-//     //     {isTestMode ? "MODO TESTE" : "Próximo Ping"}
-//     //   </div>
-//     //   <div className="font-mono text-lg text-cyan-400 tracking-widest">
-//     //     {timeLeft}
-//     //   </div>
-//     //   <div className="w-full bg-gray-700 rounded-full h-1.5 mt-1">
-//     //     <div
-//     //       className="bg-green-500 h-1.5 rounded-full transition-all duration-1000 ease-linear"
-//     //       style={{ width: `${progress}%` }}
-//     //     ></div>
-//     //   </div>
-//     // </div>
-//   );
-// };
+};
