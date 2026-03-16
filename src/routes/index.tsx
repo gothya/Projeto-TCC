@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router-dom';
+import { AdminRoute } from '../components/auth/AdminRoute';
 import { ProtectedRoute } from '../components/auth/ProtectedRoute';
 import { PublicRoute } from '../components/auth/PublicRoute';
 import NotFound from '../pages/404Page';
@@ -54,9 +55,9 @@ export function AppRoutes() {
       <Route
         path="/admin"
         element={
-          <ProtectedRoute>
+          <AdminRoute>
             <AdminDashboardPage />
-          </ProtectedRoute>
+          </AdminRoute>
         }
       />
 
