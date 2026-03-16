@@ -1,0 +1,750 @@
+﻿commit 7a10c455783ff8a4bb808c731f174559a656d6ea
+Author: Thiago Carneiro <gothya@gmail.com>
+Date:   Sun Mar 15 22:38:23 2026 -0300
+
+    Relatorio do participante
+
+diff --git a/relatorio_tecnico.md b/relatorio_tecnico.md
+new file mode 100644
+index 0000000..a29aa26
+--- /dev/null
++++ b/relatorio_tecnico.md
+@@ -0,0 +1,47 @@
++# Relat├│rio T├®cnico: Psylogos - O Enigma do Cora├º├úo
++
++## Vis├úo Geral do Projeto
++**Psylogos** ├® uma aplica├º├úo web gamificada voltada para coleta de dados em pesquisas psicol├│gicas e comportamentais, utilizando a metodologia *Ecological Momentary Assessment* (EMA). A aplica├º├úo monitora participantes ao longo de uma jornada de 7 dias, enviando "pings" di├írios para avalia├º├Áes contextuais e registrando m├®tricas de bem-estar.
++
++## Arquitetura e Stack Tecnol├│gico
++O projeto foi desenvolvido com tecnologias modernas de Front-end e Backend-as-a-Service (BaaS), garantindo reatividade e sincroniza├º├úo em tempo real:
++- **Core Framework:** React 19 executado via Vite.
++- **Roteamento:** React Router DOM v7 para navega├º├úo Single Page Application (SPA).
++- **Backend e Banco de Dados:** Firebase (Firestore, Authentication, Functions e Cloud Messaging).
++- **Estiliza├º├úo:** Tailwind CSS (evidenciado pelo uso de classes utilit├írias no c├│digo) suplementado com componentes visuais complexos como o `PlexusFace`.
++- **Ecosistema Adicional:** Integra├º├úo de `crypto-js` para seguran├ºa local/cookies e biblioteca `xlsx` para exporta├º├úo de dados anal├¡ticos pelos administradores.
++
++## Funcionalidades Principais (App do Participante)
++
++### 1. Jornada de 7 Dias e Sistema de "Pings"
++- O n├║cleo da aplica├º├úo ├® uma jornada avaliativa de 7 dias. O cronograma inicia-se pontualmente ├ás 09h00 (logo ap├│s o registro ou no dia seguinte, dependendo do hor├írio da inscri├º├úo).
++- **Programa├º├úo Di├íria:** A aplica├º├úo agenda 7 pings di├írios estruturados em janelas de tempo fixas (09h, 11h, 13h, 15h, 17h, 19h, 21h).
++- **Regras de Janela de Resposta:** Cada ping tem uma janela de tempo r├¡gida: ativa-se 5 minutos antes do hor├írio marcado e encerra-se (expira) 20 minutos depois. Se ignorado, ├® automaticamente classificado como `missed` (perdido). Se respondido, torna-se `completed`.
++- **L├│gica de Tempo Real:** Utilizando a fun├º├úo `evaluateFullJourneySchedule` e hooks nativos do React, a aplica├º├úo recalcula o estado de toda a grade de 49 eventos contra o rel├│gio real e injeta as regras no Firestore automaticamente para consist├¬ncia.
++
++### 2. Fluxos de Question├írios (Instrument Flow)
++Quando o usu├írio atende ao ping (bot├úo no `DashboardPage`), um fluxo de instrumento modal ├® disparado. Dependendo se ├® um ping regular ou o ├║ltimo do dia ("Star Ping"), o fluxo altera:
++- **Pings Regulares:** Coleta de SAM (Self-Assessment Manikin, para val├¬ncia, alerta e domin├óncia), seguido do "Feed Context" e PANAS Contextual.
++- **Fim de Dia (End of Day):** Question├írio di├írio mais denso focado em m├®tricas do PANAS di├írio e num Log de Tempo de Tela ("End of Day Log"), qualidade de sono e n├¡vel de estresse.
++
++### 3. Sistema de Gamifica├º├úo (XP, N├¡veis e Leaderboard)
++Para incentivar engajamento ao longo da pesquisa, os usu├írios recebem recompensa imediata ap├│s as tarefas e progridem em N├¡veis:
++- Pings normais prov├¬m **50 XP**.
++- Pings do "Fim do Dia" prov├¬m **100 XP**.
++- **Leaderboard em tempo real:** Ranqueamento cont├¡nuo sincronizado pelo Firestore (`collection("participantes")`), mostrando os pontos contrapostos com os outros participantes no painel com foco nos 3 primeiros colcocados (P├│dio).
++
++### 4. Gest├úo de Contas e Perfil
++- Upload de Avatar (armazenado em Base64 no pr├│prio documento do usu├írio) / Remo├º├úo de Avatar.
++- Atualiza├º├úo din├ómica do Nickname e dados Sociodemogr├íficos sincronizados ativamente com o banco central.
++
++## Funcionalidades Administrativas (Admin Dashboard)
++Painel exclusivo para pesquisadores (`AdminDashboardPage.tsx`) projetado em volta da an├ílise dos dados consolidados:
++- **Dashboard Global:** Visualiza├º├úo de KPIs globais como "Total de Usu├írios",  "Taxa Global de Resposta", "N├¡vel M├®dio", "Tempo de Tela M├®dio (com divis├úo das plataformas mais utilizadas como Instagram/TikTok)", M├®dias do modelo SAM (Val├¬ncia/Alerta) e do PANAS.
++- **An├ílise Granular de Indiv├¡duos:** Utiliza um campo de busca auto-complete para selecionar qualquer participante espec├¡fico. Uma vez selecionado, renderiza o "Thermometer" de uso de tela e lista do hist├│rico reverso cronol├│gico completo das 49 respostas do sujeito, incluindo os "missed pings".
++- **Gest├úo de Engajamento Interventivo:** O administrador possui a habilidade de acionar Notifica├º├Áes Push Globais em massa (`send-broadcast`) acessando uma Firebase Function interna para notificar dispositivos registrados via Firebase Cloud Messaging.
++- **Exporta├º├úo de Dados:** Capacidade de extrair a base integral de respostas do Firestore e envi├í-la para o Excel (usando `xlsx`) com 1 clique para processamento estat├¡stico local (via SPSS, R, Python, etc.).
++
++## Considera├º├Áes T├®cnicas / Persist├¬ncia
++A aplica├º├úo armazena seus dados principalmente na matriz de pings aninhada ao objeto `user`/`GameState` dentro da cole├º├úo `participantes` no Firestore. O uso massivo de `useEffect` com `setInterval` a cada 5 segundos no `DashboardPage` assegura que at├® altera├º├Áes bruscas de estado no Frontend disparem rec├ílculos das prementes janelas das EMA.
++
++A integra├º├úo com service workers garante deep linking (parametr├┤ `open_ping`) a partir das notifica├º├Áes push (FCM) em mobile/desktop diretamente para o fluxo de resposta daquele momento.
+diff --git a/src/components/menu/ProfileMenu.tsx b/src/components/menu/ProfileMenu.tsx
+index ec7af79..ab7bf48 100644
+--- a/src/components/menu/ProfileMenu.tsx
++++ b/src/components/menu/ProfileMenu.tsx
+@@ -13,6 +13,8 @@ export const ProfileMenu: React.FC<{
+   onViewData: () => void;
+   onLogout: () => void;
+   hasAvatar: boolean;
++  isReportAvailable: boolean;
++  onDownloadReport: () => void;
+ }> = ({
+   onUpload,
+   onRemove,
+@@ -21,6 +23,8 @@ export const ProfileMenu: React.FC<{
+   onViewData,
+   onLogout,
+   hasAvatar,
++  isReportAvailable,
++  onDownloadReport,
+ }) => {
+   const baseClass =
+     "flex items-center space-x-3 w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-cyan-400/20 hover:text-cyan-300 transition-colors rounded-md";
+@@ -41,6 +45,14 @@ export const ProfileMenu: React.FC<{
+       <button onClick={onViewData} className={baseClass}>
+         <IdentificationIcon className="w-4 h-4" /> <span>Meus Dados</span>
+       </button>
++      {isReportAvailable && (
++        <button onClick={onDownloadReport} className={baseClass}>
++          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
++            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
++          </svg>
++          <span>Meu Relat├│rio</span>
++        </button>
++      )}
+       <button onClick={onViewRcle} className={baseClass}>
+         <DocumentTextIcon className="w-4 h-4" /> <span>Ver Termos</span>
+       </button>
+diff --git a/src/components/modal/ParticipantReportModal.tsx b/src/components/modal/ParticipantReportModal.tsx
+new file mode 100644
+index 0000000..fa5a22e
+--- /dev/null
++++ b/src/components/modal/ParticipantReportModal.tsx
+@@ -0,0 +1,391 @@
++import React from "react";
++import { GameState } from "@/src/components/data/GameState";
++import {
++  calculateReportStats,
++  generateTextFeedback,
++  ReportStats,
++  SCREEN_TIME_GLOBAL_REF,
++  SCREEN_TIME_NATIONAL_REF,
++} from "@/src/utils/ReportGeneratorUtils";
++
++const MAX_SCREEN_DISPLAY = 300;
++
++const formatMinutes = (mins: number) =>
++  `${Math.floor(mins / 60)}h ${mins % 60}min`;
++
++const ScoreBar: React.FC<{
++  value: number;
++  min: number;
++  max: number;
++  colorClass: string;
++}> = ({ value, min, max, colorClass }) => {
++  const pct = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
++  return (
++    <div className="w-full bg-gray-200 rounded-full h-3">
++      <div
++        className={`h-3 rounded-full transition-all ${colorClass}`}
++        style={{ width: `${pct}%` }}
++      />
++    </div>
++  );
++};
++
++const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
++  <h3 className="text-xs font-bold uppercase tracking-widest text-cyan-700 border-b border-cyan-200 pb-1 mb-3">
++    {children}
++  </h3>
++);
++
++type Props = {
++  gameState: GameState;
++  onClose: () => void;
++};
++
++export const ParticipantReportModal: React.FC<Props> = ({ gameState, onClose }) => {
++  const stats: ReportStats = calculateReportStats(gameState);
++  const feedback = generateTextFeedback(stats);
++  const generatedAt = new Date().toLocaleDateString("pt-BR", {
++    day: "2-digit",
++    month: "long",
++    year: "numeric",
++  });
++
++  const handlePrint = () => {
++    window.print();
++  };
++
++  return (
++    <>
++      {/*
++        Estrat├®gia de impress├úo:
++        - body * { visibility: hidden } oculta tudo
++        - #psylogos-report e filhos ficam vis├¡veis via visibility: visible
++        - position: absolute coloca o relat├│rio no topo da p├ígina impressa
++        - O container pai (overflow-y-auto) n├úo interfere pois visibility n├úo segue cascata
++      */}
++      <style>{`
++        @media print {
++          body * { visibility: hidden !important; }
++          #psylogos-report {
++            visibility: visible !important;
++            position: absolute !important;
++            top: 0 !important;
++            left: 0 !important;
++            width: 100% !important;
++            background: white !important;
++            color: #111 !important;
++            padding: 2rem !important;
++            margin: 0 !important;
++            overflow: visible !important;
++            max-height: none !important;
++            box-shadow: none !important;
++            border: none !important;
++          }
++          #psylogos-report * { visibility: visible !important; }
++        }
++      `}</style>
++
++      {/* Backdrop */}
++      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
++        {/* Modal container */}
++        <div className="relative bg-slate-900 border border-cyan-400/30 rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl">
++
++          {/* Close button */}
++          <button
++            onClick={onClose}
++            className="absolute top-3 right-3 text-gray-400 hover:text-white z-10 transition-colors"
++            aria-label="Fechar relat├│rio"
++          >
++            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
++              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
++            </svg>
++          </button>
++
++          {/* Scrollable printable area */}
++          <div className="overflow-y-auto flex-1">
++            <div id="psylogos-report" className="p-6 bg-white text-gray-800">
++
++              {/* ÔöÇÔöÇ Cabe├ºalho ÔöÇÔöÇ */}
++              <div className="text-center mb-6 pb-4 border-b-2 border-cyan-500">
++                <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Relat├│rio Pessoal</p>
++                <h1 className="text-2xl font-bold text-cyan-600">Psylogos</h1>
++                <p className="text-sm text-gray-500 italic mt-0.5">"O Enigma do Cora├º├úo"</p>
++                <div className="mt-3 flex justify-center gap-6 text-sm text-gray-700">
++                  <span className="font-semibold">{gameState.user?.nickname}</span>
++                  <span>N├¡vel {gameState.user?.level}</span>
++                  <span>{gameState.user?.points} XP</span>
++                </div>
++                <p className="text-xs text-gray-400 mt-1">Gerado em {generatedAt}</p>
++              </div>
++
++              {/* ÔöÇÔöÇ Desempenho na Jornada ÔöÇÔöÇ */}
++              <div className="mb-6">
++                <SectionTitle>Desempenho na Jornada</SectionTitle>
++                <div className="grid grid-cols-3 gap-3 text-center mb-3">
++                  <div className="bg-green-50 rounded-lg p-3 border border-green-200">
++                    <p className="text-2xl font-bold text-green-600">{stats.pingStats.completed}</p>
++                    <p className="text-xs text-gray-500 mt-1">Respondidos</p>
++                  </div>
++                  <div className="bg-red-50 rounded-lg p-3 border border-red-200">
++                    <p className="text-2xl font-bold text-red-500">{stats.pingStats.missed}</p>
++                    <p className="text-xs text-gray-500 mt-1">Perdidos</p>
++                  </div>
++                  <div className="bg-cyan-50 rounded-lg p-3 border border-cyan-200">
++                    <p className="text-2xl font-bold text-cyan-600">{stats.pingStats.completionRate}%</p>
++                    <p className="text-xs text-gray-500 mt-1">Taxa de Resposta</p>
++                  </div>
++                </div>
++                <div>
++                  <div className="flex justify-between text-xs text-gray-500 mb-1">
++                    <span>Progresso geral</span>
++                    <span>{stats.pingStats.completed} de {stats.pingStats.issued} pings emitidos</span>
++                  </div>
++                  <ScoreBar
++                    value={stats.pingStats.completed}
++                    min={0}
++                    max={stats.pingStats.issued || 1}
++                    colorClass="bg-cyan-500"
++                  />
++                </div>
++              </div>
++
++              {/* ÔöÇÔöÇ SAM ÔöÇÔöÇ */}
++              {stats.sam ? (
++                <div className="mb-6">
++                  <SectionTitle>Bem-Estar Emocional ÔÇö SAM</SectionTitle>
++                  <p className="text-xs text-gray-500 mb-3">
++                    O SAM (Self-Assessment Manikin) avalia tr├¬s dimens├Áes emocionais em escala de 1 a 9.
++                    Valores acima de 5 indicam estados positivos, ativados e controlados.
++                  </p>
++                  <div className="space-y-4">
++                    {[
++                      {
++                        label: "Val├¬ncia (Prazer)",
++                        value: stats.sam.valence,
++                        low: "Desprazer",
++                        high: "Prazer",
++                        colorClass: stats.sam.valence >= 5 ? "bg-cyan-500" : "bg-orange-400",
++                      },
++                      {
++                        label: "Alerta (Arousal)",
++                        value: stats.sam.arousal,
++                        low: "Calmo",
++                        high: "Agitado",
++                        colorClass: "bg-blue-500",
++                      },
++                      {
++                        label: "Domin├óncia (Controle)",
++                        value: stats.sam.dominance,
++                        low: "Sem controle",
++                        high: "Com controle",
++                        colorClass: stats.sam.dominance >= 5 ? "bg-purple-500" : "bg-gray-400",
++                      },
++                    ].map(({ label, value, low, high, colorClass }) => (
++                      <div key={label}>
++                        <div className="flex justify-between text-xs text-gray-700 mb-1">
++                          <span className="font-medium">{label}</span>
++                          <span className="font-bold text-cyan-700">{value.toFixed(1)} / 9</span>
++                        </div>
++                        <ScoreBar value={value} min={1} max={9} colorClass={colorClass} />
++                        <div className="flex justify-between text-xs text-gray-400 mt-0.5">
++                          <span>{low}</span>
++                          <span>{high}</span>
++                        </div>
++                      </div>
++                    ))}
++                  </div>
++                  <p className="text-xs text-gray-400 mt-2">Baseado em {stats.sam.count} avalia├º├Áes.</p>
++                </div>
++              ) : (
++                <div className="mb-6 p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
++                  <SectionTitle>Bem-Estar Emocional ÔÇö SAM</SectionTitle>
++                  <p className="text-xs text-gray-400">Nenhuma avalia├º├úo SAM registrada ainda.</p>
++                </div>
++              )}
++
++              {/* ÔöÇÔöÇ PANAS ÔöÇÔöÇ */}
++              {stats.panas ? (
++                <div className="mb-6">
++                  <SectionTitle>Afeto ÔÇö PANAS</SectionTitle>
++                  <p className="text-xs text-gray-500 mb-3">
++                    A escala PANAS avalia 10 afetos positivos e 10 negativos (cada item: 1ÔÇô5 pontos; total por dimens├úo: 10ÔÇô50).
++                    Afeto Positivo alto e Negativo baixo indicam maior bem-estar.
++                  </p>
++                  <div className="space-y-4">
++                    <div>
++                      <div className="flex justify-between text-xs text-gray-700 mb-1">
++                        <span className="font-medium">Afeto Positivo (PA)</span>
++                        <span className="font-bold text-green-600">{stats.panas.pa.toFixed(1)} / 50</span>
++                      </div>
++                      <ScoreBar value={stats.panas.pa} min={10} max={50} colorClass="bg-green-500" />
++                      <div className="flex justify-between text-xs text-gray-400 mt-0.5">
++                        <span>Baixo (10)</span>
++                        <span>Alto (50)</span>
++                      </div>
++                    </div>
++                    <div>
++                      <div className="flex justify-between text-xs text-gray-700 mb-1">
++                        <span className="font-medium">Afeto Negativo (NA)</span>
++                        <span className="font-bold text-red-500">{stats.panas.na.toFixed(1)} / 50</span>
++                      </div>
++                      <ScoreBar value={stats.panas.na} min={10} max={50} colorClass="bg-red-400" />
++                      <div className="flex justify-between text-xs text-gray-400 mt-0.5">
++                        <span>Baixo (10)</span>
++                        <span>Alto (50)</span>
++                      </div>
++                    </div>
++                  </div>
++                  <p className="text-xs text-gray-400 mt-2">Baseado em {stats.panas.count} avalia├º├Áes.</p>
++                </div>
++              ) : (
++                <div className="mb-6 p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
++                  <SectionTitle>Afeto ÔÇö PANAS</SectionTitle>
++                  <p className="text-xs text-gray-400">Nenhuma avalia├º├úo PANAS registrada ainda.</p>
++                </div>
++              )}
++
++              {/* ÔöÇÔöÇ Tempo de Tela ÔöÇÔöÇ */}
++              {stats.screenTime ? (
++                <div className="mb-6">
++                  <SectionTitle>Consumo de V├¡deos Curtos</SectionTitle>
++                  <p className="text-xs text-gray-500 mb-3">
++                    Tempo m├®dio di├írio de uso de plataformas de v├¡deos curtos (TikTok, Reels, Shorts).
++                    As linhas de refer├¬ncia indicam a m├®dia global e a m├®dia nacional (Brasil).
++                  </p>
++
++                  {/* Term├┤metro comparativo */}
++                  <div className="mb-1">
++                    <div className="flex justify-between text-xs text-gray-700 mb-1">
++                      <span className="font-medium">Sua m├®dia di├íria</span>
++                      <span className="font-bold text-cyan-700">
++                        {formatMinutes(stats.screenTime.avgDailyMinutes)}
++                        {" "}({stats.screenTime.avgDailyMinutes} min)
++                      </span>
++                    </div>
++                    <div className="relative w-full bg-gray-200 rounded-full h-5">
++                      {/* Barra do usu├írio */}
++                      <div
++                        className={`h-5 rounded-full transition-all ${
++                          stats.screenTime.avgDailyMinutes > SCREEN_TIME_NATIONAL_REF
++                            ? "bg-red-500"
++                            : stats.screenTime.avgDailyMinutes > SCREEN_TIME_GLOBAL_REF
++                            ? "bg-yellow-400"
++                            : "bg-green-500"
++                        }`}
++                        style={{
++                          width: `${Math.min(100, (stats.screenTime.avgDailyMinutes / MAX_SCREEN_DISPLAY) * 100)}%`,
++                        }}
++                      />
++                      {/* Linha refer├¬ncia global */}
++                      <div
++                        className="absolute top-0 bottom-0 w-0.5 bg-blue-600"
++                        style={{ left: `${(SCREEN_TIME_GLOBAL_REF / MAX_SCREEN_DISPLAY) * 100}%` }}
++                      />
++                      {/* Linha refer├¬ncia nacional */}
++                      <div
++                        className="absolute top-0 bottom-0 w-0.5 bg-purple-600"
++                        style={{ left: `${(SCREEN_TIME_NATIONAL_REF / MAX_SCREEN_DISPLAY) * 100}%` }}
++                      />
++                    </div>
++                    {/* Legenda das linhas */}
++                    <div className="relative flex justify-between text-xs text-gray-400 mt-1 h-4">
++                      <span>0</span>
++                      <span
++                        className="absolute text-blue-600 font-medium"
++                        style={{
++                          left: `${(SCREEN_TIME_GLOBAL_REF / MAX_SCREEN_DISPLAY) * 100}%`,
++                          transform: "translateX(-50%)",
++                        }}
++                      >
++                        {SCREEN_TIME_GLOBAL_REF}m Global
++                      </span>
++                      <span
++                        className="absolute text-purple-600 font-medium"
++                        style={{
++                          left: `${(SCREEN_TIME_NATIONAL_REF / MAX_SCREEN_DISPLAY) * 100}%`,
++                          transform: "translateX(-50%)",
++                        }}
++                      >
++                        {SCREEN_TIME_NATIONAL_REF}m BR
++                      </span>
++                      <span>{MAX_SCREEN_DISPLAY}min+</span>
++                    </div>
++                  </div>
++
++                  {/* Breakdown por plataforma */}
++                  {Object.keys(stats.screenTime.platformBreakdown).length > 0 && (
++                    <div className="mt-3 grid grid-cols-2 gap-2">
++                      {Object.entries(stats.screenTime.platformBreakdown)
++                        .sort(([, a], [, b]) => b - a)
++                        .map(([platform, totalMins]) => (
++                          <div
++                            key={platform}
++                            className="bg-gray-50 rounded p-2 border border-gray-200 text-xs flex justify-between"
++                          >
++                            <span className="font-medium text-gray-700">{platform}</span>
++                            <span className="text-gray-500">
++                              ~{Math.round(totalMins / stats.screenTime!.totalDays)} min/dia
++                            </span>
++                          </div>
++                        ))}
++                    </div>
++                  )}
++                  <p className="text-xs text-gray-400 mt-2">
++                    Baseado em {stats.screenTime.totalDays} registros de fim de dia.
++                  </p>
++                </div>
++              ) : (
++                <div className="mb-6 p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
++                  <SectionTitle>Consumo de V├¡deos Curtos</SectionTitle>
++                  <p className="text-xs text-gray-400">Nenhum registro de tempo de tela encontrado.</p>
++                </div>
++              )}
++
++              {/* ÔöÇÔöÇ Avalia├º├úo do Psylogos ÔöÇÔöÇ */}
++              <div className="mb-6 p-4 bg-cyan-50 rounded-lg border border-cyan-200">
++                <SectionTitle>Avalia├º├úo do Psylogos</SectionTitle>
++                <p className="text-sm text-gray-700 leading-relaxed">{feedback}</p>
++                <p className="text-xs text-gray-400 mt-3 italic">
++                  * Este relat├│rio ├® gerado automaticamente com base nos seus dados coletados durante o estudo EMA.
++                  N├úo constitui diagn├│stico cl├¡nico.
++                </p>
++              </div>
++
++              {/* ÔöÇÔöÇ Rodap├® ÔöÇÔöÇ */}
++              <div className="text-center text-xs text-gray-400 border-t border-gray-200 pt-3">
++                <p className="font-medium">Psylogos ÔÇö Estudo de Avalia├º├úo Ecol├│gica Moment├ónea (EMA)</p>
++                <p>Relat├│rio gerado em {generatedAt}</p>
++              </div>
++
++            </div>
++          </div>
++
++          {/* ÔöÇÔöÇ Bot├Áes de a├º├úo (fora da ├írea impressa) ÔöÇÔöÇ */}
++          <div className="flex justify-end gap-3 p-4 border-t border-slate-700 bg-slate-900 rounded-b-xl">
++            <button
++              onClick={onClose}
++              className="px-4 py-2 text-sm text-gray-400 hover:text-white border border-slate-600 hover:border-slate-400 rounded-lg transition-colors"
++            >
++              Fechar
++            </button>
++            <button
++              onClick={handlePrint}
++              className="px-4 py-2 text-sm bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold rounded-lg transition-colors flex items-center gap-2"
++            >
++              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
++                <path
++                  strokeLinecap="round"
++                  strokeLinejoin="round"
++                  strokeWidth={2}
++                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
++                />
++              </svg>
++              Imprimir / Salvar como PDF
++            </button>
++          </div>
++
++        </div>
++      </div>
++    </>
++  );
++};
+diff --git a/src/pages/DashboardPage.tsx b/src/pages/DashboardPage.tsx
+index ec8a73b..ffc856e 100644
+--- a/src/pages/DashboardPage.tsx
++++ b/src/pages/DashboardPage.tsx
+@@ -14,7 +14,9 @@ import { XCircleIcon } from "@/src/components/icons/XCircleIcon";
+ import { ProfileMenu } from "@/src/components/menu/ProfileMenu";
+ import { InstrumentModal } from "@/src/components/modal/InstrumentModal";
+ import { PerformanceModal } from "@/src/components/modal/PerformanceModal";
++import { ParticipantReportModal } from "@/src/components/modal/ParticipantReportModal";
+ import { RcleModal } from "@/src/components/modal/RcleModal";
++import { isEligibleForReport } from "@/src/utils/ReportGeneratorUtils";
+ import { SociodemographicModal } from "@/src/components/modal/SociodemographicModal";
+ import { PlexusFace } from "@/src/components/PlexusFace";
+ import { PodiumItem } from "@/src/components/PodiumItem";
+@@ -42,6 +44,7 @@ export const DashboardPage: React.FC<{
+   const [isBellVisible, setIsBellVisible] = useState(false);
+   const [isRcleModalOpen, setIsRcleModalOpen] = useState(false);
+   const [isPerformanceModalOpen, setIsPerformanceModalOpen] = useState(false);
++  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+   const [isSociodemographicModalOpen, setIsSociodemographicModalOpen] = useState(false);
+   const [instrumentFlow, setInstrumentFlow] = useState<InstrumentFlowState>(null);
+@@ -536,6 +539,8 @@ export const DashboardPage: React.FC<{
+ 
+   const notificationTimes = ["9h", "11h", "13h", "15h", "17h", "19h", "21h"];
+ 
++  const isReportAvailable = pings ? isEligibleForReport(pings) : false;
++
+   const completedPings = pings ? pings
+     .flatMap(d => d.statuses)
+     .filter((p, index) => (index + 1) % 7 !== 0 && p === "completed").length : 0;
+@@ -623,6 +628,12 @@ export const DashboardPage: React.FC<{
+           gameState={participante}
+         />
+       )}
++      {isReportModalOpen && participante && (
++        <ParticipantReportModal
++          gameState={participante}
++          onClose={() => setIsReportModalOpen(false)}
++        />
++      )}
+       <header className="flex items-center justify-between mb-8">
+         <div className="flex items-center space-x-4">
+           <div className="relative" ref={profileMenuRef}>
+@@ -659,6 +670,11 @@ export const DashboardPage: React.FC<{
+                   setIsProfileMenuOpen(false);
+                 }}
+                 hasAvatar={!!participante?.avatar}
++                isReportAvailable={isReportAvailable}
++                onDownloadReport={() => {
++                  setIsReportModalOpen(true);
++                  setIsProfileMenuOpen(false);
++                }}
+               />
+             )}
+           </div>
+diff --git a/src/utils/ReportGeneratorUtils.ts b/src/utils/ReportGeneratorUtils.ts
+new file mode 100644
+index 0000000..47671d5
+--- /dev/null
++++ b/src/utils/ReportGeneratorUtils.ts
+@@ -0,0 +1,195 @@
++import { GameState } from "@/src/components/data/GameState";
++
++const POSITIVE_ITEMS = [
++  "Am├ível", "Animado", "Apaixonado", "Determinado", "Din├ómico",
++  "Entusiasmado", "Forte", "Inspirado", "Orgulhoso", "Vigoroso",
++];
++const NEGATIVE_ITEMS = [
++  "Aflito", "Amedrontado", "Angustiado", "Humilhado", "Incomodado",
++  "Inquieto", "Irritado", "Nervoso", "Perturbado", "Rancoroso",
++];
++
++export const SCREEN_TIME_GLOBAL_REF = 143;  // min/dia ÔÇö m├®dia global
++export const SCREEN_TIME_NATIONAL_REF = 229; // min/dia ÔÇö m├®dia nacional (Brasil)
++
++export type ReportStats = {
++  pingStats: {
++    issued: number;
++    completed: number;
++    missed: number;
++    completionRate: number;
++  };
++  sam: {
++    valence: number;
++    arousal: number;
++    dominance: number;
++    count: number;
++  } | null;
++  panas: {
++    pa: number;
++    na: number;
++    count: number;
++  } | null;
++  screenTime: {
++    avgDailyMinutes: number;
++    totalDays: number;
++    platformBreakdown: Record<string, number>;
++  } | null;
++};
++
++export function isEligibleForReport(pings: { statuses: string[] }[]): boolean {
++  const allStatuses = pings.flatMap((d) => d.statuses);
++  const issued = allStatuses.filter((s) => s !== "pending").length;
++  const completed = allStatuses.filter((s) => s === "completed").length;
++  return issued > 0 && completed / issued >= 0.5;
++}
++
++export function calculateReportStats(gameState: GameState): ReportStats {
++  const allStatuses = (gameState.pings || []).flatMap((d) => d.statuses);
++  const issued = allStatuses.filter((s) => s !== "pending").length;
++  const completed = allStatuses.filter((s) => s === "completed").length;
++  const missed = allStatuses.filter((s) => s === "missed").length;
++  const completionRate = issued > 0 ? Math.round((completed / issued) * 100) : 0;
++
++  let samTotals = { valence: 0, arousal: 0, dominance: 0, count: 0 };
++  let panasTotals = { pa: 0, na: 0, count: 0 };
++  let screenTimeTotalMinutes = 0;
++  let screenTimeDays = 0;
++  const platformBreakdown: Record<string, number> = {};
++
++  (gameState.responses || []).forEach((r) => {
++    if (r.sam) {
++      samTotals.valence += r.sam.pleasure;
++      samTotals.arousal += r.sam.arousal;
++      samTotals.dominance += r.sam.dominance;
++      samTotals.count++;
++    }
++
++    if (r.panas) {
++      let pa = 0, na = 0, hasPanas = false;
++      Object.entries(r.panas).forEach(([key, value]) => {
++        if (POSITIVE_ITEMS.includes(key)) pa += Number(value);
++        if (NEGATIVE_ITEMS.includes(key)) na += Number(value);
++        hasPanas = true;
++      });
++      if (hasPanas) {
++        panasTotals.pa += pa;
++        panasTotals.na += na;
++        panasTotals.count++;
++      }
++    }
++
++    if (r.screenTimeLog && r.screenTimeLog.length > 0) {
++      let dayTotal = 0;
++      r.screenTimeLog.forEach((entry) => {
++        const dur = parseInt(entry.duration || "0");
++        if (!isNaN(dur)) {
++          dayTotal += dur;
++          const plat = entry.platform || "Outros";
++          platformBreakdown[plat] = (platformBreakdown[plat] || 0) + dur;
++        }
++      });
++      screenTimeTotalMinutes += dayTotal;
++      screenTimeDays++;
++    }
++  });
++
++  return {
++    pingStats: { issued, completed, missed, completionRate },
++    sam:
++      samTotals.count > 0
++        ? {
++            valence: samTotals.valence / samTotals.count,
++            arousal: samTotals.arousal / samTotals.count,
++            dominance: samTotals.dominance / samTotals.count,
++            count: samTotals.count,
++          }
++        : null,
++    panas:
++      panasTotals.count > 0
++        ? {
++            pa: panasTotals.pa / panasTotals.count,
++            na: panasTotals.na / panasTotals.count,
++            count: panasTotals.count,
++          }
++        : null,
++    screenTime:
++      screenTimeDays > 0
++        ? {
++            avgDailyMinutes: Math.round(screenTimeTotalMinutes / screenTimeDays),
++            totalDays: screenTimeDays,
++            platformBreakdown,
++          }
++        : null,
++  };
++}
++
++export function generateTextFeedback(stats: ReportStats): string {
++  const parts: string[] = [];
++
++  if (stats.sam) {
++    const { valence, arousal } = stats.sam;
++    if (valence >= 6) {
++      parts.push(
++        "Ao longo da jornada, seu estado emocional predominante foi positivo, com n├¡veis elevados de prazer e bem-estar."
++      );
++    } else if (valence >= 4) {
++      parts.push(
++        "Seu estado emocional ao longo da jornada foi neutro a moderado, com varia├º├Áes entre momentos agrad├íveis e menos agrad├íveis."
++      );
++    } else {
++      parts.push(
++        "Sua avalia├º├úo emocional indicou momentos de baixo bem-estar, com predom├¡nio de estados menos prazerosos durante a jornada."
++      );
++    }
++
++    if (arousal >= 6) {
++      parts.push(
++        "Voc├¬ demonstrou alto n├¡vel de ativa├º├úo e alerta, t├¡pico de quem est├í engajado e energizado."
++      );
++    } else if (arousal < 4) {
++      parts.push(
++        "Seu n├¡vel de alerta foi mais calmo e relaxado ÔÇö uma postura que pode ser sinal de tranquilidade ou baixa estimula├º├úo."
++      );
++    }
++  }
++
++  if (stats.panas) {
++    const { pa, na } = stats.panas;
++    // PA e NA: 10 itens ├ù escala 1ÔÇô5 ÔåÆ range 10ÔÇô50
++    const paLevel = pa >= 35 ? "alto" : pa >= 22 ? "moderado" : "baixo";
++    const naLevel = na >= 25 ? "elevado" : na >= 15 ? "moderado" : "baixo";
++    const emotional =
++      paLevel === "alto" && naLevel === "baixo"
++        ? "um bem-estar emocional saud├ível"
++        : paLevel === "baixo" && naLevel === "elevado"
++        ? "sinais de sofrimento emocional que merecem aten├º├úo"
++        : "um equil├¡brio emocional dentro do esperado para o cotidiano";
++    parts.push(
++      `Seu Afeto Positivo m├®dio foi ${paLevel} e o Afeto Negativo foi ${naLevel}, uma combina├º├úo que reflete ${emotional}.`
++    );
++  }
++
++  if (stats.screenTime) {
++    const avg = stats.screenTime.avgDailyMinutes;
++    if (avg <= SCREEN_TIME_GLOBAL_REF) {
++      parts.push(
++        `Seu tempo m├®dio de uso de v├¡deos curtos foi de ${avg} min/dia, abaixo da m├®dia global (${SCREEN_TIME_GLOBAL_REF} min) ÔÇö um padr├úo moderado de consumo.`
++      );
++    } else if (avg <= SCREEN_TIME_NATIONAL_REF) {
++      parts.push(
++        `Seu tempo m├®dio de uso foi de ${avg} min/dia, acima da m├®dia global (${SCREEN_TIME_GLOBAL_REF} min), mas dentro do padr├úo nacional (${SCREEN_TIME_NATIONAL_REF} min).`
++      );
++    } else {
++      parts.push(
++        `Seu tempo m├®dio de uso foi de ${avg} min/dia, acima da m├®dia nacional de ${SCREEN_TIME_NATIONAL_REF} min ÔÇö um padr├úo de consumo intenso que pode influenciar seu bem-estar.`
++      );
++    }
++  }
++
++  if (parts.length === 0) {
++    return "Continue respondendo aos pings para enriquecer seu relat├│rio pessoal com an├ílises mais completas.";
++  }
++
++  return parts.join(" ");
++}

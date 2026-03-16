@@ -61,6 +61,8 @@ export function evaluatePingState(
 
 export type ScheduleEvaluationResult = {
   currentActivePing: { day: number; ping: number; expiresAt: Date } | null;
+  /** Ping cuja janela de tempo está aberta (independente do status). Usado para manter o glow no ping atual mesmo após ele ser respondido. */
+  currentTimeWindowPing: { day: number; ping: number; expiresAt: Date } | null;
   nextFuturePing: { day: number; ping: number; startsAt: Date } | null;
   newlyMissedPings: { day: number; ping: number }[];
   isJourneyComplete: boolean;
@@ -77,6 +79,7 @@ export function evaluateFullJourneySchedule(
 ): ScheduleEvaluationResult {
   const result: ScheduleEvaluationResult = {
     currentActivePing: null,
+    currentTimeWindowPing: null,
     nextFuturePing: null,
     newlyMissedPings: [],
     isJourneyComplete: false,
@@ -99,8 +102,13 @@ export function evaluateFullJourneySchedule(
         result.newlyMissedPings.push({ day, ping });
       }
 
-      if (state === "active" && statusInDb === "pending") {
-        if (!result.currentActivePing) {
+      if (state === "active") {
+        if (!result.currentTimeWindowPing) {
+          const expiresAt = new Date(scheduledDate);
+          expiresAt.setMinutes(expiresAt.getMinutes() + 20);
+          result.currentTimeWindowPing = { day, ping, expiresAt };
+        }
+        if (statusInDb === "pending" && !result.currentActivePing) {
           const expiresAt = new Date(scheduledDate);
           expiresAt.setMinutes(expiresAt.getMinutes() + 20);
           result.currentActivePing = { day, ping, expiresAt };

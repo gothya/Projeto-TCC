@@ -114,6 +114,15 @@ export const DashboardPage: React.FC<{
         new Date()
       );
 
+      console.log("[Schedule]", new Date().toLocaleTimeString(), {
+        currentActivePing: result.currentActivePing,
+        currentTimeWindowPing: result.currentTimeWindowPing,
+        nextFuturePing: result.nextFuturePing,
+        isBellVisible,
+        highlightedPing,
+        isActiveWindow,
+      });
+
       // 1. Handle Newly Missed Pings
       if (result.newlyMissedPings.length > 0) {
         console.log("Found missed pings:", result.newlyMissedPings);
@@ -151,12 +160,22 @@ export const DashboardPage: React.FC<{
          return;
       }
 
-      // 3. Active Ping
+      // 3. Active Ping (pendente — sino aparece)
       if (result.currentActivePing) {
          setHighlightedPing({ day: result.currentActivePing.day, ping: result.currentActivePing.ping });
          setIsBellVisible(true);
          setTimerLabel("Responder até:");
          setTimerTargetDate(result.currentActivePing.expiresAt);
+         setIsActiveWindow(true);
+         return;
+      }
+
+      // 3.5. Janela ativa mas ping já respondido — mantém glow no ping atual até T+20
+      if (result.currentTimeWindowPing) {
+         setHighlightedPing({ day: result.currentTimeWindowPing.day, ping: result.currentTimeWindowPing.ping });
+         setIsBellVisible(false);
+         setTimerLabel("Responder até:");
+         setTimerTargetDate(result.currentTimeWindowPing.expiresAt);
          setIsActiveWindow(true);
          return;
       }
@@ -511,9 +530,11 @@ export const DashboardPage: React.FC<{
   };
 
   const handleTimerEnd = useCallback(async () => {
+    console.log("[TimerEnd]", new Date().toLocaleTimeString(), { isActiveWindow, highlightedPing });
     if (!isActiveWindow) {
       // It was waiting for a future ping, which just started.
       setIsBellVisible(true);
+      startInstrumentFlow();
       try {
         const currentToken = await getToken(getMessaging(), {
           vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
@@ -532,7 +553,7 @@ export const DashboardPage: React.FC<{
         console.error("Error fetching FCM token:", error);
       }
     }
-  }, [isActiveWindow, sendPush]);
+  }, [isActiveWindow, sendPush, startInstrumentFlow]);
 
   const notificationTimes = ["9h", "11h", "13h", "15h", "17h", "19h", "21h"];
 
