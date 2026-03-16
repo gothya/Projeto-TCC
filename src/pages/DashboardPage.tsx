@@ -534,7 +534,6 @@ export const DashboardPage: React.FC<{
     if (!isActiveWindow) {
       // It was waiting for a future ping, which just started.
       setIsBellVisible(true);
-      startInstrumentFlow();
       try {
         const currentToken = await getToken(getMessaging(), {
           vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
@@ -553,7 +552,7 @@ export const DashboardPage: React.FC<{
         console.error("Error fetching FCM token:", error);
       }
     }
-  }, [isActiveWindow, sendPush, startInstrumentFlow]);
+  }, [isActiveWindow, sendPush]);
 
   const notificationTimes = ["9h", "11h", "13h", "15h", "17h", "19h", "21h"];
 

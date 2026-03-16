@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { getParticipanteByUid } from "../service/user/participanteService";
 import { GameState } from "../components/data/GameState";
@@ -28,9 +28,9 @@ export function useParticipante() {
     fetchData();
   }, [user, authLoading]);
 
-  const updateParticipante = (newState: GameState) => {
+  const updateParticipante = useCallback((newState: GameState) => {
     setParticipante(newState);
-  };
+  }, []);
 
   return {
     participante,
