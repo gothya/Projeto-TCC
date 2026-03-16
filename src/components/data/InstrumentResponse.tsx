@@ -7,6 +7,8 @@ export type InstrumentResponse = {
   pingDay: number;
   pingIndex: number;
   type: "regular" | "end_of_day";
+  /** Indica se esta é a resposta válida para o ping. false = sobrescrita por resposta posterior. Ausente = true (retrocompatibilidade). */
+  isValid?: boolean;
   sam?: SamResponse;
   wasWatchingFeed?: boolean;
   panas?: PanasResponse;

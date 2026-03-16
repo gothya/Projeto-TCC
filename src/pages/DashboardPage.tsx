@@ -170,10 +170,10 @@ export const DashboardPage: React.FC<{
          return;
       }
 
-      // 3.5. Janela ativa mas ping já respondido — mantém glow no ping atual até T+20
+      // 3.5. Janela ativa mas ping já respondido/perdido — sino permanece visível para re-resposta
       if (result.currentTimeWindowPing) {
          setHighlightedPing({ day: result.currentTimeWindowPing.day, ping: result.currentTimeWindowPing.ping });
-         setIsBellVisible(false);
+         setIsBellVisible(true);
          setTimerLabel("Responder até:");
          setTimerTargetDate(result.currentTimeWindowPing.expiresAt);
          setIsActiveWindow(true);
@@ -348,14 +348,28 @@ export const DashboardPage: React.FC<{
     if (!instrumentFlow || !participante) return;
 
     const { day, ping } = instrumentFlow.ping;
+    const previousStatus = participante.pings[day].statuses[ping];
 
-    // 🔹 1. Criar novo estado
     const newPings = participante.pings.map((dayObj) => ({
       ...dayObj,
       statuses: [...dayObj.statuses],
     }));
 
     newPings[day].statuses[ping] = "completed";
+
+    // Se o ping já havia sido respondido, invalida a resposta anterior e mantém ambas.
+    // Se era missed ou pending, apenas adiciona a nova resposta como válida.
+    const newResponses: InstrumentResponse[] =
+      previousStatus === "completed"
+        ? [
+            ...participante.responses.map((r) =>
+              r.pingDay === day && r.pingIndex === ping
+                ? { ...r, isValid: false }
+                : r
+            ),
+            { ...finalResponseData, isValid: true },
+          ]
+        : [...participante.responses, { ...finalResponseData, isValid: true }];
 
     const newXp = newPings.reduce((acc, dayObj) => {
       return (
@@ -375,7 +389,7 @@ export const DashboardPage: React.FC<{
     const newState = {
       ...participante,
       pings: newPings,
-      responses: [...participante.responses, finalResponseData],
+      responses: newResponses,
       user: {
         ...participante.user,
         points: newXp,
@@ -387,43 +401,12 @@ export const DashboardPage: React.FC<{
       await UserService.updateUser(newState);
       updateParticipante(newState);
       setInstrumentFlow(null);
-      setIsBellVisible(false);
-      alert('funcionou');
+      // Sino permanece visível — o evaluateSchedule controla via currentTimeWindowPing
     }
     catch (error) {
       console.error("Erro ao finalizar instrumento:", error);
     }
   };
-
-  const handleMissedPing = useCallback(async () => {
-    if (!instrumentFlow || !participante) return;
-
-    const { day, ping } = instrumentFlow.ping;
-
-    const newPings = participante.pings.map((dayObj) => ({
-      ...dayObj,
-      statuses: [...dayObj.statuses],
-    }));
-
-    newPings[day].statuses[ping] = "missed";
-
-    const newState = {
-      ...participante,
-      pings: newPings,
-    };
-
-    // 🔥 Atualiza estado local
-    updateParticipante(newState);
-
-    // 🔥 Persiste no Firestore
-    try {
-      await UserService.updateUser(newState);
-    } catch (error) {
-      console.error("Erro ao salvar ping perdido:", error);
-    }
-
-    setInstrumentFlow(null);
-  }, [instrumentFlow, participante, updateParticipante]);
 
   // Note: 5 Minute Timeout for Active Ping was removed
   // The schedule evaluator completely handles missed pings on a fixed real-world timeline.
@@ -622,7 +605,7 @@ export const DashboardPage: React.FC<{
         <InstrumentModal
           flow={instrumentFlow}
           onStep={handleInstrumentStep}
-          onCancel={handleMissedPing}
+          onCancel={() => setInstrumentFlow(null)}
         />
       )}
       {isRcleModalOpen && (
