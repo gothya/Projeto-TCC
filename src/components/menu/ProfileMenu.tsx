@@ -29,7 +29,7 @@ export const ProfileMenu: React.FC<{
   const baseClass =
     "flex items-center space-x-3 w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-cyan-400/20 hover:text-cyan-300 transition-colors rounded-md";
   return (
-    <div className="absolute top-full mt-2 w-56 bg-slate-800/90 backdrop-blur-md border border-cyan-400/20 rounded-lg shadow-glow-blue p-2 z-20">
+    <div className="absolute top-full left-0 mt-2 w-56 bg-slate-800/90 backdrop-blur-md border border-cyan-400/20 rounded-lg shadow-glow-blue p-2 z-50">
       <button onClick={onUpload} className={baseClass}>
         <CameraIcon className="w-4 h-4" /> <span>Alterar Avatar</span>
       </button>

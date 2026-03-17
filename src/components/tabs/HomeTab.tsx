@@ -92,19 +92,17 @@ export const HomeTab: React.FC<Props> = ({
           <MenuIcon />
         </button>
         {isProfileMenuOpen && (
-          <div className="absolute top-10 left-0 z-50">
-            <ProfileMenu
-              onUpload={onUpload}
-              onRemove={onRemove}
-              onViewRcle={onViewRcle}
-              onViewPerformance={onViewPerformance}
-              onViewData={onViewData}
-              onLogout={onLogout}
-              hasAvatar={!!user?.avatar}
-              isReportAvailable={isReportAvailable}
-              onDownloadReport={onDownloadReport}
-            />
-          </div>
+          <ProfileMenu
+            onUpload={onUpload}
+            onRemove={onRemove}
+            onViewRcle={onViewRcle}
+            onViewPerformance={onViewPerformance}
+            onViewData={onViewData}
+            onLogout={onLogout}
+            hasAvatar={!!user?.avatar}
+            isReportAvailable={isReportAvailable}
+            onDownloadReport={onDownloadReport}
+          />
         )}
       </div>
 

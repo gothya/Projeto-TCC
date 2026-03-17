@@ -196,7 +196,7 @@ export const ConquistasTab: React.FC<Props> = ({ participante, isReportAvailable
           <div className="space-y-2">
             {pings.map((day, dayIdx) => (
               <div key={dayIdx} className="grid grid-cols-7 gap-1 items-center">
-                {day.statuses.map((status, pingIdx) => {
+                {(day.statuses ?? []).map((status, pingIdx) => {
                   const isLast = pingIdx === 6;
                   return (
                     <div key={pingIdx} className="flex items-center justify-center h-6">
