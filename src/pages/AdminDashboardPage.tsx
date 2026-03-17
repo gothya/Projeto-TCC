@@ -1,6 +1,7 @@
 
 import { GameState } from "@/src/components/data/GameState";
 import { exportToExcel } from "@/src/utils/excelExporter";
+import { POSITIVE_ITEMS, NEGATIVE_ITEMS } from "@/src/constants/panas";
 import {
     calculateDetailedStatsForUser,
     calculateGlobalAverageStats,
