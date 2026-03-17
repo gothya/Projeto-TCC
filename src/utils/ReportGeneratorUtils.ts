@@ -30,11 +30,11 @@ export type ReportStats = {
   } | null;
 };
 
+export const REPORT_UNLOCK_THRESHOLD = 24;
+
 export function isEligibleForReport(pings: { statuses: string[] }[]): boolean {
-  const allStatuses = pings.flatMap((d) => d.statuses);
-  const issued = allStatuses.filter((s) => s !== "pending").length;
-  const completed = allStatuses.filter((s) => s === "completed").length;
-  return issued > 0 && completed / issued >= 0.5;
+  const completed = pings.flatMap((d) => d.statuses).filter((s) => s === "completed").length;
+  return completed >= REPORT_UNLOCK_THRESHOLD;
 }
 
 export function calculateReportStats(gameState: GameState): ReportStats {
