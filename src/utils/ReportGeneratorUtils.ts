@@ -30,7 +30,7 @@ export type ReportStats = {
   } | null;
 };
 
-export const REPORT_UNLOCK_THRESHOLD = 24;
+export const REPORT_UNLOCK_THRESHOLD = 21;
 
 export function isEligibleForReport(pings: { statuses: string[] }[]): boolean {
   const completed = pings.flatMap((d) => d.statuses).filter((s) => s === "completed").length;
