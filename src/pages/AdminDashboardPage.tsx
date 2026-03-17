@@ -15,6 +15,7 @@ import { ChevronDownIcon } from "@/src/components/icons/ChevronDownIcon";
 import { DocumentTextIcon } from "@/src/components/icons/DocumentTextIcon";
 import { MagnifyingGlassIcon } from "@/src/components/icons/MagnifyingGlassIcon";
 import { UserIcon } from "@/src/components/icons/UserIcon";
+import { POSITIVE_ITEMS, NEGATIVE_ITEMS } from "@/src/constants/panas";
 import { auth, db } from "@/src/services/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import React, { useEffect, useState } from "react";

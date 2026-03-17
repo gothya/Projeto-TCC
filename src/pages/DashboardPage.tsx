@@ -2,24 +2,17 @@ import { GameState } from "@/src/components/data/GameState";
 import { InstrumentResponse } from "@/src/components/data/InstrumentResponse";
 import { InstrumentFlowState } from "@/src/components/states/InstrumentFlowState";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Card } from "@/src/components/Card";
-import { CountdownTimer } from "@/src/components/CountdownTimer";
 import { evaluateFullJourneySchedule, getJourneyStartDate } from "@/src/utils/timeUtils";
-
-import { BellIcon } from "@/src/components/icons/BellIcon";
-import { CheckCircleIcon } from "@/src/components/icons/CheckCircleIcon";
-import { StarIcon } from "@/src/components/icons/StarIcon";
-import { UserIcon } from "@/src/components/icons/UserIcon";
-import { XCircleIcon } from "@/src/components/icons/XCircleIcon";
-import { ProfileMenu } from "@/src/components/menu/ProfileMenu";
 import { InstrumentModal } from "@/src/components/modal/InstrumentModal";
 import { PerformanceModal } from "@/src/components/modal/PerformanceModal";
 import { ParticipantReportModal } from "@/src/components/modal/ParticipantReportModal";
 import { RcleModal } from "@/src/components/modal/RcleModal";
 import { SociodemographicModal } from "@/src/components/modal/SociodemographicModal";
 import { isEligibleForReport } from "@/src/utils/ReportGeneratorUtils";
-import { PlexusFace } from "@/src/components/PlexusFace";
-import { PodiumItem } from "@/src/components/PodiumItem";
+import { BottomNav, Tab } from "@/src/components/navigation/BottomNav";
+import { HomeTab } from "@/src/components/tabs/HomeTab";
+import { SocialTab } from "@/src/components/tabs/SocialTab";
+import { ConquistasTab } from "@/src/components/tabs/ConquistasTab";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { db } from "@/src/services/firebase";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
@@ -27,7 +20,6 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 import { getMessaging, getToken } from "firebase/messaging";
 import { useNavigate } from "react-router-dom";
 import { useParticipante } from "../hooks/useParticipante";
-import { doc, getDoc, setDoc } from "firebase/firestore";
 import UserService from "../service/user/UserService";
 import { NotificationService } from "../services/NotificationService";
 
@@ -42,6 +34,7 @@ export const DashboardPage: React.FC<{
     ping: number;
   } | null>(null);
   const [isBellVisible, setIsBellVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState<Tab>("home");
   const [isRcleModalOpen, setIsRcleModalOpen] = useState(false);
   const [isPerformanceModalOpen, setIsPerformanceModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -51,7 +44,7 @@ export const DashboardPage: React.FC<{
   const [timerTargetDate, setTimerTargetDate] = useState<Date | null>(null);
   const [timerLabel, setTimerLabel] = useState<string>("");
   const [isActiveWindow, setIsActiveWindow] = useState(false);
-  const { user: authUser, logout } = useAuth();
+  const { logout } = useAuth();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -59,26 +52,6 @@ export const DashboardPage: React.FC<{
   const isReportAvailable = pings.length > 0 && isEligibleForReport(pings);
 
   const navigate = useNavigate();
-
-  const [notificationPermission, setNotificationPermission] = useState(
-    Notification.permission
-  );
-
-  const requestNotificationPermission = async () => {
-    // const service = await NotificationService.init();
-    // const token = await service.requestPermission();
-
-    // if (token) {
-    //   setNotificationPermission("granted");
-    //   if (authUser) {
-    //     await service.saveTokenToFirestore(authuser?.uid, token);
-    //   }
-    //   alert("Notificações ativadas com sucesso!");
-    // } else {
-    //   setNotificationPermission("denied");
-    //   alert("Não foi possível ativar as notificações. Verifique as permissões do navegador.");
-    // }
-  };
 
 
 
@@ -251,13 +224,6 @@ export const DashboardPage: React.FC<{
     }
   };
 
-  const [pushStatus, setPushStatus] = useState(Notification.permission);
-
-  useEffect(() => {
-    setPushStatus(Notification.permission);
-  }, []);
-
-  const messaging = getMessaging();
   const functions = getFunctions();
   const sendPush = httpsCallable(functions, 'sendPushNotification');
 
@@ -541,38 +507,6 @@ export const DashboardPage: React.FC<{
     }
   }, [isActiveWindow, sendPush]);
 
-  const notificationTimes = ["9h", "11h", "13h", "15h", "17h", "19h", "21h"];
-
-  const completedPings = pings ? pings
-    .flatMap(d => d.statuses)
-    .filter((p, index) => (index + 1) % 7 !== 0 && p === "completed").length : 0;
-  const missedPings = pings ? pings
-    .flatMap(d => d.statuses)
-    .filter((p, index) => (index + 1) % 7 !== 0 && p === "missed").length : 0;
-  const completedStars = pings ? pings
-    .flatMap(d => d.statuses)
-    .filter((p, index) => (index + 1) % 7 === 0 && p === "completed").length : 0;
-
-  const { level, points: totalXp } = participante ? participante?.user : { level: 0, points: 0 };
-  const currentLevelXpStart = LEVEL_THRESHOLDS[level - 1] ?? 0;
-  const nextLevelXpTarget =
-    LEVEL_THRESHOLDS[level] ?? LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
-
-  const xpForThisLevel = nextLevelXpTarget - currentLevelXpStart;
-  const xpIntoLevel = totalXp - currentLevelXpStart;
-
-  const progressPercentage =
-    xpForThisLevel > 0 && xpIntoLevel >= 0
-      ? (xpIntoLevel / xpForThisLevel) * 100
-      : 0;
-
-  const pingIconClasses = "transition-transform duration-150 ease-in-out";
-
-  // Use real data
-  const allPlayers = leaderboardData.length > 0 ? leaderboardData : [{ nickname: participante?.user?.nickname, points: participante?.user?.points }];
-  const topThree = allPlayers.slice(0, 3);
-  const restOfPlayers = allPlayers.slice(3);
-
   const handleLogout = async () => {
     await logout();
     navigate("/login");
@@ -604,7 +538,9 @@ export const DashboardPage: React.FC<{
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-4xl mx-auto animate-fade-in">
+    <div className="h-screen flex flex-col overflow-hidden bg-brand-dark">
+
+      {/* ── Modais (preservados, sem alteração) ── */}
       {instrumentFlow && (
         <InstrumentModal
           flow={instrumentFlow}
@@ -636,299 +572,63 @@ export const DashboardPage: React.FC<{
           onClose={() => setIsReportModalOpen(false)}
         />
       )}
-      <header className="flex items-center justify-between mb-8">
-        <div className="flex items-center space-x-4">
-          <div className="relative" ref={profileMenuRef}>
-            <button
-              onClick={() => setIsProfileMenuOpen((prev) => !prev)}
-              className="relative group w-16 h-16 rounded-full bg-slate-800 border-2 border-cyan-400 flex items-center justify-center overflow-hidden cursor-pointer transition-all hover:border-cyan-300 hover:shadow-glow-blue-sm"
-              aria-label="Menu do perfil"
-            >
-              {participante?.user ? (
-                <img
-                  src={participante?.user?.avatar}
-                  alt="Avatar do usuário"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <UserIcon className="w-8 h-8 text-cyan-400" />
-              )}
-            </button>
-            {isProfileMenuOpen && (
-              <ProfileMenu
-                onLogout={handleLogout}
-                onUpload={() => fileInputRef.current?.click()}
-                onRemove={handleRemoveAvatar}
-                onViewRcle={() => {
-                  setIsRcleModalOpen(true);
-                  setIsProfileMenuOpen(false);
-                }}
-                onViewPerformance={() => {
-                  setIsPerformanceModalOpen(true);
-                  setIsProfileMenuOpen(false);
-                }}
-                onViewData={() => {
-                  setIsSociodemographicModalOpen(true);
-                  setIsProfileMenuOpen(false);
-                }}
-                hasAvatar={!!participante?.avatar}
-                isReportAvailable={isReportAvailable}
-                onDownloadReport={() => {
-                  setIsReportModalOpen(true);
-                  setIsProfileMenuOpen(false);
-                }}
-              />
-            )}
-          </div>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleAvatarChange}
-            accept="image/png, image/jpeg"
-            className="hidden"
+
+      {/* Hidden file input for avatar */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleAvatarChange}
+        accept="image/png, image/jpeg"
+        className="hidden"
+      />
+
+      {/* ── Conteúdo da aba ativa (scrollável) ── */}
+      <div className="flex-1 overflow-y-auto" style={{ paddingBottom: "5rem" }}>
+        {activeTab === "home" && participante && (
+          <HomeTab
+            participante={participante}
+            highlightedPing={highlightedPing}
+            timerTargetDate={timerTargetDate}
+            timerLabel={timerLabel}
+            isActiveWindow={isActiveWindow}
+            onTimerEnd={handleTimerEnd}
+            isProfileMenuOpen={isProfileMenuOpen}
+            onToggleProfileMenu={() => setIsProfileMenuOpen(prev => !prev)}
+            onCloseProfileMenu={() => setIsProfileMenuOpen(false)}
+            onUpload={() => fileInputRef.current?.click()}
+            onRemove={handleRemoveAvatar}
+            onViewRcle={() => { setIsRcleModalOpen(true); setIsProfileMenuOpen(false); }}
+            onViewPerformance={() => { setIsPerformanceModalOpen(true); setIsProfileMenuOpen(false); }}
+            onViewData={() => { setIsSociodemographicModalOpen(true); setIsProfileMenuOpen(false); }}
+            onLogout={handleLogout}
+            isReportAvailable={isReportAvailable}
+            onDownloadReport={() => { setIsReportModalOpen(true); setIsProfileMenuOpen(false); }}
           />
-          <div>
-            <h1 className="text-md lg:text-lg sm:text-sm font-bold text-cyan-400">{participante?.user?.nickname}</h1>
-            <p className="text-md lg:text-lg sm:text-sm font-bold text-gray-400">Nível {participante?.user?.level} - Mente Curiosa</p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-4">
-          {pushStatus === "denied" && (
-            <div className="bg-red-500 text-white p-4 rounded-lg mb-4">
-              Você bloqueou as notificações.
-              Para ativar, vá nas configurações do navegador.
-            </div>
-          )}
-          {notificationPermission === "default" && (
-            <button
-              onClick={requestNotificationPermission}
-              className="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 px-3 py-1 rounded hover:bg-cyan-500/30 transition-colors"
-            >
-              Ativar Notificações
-            </button>
-          )}
-          <CountdownTimer 
-            targetDate={timerTargetDate} 
-            label={timerLabel} 
-            onTimerEnd={handleTimerEnd} 
-            isActiveWindow={isActiveWindow} 
+        )}
+        {activeTab === "social" && (
+          <SocialTab
+            leaderboardData={leaderboardData}
+            currentNickname={participante?.user?.nickname}
           />
+        )}
+        {activeTab === "conquistas" && participante && (
+          <ConquistasTab
+            participante={participante}
+            isReportAvailable={isReportAvailable}
+            onOpenReport={() => setIsReportModalOpen(true)}
+          />
+        )}
+      </div>
 
-          { isBellVisible &&
-            <button
-              className="p-2 rounded-full bg-slate-800/50 hover:bg-slate-700/50 disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={startInstrumentFlow}
-              disabled={!highlightedPing || !!instrumentFlow}
-              aria-label="Responder próximo ping"
-            >
-              <BellIcon className="w-6 h-6 text-cyan-400" />
-            </button>
-          }
-          {/* <button
-            onClick={handleLogout}
-            className="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 px-3 py-1 rounded hover:bg-cyan-500/30 transition-colors"
-          >
-            Sair
-          </button> */}
-        </div>
-      </header>
+      {/* ── Bottom Navigation ── */}
+      <BottomNav
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        isBellVisible={isBellVisible}
+        onBellClick={startInstrumentFlow}
+        bellDisabled={!highlightedPing || !!instrumentFlow}
+      />
 
-      <main className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-3">
-          <Card>
-            <div className="p-2 text-center">
-              <h2 className="text-lg font-semibold text-cyan-400 mb-4">
-                "Psylogos, uma inteligência buscando compreender o coração da
-                Humanidade."
-              </h2>
-              <div className="w-64 h-64 mx-auto cursor-grab active:cursor-grabbing">
-                <PlexusFace />
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        <Card className="md:col-span-2">
-          <h3 className="card-title">XP / LVL</h3>
-          <div className="w-full bg-gray-700 rounded-full h-4">
-            <div
-              className="bg-cyan-400 h-4 rounded-full"
-              style={{ width: `${progressPercentage}%` }}
-            ></div>
-          </div>
-          <div className="flex justify-between mt-1 text-sm text-cyan-300">
-            <span>Nível {level}</span>
-            <span>
-              {totalXp} / {nextLevelXpTarget} XP
-            </span>
-            <span>Nível {level + 1}</span>
-          </div>
-          <p className="text-center text-gray-400 text-xs mt-2">
-            XP total acumulado / XP para próximo nível
-          </p>
-        </Card>
-
-
-
-        <div className="md:col-span-3">
-          <Card>
-            <h3 className="card-title text-center mb-4">Resumo da Semana</h3>
-            <div className="flex justify-around items-start text-center">
-              <div className="flex flex-col items-center space-y-2">
-                <CheckCircleIcon className="w-10 h-10 text-green-400" />
-                <h4 className="text-sm font-semibold text-gray-300">
-                  Pings Respondidos
-                </h4>
-                <p className="text-2xl font-bold text-green-400">
-                  {completedPings}
-                  <span className="text-sm font-normal text-gray-500">/42</span>
-                </p>
-              </div>
-              <div className="flex flex-col items-center space-y-2">
-                <XCircleIcon className="w-10 h-10 text-red-500" />
-                <h4 className="text-sm font-semibold text-gray-300">
-                  Pings Perdidos
-                </h4>
-                <p className="text-2xl font-bold text-red-500">
-                  {missedPings}
-                  <span className="text-sm font-normal text-gray-500">/13</span>
-                </p>
-              </div>
-              <div className="flex flex-col items-center space-y-2">
-                <StarIcon className="w-10 h-10 text-yellow-400" />
-                <h4 className="text-sm font-semibold text-gray-300">
-                  Dias Completos
-                </h4>
-                <p className="text-2xl font-bold text-yellow-400">
-                  {completedStars}
-                  <span className="text-sm font-normal text-gray-500">/5</span>
-                </p>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        <Card className="md:col-span-1">
-          <h3 className="card-title">Leaderboard</h3>
-          <div className="flex justify-center items-end gap-2 mb-6">
-            {topThree[1] && (
-              <PodiumItem
-                player={topThree[1]}
-                rank={2}
-                isCurrentUser={topThree[1].nickname === participante?.user?.nickname}
-              />
-            )}
-            {topThree[0] && (
-              <PodiumItem
-                player={topThree[0]}
-                rank={1}
-                isCurrentUser={topThree[0].nickname === participante?.user?.nickname}
-              />
-            )}
-            {topThree[2] && (
-              <PodiumItem
-                player={topThree[2]}
-                rank={3}
-                isCurrentUser={topThree[2].nickname === participante?.user?.nickname}
-              />
-            )}
-          </div>
-          <ul className="space-y-2">
-            {restOfPlayers.map((player, index) => {
-              const isCurrentUser = player.nickname === participante?.user?.nickname;
-              const rank = index + 4;
-              const userHighlight = isCurrentUser
-                ? "bg-cyan-500/20 border-cyan-400 text-cyan-200 font-bold"
-                : "border-transparent";
-
-              return (
-                <li
-                  key={`${player.nickname}-${index}`}
-                  className={`flex items-center justify-between p-2 rounded-md border-l-4 transition-all ${userHighlight}`}
-                >
-                  <span className="flex items-center">
-                    <span className="w-6 text-center text-gray-400 mr-2">
-                      {rank}
-                    </span>
-                    {player.nickname}
-                  </span>
-                  <span className="font-mono">{player.points}</span>
-                </li>
-              );
-            })}
-          </ul>
-        </Card>
-
-        <Card className="md:col-span-2">
-          <h3 className="card-title">Pings (Notificações)</h3>
-          <div className="grid grid-cols-7 gap-y-3 items-center text-center">
-            {notificationTimes.map((time) => (
-              <div
-                key={time}
-                className="font-semibold text-sm text-cyan-300/80"
-              >
-                {time}
-              </div>
-            ))}
-            {pings && pings.map((day, dayIndex) => (
-              <React.Fragment key={dayIndex}>
-                {day.statuses.map((status, pingIndex) => {
-                  const isLastColumn =
-                    pingIndex === notificationTimes.length - 1;
-                  const isHighlighted =
-                    highlightedPing?.day === dayIndex &&
-                    highlightedPing?.ping === pingIndex;
-
-                  return (
-                    <div
-                      key={`${dayIndex}-${pingIndex}`}
-                      className={`h-6 flex items-center justify-center relative`}
-                    >
-                      {isHighlighted && (
-                        <div className="absolute inset-0 rounded-full bg-cyan-400/50 animate-ping-glow"></div>
-                      )}
-                      <div className="relative z-10">
-                        {isLastColumn ? (
-                          status === "completed" ? (
-                            <StarIcon
-                              className={`w-5 h-5 text-yellow-400 ${pingIconClasses}`}
-                            />
-                          ) : status === "missed" ? (
-                            <div
-                              className={`w-3 h-1 bg-gray-500 rounded-full ${pingIconClasses}`}
-                            ></div>
-                          ) : (
-                            <StarIcon
-                              className={`w-5 h-5 text-gray-700 ${pingIconClasses}`}
-                            />
-                          )
-                        ) : status === "completed" ? (
-                          <div
-                            className={`w-4 h-4 rounded-full bg-green-400 ${pingIconClasses}`}
-                          ></div>
-                        ) : status === "missed" ? (
-                          <div
-                            className={`w-4 h-4 rounded-full bg-red-500 ${pingIconClasses}`}
-                          ></div>
-                        ) : (
-                          <div
-                            className={`w-4 h-4 rounded-full bg-gray-700 ${pingIconClasses}`}
-                          ></div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </React.Fragment>
-            ))}
-          </div>
-          <p className="text-xs text-gray-400 mt-4 text-center">
-            Progresso de 7 dias. Verde: Respondido, Vermelho: Perdido, Cinza:
-            Pendente.
-          </p>
-        </Card>
-      </main>
-      {/* Fix: Removed non-standard 'jsx' and 'global' props from the style tag. Standard React does not support styled-jsx syntax without special configuration. A regular <style> tag will achieve the desired global styling. */}
       <style>{`
         .form-input {
           width: 100%;
@@ -944,24 +644,7 @@ export const DashboardPage: React.FC<{
           border-color: rgba(0, 255, 255, 0.6);
           box-shadow: 0 0 8px rgba(0, 255, 255, 0.4), 0 0 3px rgba(0, 255, 255, 0.6);
         }
-        textarea.form-input {
-            min-height: 80px;
-        }
-        @keyframes fade-in {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes fade-in-down {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slow-spin-slow {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .animate-fade-in { animation: fade-in 0.5s ease-out; }
-        .animate-fade-in-down { animation: fade-in-down 0.5s ease-out; }
-        .animate-slow-spin-slow { animation: slow-spin-slow 20s linear infinite; }
+        textarea.form-input { min-height: 80px; }
       `}</style>
     </div>
   );
