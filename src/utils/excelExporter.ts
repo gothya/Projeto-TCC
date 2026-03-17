@@ -1,17 +1,20 @@
 import * as XLSX from "xlsx";
 import { GameState } from "@/src/components/data/GameState";
+import { InstrumentResponse } from "@/src/components/data/InstrumentResponse";
+import { NEGATIVE_ITEMS, NOTIFICATION_TIMES, POSITIVE_ITEMS } from "@/src/constants/panas";
+import { parseDurationMinutes, resolvePlatformName } from "./screenTimeUtils";
+import {
+  CovariablesRow,
+  ExportResult,
+  ExportSheets,
+  PanasRow,
+  SamRow,
+  ScreenTimeRow,
+} from "./exportTypes";
 
-// PANAS GROUPS
-const POSITIVE_ITEMS = [
-  "Amável", "Animado", "Apaixonado", "Determinado", "Dinâmico",
-  "Entusiasmado", "Forte", "Inspirado", "Orgulhoso", "Vigoroso"
-];
-const NEGATIVE_ITEMS = [
-  "Aflito", "Amedrontado", "Angustiado", "Humilhado", "Incomodado",
-  "Inquieto", "Irritado", "Nervoso", "Perturbado", "Rancoroso"
-];
-
-const NOTIFICATION_TIMES = ["9h", "11h", "13h", "15h", "17h", "19h", "21h"];
+// ---------------------------------------------------------------------------
+// Tipos internos
+// ---------------------------------------------------------------------------
 
 type FlatResponse = {
   nickname: string;
@@ -21,12 +24,13 @@ type FlatResponse = {
   pingIndex: number;
   pingLabel: string;
   type: "regular" | "end_of_day";
-  response: any;
+  response: InstrumentResponse;
 };
 
-/**
- * Flatten all user responses into a single array with participant info attached.
- */
+// ---------------------------------------------------------------------------
+// Helpers internos
+// ---------------------------------------------------------------------------
+
 function flattenResponses(allUsers: GameState[]): FlatResponse[] {
   const flat: FlatResponse[] = [];
 
@@ -34,33 +38,31 @@ function flattenResponses(allUsers: GameState[]): FlatResponse[] {
     const nickname = user.user?.nickname || "Desconhecido";
     const participantId = user.firebaseId || "N/A";
 
-    (user.responses || []).forEach((r) => {
-      const pingLabel = `Dia ${(r.pingDay ?? 0) + 1} (${NOTIFICATION_TIMES[r.pingIndex] || "?"})`;
+    (user.responses || [])
+      .filter((r) => r.isValid !== false)
+      .forEach((r) => {
+        const pingLabel = `Dia ${(r.pingDay ?? 0) + 1} (${NOTIFICATION_TIMES[r.pingIndex] || "?"})`;
 
-      flat.push({
-        nickname,
-        participantId,
-        timestamp: r.timestamp
-          ? new Date(r.timestamp).toLocaleString("pt-BR")
-          : "N/A",
-        pingDay: (r.pingDay ?? 0) + 1,
-        pingIndex: (r.pingIndex ?? 0) + 1,
-        pingLabel,
-        type: r.type,
-        response: r,
+        flat.push({
+          nickname,
+          participantId,
+          timestamp: r.timestamp
+            ? new Date(r.timestamp).toLocaleString("pt-BR")
+            : "N/A",
+          pingDay: (r.pingDay ?? 0) + 1,
+          pingIndex: (r.pingIndex ?? 0) + 1,
+          pingLabel,
+          type: r.type,
+          response: r,
+        });
       });
-    });
   });
 
   return flat;
 }
 
-/**
- * Build the SAM sheet data.
- * Only regular pings contain SAM data.
- */
-function buildSamSheet(allResponses: FlatResponse[]) {
-  const rows: Record<string, any>[] = [];
+function buildSamSheet(allResponses: FlatResponse[]): SamRow[] {
+  const rows: SamRow[] = [];
 
   allResponses.forEach((entry) => {
     const r = entry.response;
@@ -82,21 +84,16 @@ function buildSamSheet(allResponses: FlatResponse[]) {
   return rows;
 }
 
-/**
- * Build the PANAS sheet data.
- * Includes info about whether it's a midday (contextual) or end-of-day PANAS.
- */
-function buildPanasSheet(allResponses: FlatResponse[]) {
-  const rows: Record<string, any>[] = [];
+function buildPanasSheet(allResponses: FlatResponse[]): PanasRow[] {
+  const rows: PanasRow[] = [];
 
   allResponses.forEach((entry) => {
     const r = entry.response;
     if (!r.panas) return;
 
-    const panasType =
-      entry.type === "end_of_day" ? "Final do Dia" : "Meio do Dia";
+    const panasType = entry.type === "end_of_day" ? "Final do Dia" : "Meio do Dia";
 
-    const row: Record<string, any> = {
+    const row: PanasRow = {
       Nickname: entry.nickname,
       Timestamp: entry.timestamp,
       "Dia do Estudo": entry.pingDay,
@@ -105,14 +102,12 @@ function buildPanasSheet(allResponses: FlatResponse[]) {
       "Tipo PANAS": panasType,
     };
 
-    // Positive affects
     POSITIVE_ITEMS.forEach((item) => {
-      row[`POS_${item}`] = r.panas[item] ?? "";
+      row[`POS_${item}`] = r.panas![item] ?? "";
     });
 
-    // Negative affects
     NEGATIVE_ITEMS.forEach((item) => {
-      row[`NEG_${item}`] = r.panas[item] ?? "";
+      row[`NEG_${item}`] = r.panas![item] ?? "";
     });
 
     rows.push(row);
@@ -121,112 +116,71 @@ function buildPanasSheet(allResponses: FlatResponse[]) {
   return rows;
 }
 
-/**
- * Build the Screen Time sheet data.
- * Only end-of-day pings contain screen time logs.
- */
 function buildScreenTimeSheet(
   allResponses: FlatResponse[],
   allUsers: GameState[]
-) {
-  // First pass: collect all unique platform names across all users
+): ScreenTimeRow[] {
+  // 1ª passagem: coletar todos os nomes de plataforma
   const allPlatforms = new Set<string>();
-
   allUsers.forEach((user) => {
-    (user.responses || []).forEach((r) => {
-      if (r.screenTimeLog) {
-        r.screenTimeLog.forEach((entry) => {
-          const platform = entry.platform || "Outros";
-          if (platform !== "Outro") {
-            allPlatforms.add(platform);
-          } else {
-            // Use the detailed name if "Outro"
-            allPlatforms.add(entry.otherPlatformDetail || "Outro");
-          }
-        });
-      }
-    });
+    (user.responses || [])
+      .filter((r) => r.isValid !== false)
+      .forEach((r) => {
+        if (r.screenTimeLog) {
+          r.screenTimeLog.forEach((entry) => {
+            allPlatforms.add(resolvePlatformName(entry));
+          });
+        }
+      });
   });
 
   const platformList = Array.from(allPlatforms).sort();
 
-  // Second pass: build rows
-  const rows: Record<string, any>[] = [];
+  // 2ª passagem: montar linhas
+  const rows: ScreenTimeRow[] = [];
 
   allResponses.forEach((entry) => {
     const r = entry.response;
     if (!r.screenTimeLog || r.screenTimeLog.length === 0) return;
 
-    const row: Record<string, any> = {
+    const row: ScreenTimeRow = {
       Nickname: entry.nickname,
       Timestamp: entry.timestamp,
       "Dia do Estudo": entry.pingDay,
       "Ping (Slot)": entry.pingIndex,
       Horário: NOTIFICATION_TIMES[entry.pingIndex - 1] || "?",
+      "Total (min)": 0,
     };
 
-    // Initialize all platforms to 0
     platformList.forEach((p) => {
       row[`${p} (min)`] = 0;
     });
 
     let totalMinutes = 0;
 
-    r.screenTimeLog.forEach(
-      (stEntry: {
-        platform: string;
-        otherPlatformDetail: string;
-        hours: string;
-        minutes: string;
-        duration: string;
-      }) => {
-        let platformName = stEntry.platform || "Outros";
-        if (platformName === "Outro") {
-          platformName = stEntry.otherPlatformDetail || "Outro";
-        }
+    r.screenTimeLog.forEach((stEntry) => {
+      const platformName = resolvePlatformName(stEntry);
+      const dur = parseDurationMinutes(stEntry);
 
-        // Calculate duration from hours/minutes or fall back to duration
-        let dur = 0;
-        if (stEntry.hours || stEntry.minutes) {
-          const h = parseInt(stEntry.hours || "0");
-          const m = parseInt(stEntry.minutes || "0");
-          dur = (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m);
-        } else {
-          dur = parseInt(stEntry.duration || "0");
-          if (isNaN(dur)) dur = 0;
-        }
-
-        if (row[`${platformName} (min)`] !== undefined) {
-          row[`${platformName} (min)`] += dur;
-        } else {
-          row[`${platformName} (min)`] = dur;
-        }
-
-        totalMinutes += dur;
-      }
-    );
+      const key = `${platformName} (min)`;
+      row[key] = ((row[key] as number) || 0) + dur;
+      totalMinutes += dur;
+    });
 
     row["Total (min)"] = totalMinutes;
-
     rows.push(row);
   });
 
   return rows;
 }
 
-/**
- * Build the Co-variables sheet data.
- * Contains sleep quality and stressful events from end-of-day pings.
- */
-function buildCovariablesSheet(allResponses: FlatResponse[]) {
-  const rows: Record<string, any>[] = [];
+function buildCovariablesSheet(allResponses: FlatResponse[]): CovariablesRow[] {
+  const rows: CovariablesRow[] = [];
 
   allResponses.forEach((entry) => {
     const r = entry.response;
-    // Only include if has sleep or stress data
     if (!r.sleepQuality && !r.stressfulEvents) return;
 
-    // Combine multiple stressful events with ";" if they exist
     const stressText = r.stressfulEvents
       ? r.stressfulEvents
           .split("\n")
@@ -249,80 +203,85 @@ function buildCovariablesSheet(allResponses: FlatResponse[]) {
   return rows;
 }
 
+function addSheetToWorkbook(
+  wb: XLSX.WorkBook,
+  data: Record<string, unknown>[],
+  name: string
+): void {
+  if (data.length === 0) {
+    const ws = XLSX.utils.aoa_to_sheet([["Sem dados disponíveis"]]);
+    XLSX.utils.book_append_sheet(wb, ws, name);
+    return;
+  }
+
+  const ws = XLSX.utils.json_to_sheet(data);
+
+  const colWidths = Object.keys(data[0]).map((key) => {
+    const maxLen = Math.max(
+      key.length,
+      ...data.map((row) => String(row[key] ?? "").length)
+    );
+    return { wch: Math.min(maxLen + 2, 40) };
+  });
+  ws["!cols"] = colWidths;
+
+  XLSX.utils.book_append_sheet(wb, ws, name);
+}
+
+// ---------------------------------------------------------------------------
+// API pública
+// ---------------------------------------------------------------------------
+
 /**
- * Export all data to a multi-sheet Excel file and trigger download.
+ * Constrói o workbook com todas as abas. Não dispara download.
+ * Útil para testes unitários e pré-visualização.
  */
-export function exportToExcel(allUsers: GameState[]): {
-  success: boolean;
-  recordCount: number;
-  message: string;
+export function buildWorkbook(allUsers: GameState[]): {
+  wb: XLSX.WorkBook;
+  sheets: ExportSheets;
 } {
+  const allResponses = flattenResponses(allUsers);
+
+  const sheets: ExportSheets = {
+    sam: buildSamSheet(allResponses),
+    panas: buildPanasSheet(allResponses),
+    screenTime: buildScreenTimeSheet(allResponses, allUsers),
+    covariables: buildCovariablesSheet(allResponses),
+  };
+
+  const wb = XLSX.utils.book_new();
+  addSheetToWorkbook(wb, sheets.sam as unknown as Record<string, unknown>[], "SAM");
+  addSheetToWorkbook(wb, sheets.panas as unknown as Record<string, unknown>[], "PANAS");
+  addSheetToWorkbook(wb, sheets.screenTime as unknown as Record<string, unknown>[], "Tempo de Tela");
+  addSheetToWorkbook(wb, sheets.covariables as unknown as Record<string, unknown>[], "Co-variáveis");
+
+  return { wb, sheets };
+}
+
+/**
+ * Gera e faz download do arquivo Excel.
+ * Assinatura idêntica à versão anterior — nenhum chamador precisa mudar.
+ */
+export function exportToExcel(allUsers: GameState[]): ExportResult {
   if (!allUsers || allUsers.length === 0) {
-    return {
-      success: false,
-      recordCount: 0,
-      message: "Nenhum dado disponível para exportar.",
-    };
+    return { success: false, recordCount: 0, message: "Nenhum dado disponível para exportar." };
   }
 
   const allResponses = flattenResponses(allUsers);
-
   if (allResponses.length === 0) {
-    return {
-      success: false,
-      recordCount: 0,
-      message: "Nenhuma resposta encontrada para exportar.",
-    };
+    return { success: false, recordCount: 0, message: "Nenhuma resposta encontrada para exportar." };
   }
 
-  // Build sheet data
-  const samData = buildSamSheet(allResponses);
-  const panasData = buildPanasSheet(allResponses);
-  const screenTimeData = buildScreenTimeSheet(allResponses, allUsers);
-  const covariablesData = buildCovariablesSheet(allResponses);
+  const { wb, sheets } = buildWorkbook(allUsers);
 
-  // Create workbook
-  const wb = XLSX.utils.book_new();
-
-  // Helper to add a sheet (handles empty data gracefully)
-  const addSheet = (data: Record<string, any>[], name: string) => {
-    if (data.length === 0) {
-      // Create sheet with just a header saying "Sem dados"
-      const ws = XLSX.utils.aoa_to_sheet([["Sem dados disponíveis"]]);
-      XLSX.utils.book_append_sheet(wb, ws, name);
-    } else {
-      const ws = XLSX.utils.json_to_sheet(data);
-
-      // Auto-size columns
-      const colWidths = Object.keys(data[0]).map((key) => {
-        const maxLen = Math.max(
-          key.length,
-          ...data.map((row) => String(row[key] ?? "").length)
-        );
-        return { wch: Math.min(maxLen + 2, 40) };
-      });
-      ws["!cols"] = colWidths;
-
-      XLSX.utils.book_append_sheet(wb, ws, name);
-    }
-  };
-
-  addSheet(samData, "SAM");
-  addSheet(panasData, "PANAS");
-  addSheet(screenTimeData, "Tempo de Tela");
-  addSheet(covariablesData, "Co-variáveis");
-
-  // Generate and download
   const dateStr = new Date().toISOString().slice(0, 10);
-  const fileName = `dados_estudo_enigma_${dateStr}.xlsx`;
-
-  XLSX.writeFile(wb, fileName);
+  XLSX.writeFile(wb, `dados_estudo_enigma_${dateStr}.xlsx`);
 
   const totalRecords =
-    samData.length +
-    panasData.length +
-    screenTimeData.length +
-    covariablesData.length;
+    sheets.sam.length +
+    sheets.panas.length +
+    sheets.screenTime.length +
+    sheets.covariables.length;
 
   return {
     success: true,

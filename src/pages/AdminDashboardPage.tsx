@@ -1,6 +1,12 @@
 
 import { GameState } from "@/src/components/data/GameState";
 import { exportToExcel } from "@/src/utils/excelExporter";
+import {
+    calculateDetailedStatsForUser,
+    calculateGlobalAverageStats,
+    calculateGlobalPingStats,
+    calculateParticipantSummary,
+} from "@/src/utils/adminStats";
 import { BellIcon } from "@/src/components/icons/BellIcon";
 import { ChartBarIcon } from "@/src/components/icons/ChartBarIcon";
 import { CheckCircleIcon } from "@/src/components/icons/CheckCircleIcon";
@@ -13,16 +19,6 @@ import { collection, getDocs } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-
-// PANAS GROUPS
-const POSITIVE_ITEMS = [
-    "Amável", "Animado", "Apaixonado", "Determinado", "Dinâmico",
-    "Entusiasmado", "Forte", "Inspirado", "Orgulhoso", "Vigoroso"
-];
-const NEGATIVE_ITEMS = [
-    "Aflito", "Amedrontado", "Angustiado", "Humilhado", "Incomodado",
-    "Inquieto", "Irritado", "Nervoso", "Perturbado", "Rancoroso"
-];
 
 export const AdminDashboardPage: React.FC<{
     
@@ -104,270 +100,16 @@ export const AdminDashboardPage: React.FC<{
     };
 
 
-    const calculateGlobalPingStats = () => {
-        let totalIssued = 0;
-        let totalAnswered = 0;
-
-        allUsers.forEach(user => {
-            (user.pings || []).forEach(day => {
-                if (day.statuses) {
-                    day.statuses.forEach(status => {
-                        if (status !== "pending") {
-                            totalIssued++;
-                            if (status === "completed") totalAnswered++;
-                        }
-                    });
-                }
-            });
-        });
-
-        const rate = totalIssued === 0 ? 0 : Math.round((totalAnswered / totalIssued) * 100);
-
-        return { totalIssued, totalAnswered, rate };
-    };
-
-    const { totalIssued, totalAnswered, rate: globalResponseRate } = calculateGlobalPingStats();
+    const { totalIssued, totalAnswered, rate: globalResponseRate } = calculateGlobalPingStats(allUsers);
 
 
     // Stats for the SELECTED USER (or global if we wanted to aggregate all, but usually detail is per user)
     // The requirements imply browsing a "User's" history.
     // We can calculate "Global Averages" (All users) vs "Selected User Averages".
 
-    const calculateGlobalAverageStats = () => {
-        let samTotals = { valence: 0, arousal: 0, dominance: 0, count: 0 };
-        let panasStats = { totalPA: 0, totalNA: 0, count: 0 };
-        let screenTimeStats = { totalMinutes: 0, count: 0, platformBreakdown: {} as Record<string, number> };
-        let sleepStats = { totalQuality: 0, count: 0 };
-
-        // Gamification Stats
-        let totalLevel = 0;
-        let maxLevel = 0;
-
-        allUsers.forEach(user => {
-            // Gamification
-            if (user.user) {
-                totalLevel += user.user.level || 0;
-                if ((user.user.level || 0) > maxLevel) maxLevel = user.user.level || 0;
-            }
-
-            (user.responses || []).forEach(r => {
-                // SAM
-                if (r.sam) {
-                    samTotals.valence += r.sam.pleasure;
-                    samTotals.arousal += r.sam.arousal;
-                    samTotals.dominance += r.sam.dominance;
-                    samTotals.count++;
-                }
-
-                // PANAS
-                if (r.panas) {
-                    let paSum = 0;
-                    let naSum = 0;
-                    let hasPanas = false;
-                    Object.entries(r.panas).forEach(([key, value]) => {
-                        if (POSITIVE_ITEMS.includes(key)) paSum += Number(value);
-                        if (NEGATIVE_ITEMS.includes(key)) naSum += Number(value);
-                        hasPanas = true;
-                    });
-                    if (hasPanas) {
-                        panasStats.totalPA += paSum;
-                        panasStats.totalNA += naSum;
-                        panasStats.count++;
-                    }
-                }
-
-                // Screen Time
-                if (r.screenTimeLog) {
-                    let dailyMinutes = 0;
-                    r.screenTimeLog.forEach(entry => {
-                        const dur = parseInt(entry.duration || "0");
-                        if (!isNaN(dur)) {
-                            dailyMinutes += dur;
-                            const plat = entry.platform || "Outros";
-                            screenTimeStats.platformBreakdown[plat] = (screenTimeStats.platformBreakdown[plat] || 0) + dur;
-                        }
-                    });
-                    screenTimeStats.totalMinutes += dailyMinutes;
-                    screenTimeStats.count++; // Count "days" or "entries"? Days (responses).
-                }
-
-                // Sleep
-                if (r.sleepQuality && r.sleepQuality > 0) {
-                    sleepStats.totalQuality += r.sleepQuality;
-                    sleepStats.count++;
-                }
-            });
-        });
-
-        const samAvg = samTotals.count > 0 ? {
-            valence: (samTotals.valence / samTotals.count).toFixed(1),
-            arousal: (samTotals.arousal / samTotals.count).toFixed(1),
-            dominance: (samTotals.dominance / samTotals.count).toFixed(1),
-        } : { valence: "0.0", arousal: "0.0", dominance: "0.0" };
-
-        const panasAvg = panasStats.count > 0 ? {
-            pa: (panasStats.totalPA / panasStats.count).toFixed(1),
-            na: (panasStats.totalNA / panasStats.count).toFixed(1),
-        } : { pa: "-", na: "-" };
-
-        const sleepAvg = sleepStats.count > 0 ? (sleepStats.totalQuality / sleepStats.count).toFixed(1) : "-";
-
-
-        const avgScreenTime = screenTimeStats.count > 0 ? Math.round(screenTimeStats.totalMinutes / screenTimeStats.count) : 0;
-        const avgScreenTimeFormatted = `${Math.floor(avgScreenTime / 60)}h ${avgScreenTime % 60}m`;
-
-        // Normalize platform breakdown by count to get "Average mins per platform per day"? 
-        // Or just share of total? User asked for "Average by platform".
-        // Let's divide total platform minutes by total responses (days) to get "avg min/day" for each platform.
-        const platformAvg: Record<string, string> = {};
-        if (screenTimeStats.count > 0) {
-            Object.entries(screenTimeStats.platformBreakdown).forEach(([plat, totalMins]) => {
-                platformAvg[plat] = Math.round(totalMins / screenTimeStats.count).toString();
-            });
-        }
-
-        const avgLevel = allUsers.length > 0 ? (totalLevel / allUsers.length).toFixed(1) : "0";
-
-        return { samAvg, panasAvg, sleepAvg, avgScreenTimeFormatted, avgScreenTimeRaw: avgScreenTime, platformAvg, avgLevel, maxLevel };
-    };
-
-    const globalStats = calculateGlobalAverageStats();
-
-
-    // Stats for the SPECIFIC user being viewed
-    const calculateDetailedStatsForUser = (user: GameState) => {
-        if (!user.responses || user.responses.length === 0) return null;
-        let samTotals = { valence: 0, arousal: 0, dominance: 0, count: 0 };
-        let panasStats = { totalPA: 0, totalNA: 0, count: 0 };
-
-        user.responses.forEach(r => {
-            // SAM
-            if (r.sam) {
-                samTotals.valence += r.sam.pleasure;
-                samTotals.arousal += r.sam.arousal;
-                samTotals.dominance += r.sam.dominance;
-                samTotals.count++;
-            }
-            // PANAS
-            if (r.panas) {
-                let paSum = 0;
-                let naSum = 0;
-                let hasPanas = false;
-
-                Object.entries(r.panas).forEach(([key, value]) => {
-                    if (POSITIVE_ITEMS.includes(key)) paSum += value;
-                    if (NEGATIVE_ITEMS.includes(key)) naSum += value;
-                    hasPanas = true;
-                });
-
-                if (hasPanas) {
-                    panasStats.totalPA += paSum;
-                    panasStats.totalNA += naSum;
-                    panasStats.count++;
-                }
-            }
-        });
-
-        const samAverages = samTotals.count > 0 ? {
-            valence: (samTotals.valence / samTotals.count).toFixed(1),
-            arousal: (samTotals.arousal / samTotals.count).toFixed(1),
-            dominance: (samTotals.dominance / samTotals.count).toFixed(1),
-        } : null;
-
-        const panasAverages = panasStats.count > 0 ? {
-            pa: (panasStats.totalPA / panasStats.count).toFixed(1),
-            na: (panasStats.totalNA / panasStats.count).toFixed(1),
-        } : null;
-
-        return { samAverages, panasAverages };
-    };
+    const globalStats = calculateGlobalAverageStats(allUsers);
 
     const selectedUserStats = selectedUser ? calculateDetailedStatsForUser(selectedUser) : null;
-
-    // --- NEW: User Summary Calculation ---
-    const calculateParticipantSummary = (user: GameState) => {
-        let totalIssued = 0;
-        let totalAnswered = user.responses.length;
-
-        // Calculate issued pings (completed + missed)
-        (user.pings || []).forEach(d => {
-            if (d.statuses) {
-                d.statuses.forEach(s => {
-                    if (s === "completed" || s === "missed") totalIssued++;
-                })
-            }
-        });
-
-        // Screen Time
-        let totalScreenTimeMinutes = 0;
-        const platformBreakdown: Record<string, number> = {};
-
-        // Sleep
-        let sleepSum = 0;
-        let sleepCount = 0;
-        const sleepHistory: number[] = [];
-
-        // Stress entries
-        const stressLogs: { date: string, text: string }[] = [];
-
-        user.responses.forEach(r => {
-            // Screen Time
-            if (r.screenTimeLog) {
-                r.screenTimeLog.forEach(entry => {
-                    const dur = parseInt(entry.duration || "0");
-                    if (!isNaN(dur)) {
-                        totalScreenTimeMinutes += dur;
-                        const plat = entry.platform || "Outros";
-                        platformBreakdown[plat] = (platformBreakdown[plat] || 0) + dur;
-                    }
-                });
-            }
-
-            // Sleep
-            if (r.sleepQuality && r.sleepQuality > 0) {
-                sleepSum += r.sleepQuality;
-                sleepCount++;
-                sleepHistory.push(r.sleepQuality);
-            }
-
-            // Stress
-            if (r.stressfulEvents && r.stressfulEvents.trim().length > 0) {
-                stressLogs.push({
-                    date: new Date(r.timestamp).toLocaleDateString("pt-BR"),
-                    text: r.stressfulEvents
-                });
-            }
-        });
-
-        const avgSleep = sleepCount > 0 ? (sleepSum / sleepCount).toFixed(1) : "-";
-
-        // Correct Average Calculation
-        // We need to divide by the number of days that HAD screen time logs.
-        // Assuming each response with screenTimeLog > 0 counts as a day.
-        let screenTimeDays = 0;
-        user.responses.forEach(r => {
-            if (r.screenTimeLog && r.screenTimeLog.length > 0) screenTimeDays++;
-        });
-
-        const avgScreenTime = screenTimeDays > 0 ? Math.round(totalScreenTimeMinutes / screenTimeDays) : 0;
-        const hoursScreenTime = Math.floor(avgScreenTime / 60);
-        const minsScreenTime = avgScreenTime % 60;
-
-        return {
-            totalIssued,
-            totalAnswered,
-            screenTime: {
-                totalFormatted: `${hoursScreenTime}h ${minsScreenTime}m`, // Now showing AVERAGE daily
-                averageMinutes: avgScreenTime,
-                breakdown: platformBreakdown
-            },
-            sleep: {
-                average: avgSleep,
-                history: sleepHistory
-            },
-            stressLogs
-        };
-    };
 
     const userSummary = selectedUser ? calculateParticipantSummary(selectedUser) : null;
 
