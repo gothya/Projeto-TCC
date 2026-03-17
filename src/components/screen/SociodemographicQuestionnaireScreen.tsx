@@ -92,6 +92,47 @@ export const SociodemographicQuestionnaireScreen: React.FC<{
     onStepChange?.(prev, formData);
   };
 
+  const isStepValid = (): boolean => {
+    const d = formData;
+    switch (step) {
+      case 0:
+        return (
+          String(d.age).trim() !== "" &&
+          Number(d.age) > 0 &&
+          d.state !== "" &&
+          d.gender !== "" &&
+          d.maritalStatus !== "" &&
+          d.education !== "" &&
+          d.occupation.trim() !== ""
+        );
+      case 1:
+        return (
+          d.continuousMedication !== "" &&
+          (d.continuousMedication !== "Sim" || d.medicationDetails.trim() !== "") &&
+          d.healthDiagnosis !== "" &&
+          (d.healthDiagnosis !== "Sim" || d.diagnosisDetails.trim() !== "")
+        );
+      case 2:
+        return d.monthlyIncome !== "";
+      case 3:
+        return (
+          d.platforms.length > 0 &&
+          (!d.platforms.includes("Outras") || d.otherPlatform.trim() !== "") &&
+          d.usagePeriod !== "" &&
+          d.dailyUsage !== ""
+        );
+      case 4:
+        return (
+          d.purpose_talk !== "" &&
+          d.purpose_share !== "" &&
+          d.purpose_watch !== "" &&
+          d.purpose_search !== ""
+        );
+      default:
+        return true;
+    }
+  };
+
   const handleSubmit = () => {
     onComplete(formData);
   };
@@ -161,14 +202,16 @@ export const SociodemographicQuestionnaireScreen: React.FC<{
           {step < totalSteps - 1 ? (
             <button
               onClick={nextStep}
-              className="px-6 py-2 font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-colors shadow-glow-blue"
+              disabled={!isStepValid()}
+              className="px-6 py-2 font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-colors shadow-glow-blue disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed disabled:shadow-none"
             >
               Próximo
             </button>
           ) : (
             <button
               onClick={handleSubmit}
-              className="px-6 py-2 font-bold text-brand-dark bg-green-400 rounded-lg hover:bg-green-300 transition-colors shadow-glow-blue"
+              disabled={!isStepValid()}
+              className="px-6 py-2 font-bold text-brand-dark bg-green-400 rounded-lg hover:bg-green-300 transition-colors shadow-glow-blue disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed disabled:shadow-none"
             >
               Finalizar
             </button>
