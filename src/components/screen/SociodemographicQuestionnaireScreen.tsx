@@ -30,9 +30,11 @@ export type SociodemographicData = {
 export const SociodemographicQuestionnaireScreen: React.FC<{
   onComplete: (data: SociodemographicData) => void;
   initialData?: SociodemographicData;
-}> = ({ onComplete, initialData }) => {
+  initialStep?: number;
+  onStepChange?: (step: number, data: SociodemographicData) => void;
+}> = ({ onComplete, initialData, initialStep, onStepChange }) => {
   const totalSteps = 5;
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(initialStep ?? 0);
   const [formData, setFormData] = useState<SociodemographicData>(
     initialData || {
       age: "",
@@ -78,8 +80,17 @@ export const SociodemographicQuestionnaireScreen: React.FC<{
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const nextStep = () => setStep((prev) => Math.min(prev + 1, totalSteps - 1));
-  const prevStep = () => setStep((prev) => Math.max(prev - 1, 0));
+  const nextStep = () => {
+    const next = Math.min(step + 1, totalSteps - 1);
+    setStep(next);
+    onStepChange?.(next, formData);
+  };
+
+  const prevStep = () => {
+    const prev = Math.max(step - 1, 0);
+    setStep(prev);
+    onStepChange?.(prev, formData);
+  };
 
   const handleSubmit = () => {
     onComplete(formData);

@@ -8,6 +8,7 @@ import {
   ExportResult,
   ExportSheets,
   PanasRow,
+  ParticipantRow,
   SamRow,
   ScreenTimeRow,
 } from "./exportTypes";
@@ -174,6 +175,28 @@ function buildScreenTimeSheet(
   return rows;
 }
 
+function buildParticipantsSheet(allUsers: GameState[]): ParticipantRow[] {
+  return allUsers.map((user) => {
+    const sd = user.sociodemographicData;
+    return {
+      Nickname: user.user?.nickname || "N/A",
+      Email: user.user?.email || "N/A",
+      "Firebase ID": user.firebaseId || "N/A",
+      "Status Onboarding": user.hasOnboarded ? "Concluído" : "Incompleto",
+      "Data de Início": user.studyStartDate
+        ? new Date(user.studyStartDate).toLocaleDateString("pt-BR")
+        : "N/A",
+      Idade: sd?.age ?? "N/A",
+      Estado: sd?.state ?? "N/A",
+      Gênero: sd?.gender ?? "N/A",
+      "Estado Civil": sd?.maritalStatus ?? "N/A",
+      Escolaridade: sd?.education ?? "N/A",
+      Ocupação: sd?.occupation ?? "N/A",
+      "Renda Mensal": sd?.monthlyIncome ?? "N/A",
+    };
+  });
+}
+
 function buildCovariablesSheet(allResponses: FlatResponse[]): CovariablesRow[] {
   const rows: CovariablesRow[] = [];
 
@@ -243,6 +266,7 @@ export function buildWorkbook(allUsers: GameState[]): {
   const allResponses = flattenResponses(allUsers);
 
   const sheets: ExportSheets = {
+    participants: buildParticipantsSheet(allUsers),
     sam: buildSamSheet(allResponses),
     panas: buildPanasSheet(allResponses),
     screenTime: buildScreenTimeSheet(allResponses, allUsers),
@@ -250,6 +274,7 @@ export function buildWorkbook(allUsers: GameState[]): {
   };
 
   const wb = XLSX.utils.book_new();
+  addSheetToWorkbook(wb, sheets.participants as unknown as Record<string, unknown>[], "Participantes");
   addSheetToWorkbook(wb, sheets.sam as unknown as Record<string, unknown>[], "SAM");
   addSheetToWorkbook(wb, sheets.panas as unknown as Record<string, unknown>[], "PANAS");
   addSheetToWorkbook(wb, sheets.screenTime as unknown as Record<string, unknown>[], "Tempo de Tela");
@@ -286,6 +311,6 @@ export function exportToExcel(allUsers: GameState[]): ExportResult {
   return {
     success: true,
     recordCount: totalRecords,
-    message: `Exportado com sucesso: ${totalRecords} registros em 4 abas.`,
+    message: `Exportado com sucesso: ${sheets.participants.length} participantes e ${totalRecords} registros em 5 abas.`,
   };
 }

@@ -90,7 +90,7 @@ export const AdminDashboardPage: React.FC<{
 
     // --- CALCULATION LOGIC ---
 
-    const activeUsersCount = allUsers.length;
+    const activeUsersCount = allUsers.filter(u => u.hasOnboarded).length;
 
     // --- EXCEL EXPORT LOGIC ---
     const downloadExcel = () => {

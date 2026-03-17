@@ -38,7 +38,23 @@ export type CovariablesRow = {
   "Eventos Estressantes": string;
 };
 
+export type ParticipantRow = {
+  Nickname: string;
+  Email: string;
+  "Firebase ID": string;
+  "Status Onboarding": string;
+  "Data de Início": string;
+  Idade: number | string;
+  Estado: string;
+  Gênero: string;
+  "Estado Civil": string;
+  Escolaridade: string;
+  Ocupação: string;
+  "Renda Mensal": string;
+};
+
 export type ExportSheets = {
+  participants: ParticipantRow[];
   sam: SamRow[];
   panas: PanasRow[];
   screenTime: ScreenTimeRow[];

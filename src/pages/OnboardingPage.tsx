@@ -1,8 +1,10 @@
 import { GameState } from '@/src/components/data/GameState';
+import { SociodemographicData } from '@/src/components/screen/SociodemographicQuestionnaireScreen';
 import { OnboardingScreen } from '@/src/components/screen/OnboardingScreen';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { OnboardingDraft, useOnboardingDraft } from '@/src/hooks/useOnboardingDraft';
 import userService from '@/src/service/user/UserService';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../services/firebase';
 
@@ -29,14 +31,24 @@ const INITIAL_GAME_STATE: GameState = {
 export const OnboardingPage: React.FC = () => {
     const { user, signInAnonymously } = useAuth();
     const navigate = useNavigate();
+    const { loadDraft, saveDraft, clearDraft } = useOnboardingDraft();
 
+    const [draft, setDraft] = useState<OnboardingDraft | null>(null);
+
+    // Carrega rascunho salvo ao montar (se houver usuário autenticado)
+    useEffect(() => {
+        if (user) {
+            const saved = loadDraft(user.uid);
+            setDraft(saved);
+        }
+    }, [user]);
+
+    // Redireciona se o onboarding já foi concluído
     useEffect(() => {
         async function checkIfAlreadyOnboarded() {
             if (!user) return;
-
             try {
                 const existingUser = await userService.getParticipantById(user.uid);
-
                 if (existingUser?.hasOnboarded) {
                     navigate("/dashboard");
                 }
@@ -44,15 +56,30 @@ export const OnboardingPage: React.FC = () => {
                 console.error("Erro ao verificar onboarding:", error);
             }
         }
-
         checkIfAlreadyOnboarded();
     }, [user, navigate]);
 
-    const handleOnboardingComplete = async (nickname: string, data: any) => {
+    const handleDraftChange = (patch: Omit<OnboardingDraft, "uid" | "savedAt">) => {
+        if (!user) return;
+        setDraft((prev) => ({
+            ...(prev ?? { uid: user.uid, savedAt: new Date().toISOString() }),
+            ...patch,
+            uid: user.uid,
+            savedAt: new Date().toISOString(),
+        }));
+        saveDraft(user.uid, patch);
+    };
+
+    const handleDraftClear = () => {
+        if (!user) return;
+        clearDraft(user.uid);
+        setDraft(null);
+    };
+
+    const handleOnboardingComplete = async (nickname: string, data: SociodemographicData) => {
         try {
             let currentUser = user;
 
-            // 1. Garante que temos um usuário autenticado
             if (!currentUser) {
                 await signInAnonymously();
                 currentUser = auth.currentUser;
@@ -60,7 +87,6 @@ export const OnboardingPage: React.FC = () => {
 
             if (!currentUser) throw new Error("Falha na autenticação do Firebase.");
 
-            // 2. Mapeia os dados para o GameState
             const userEmail = currentUser.email || "";
             const userAvatar = currentUser.photoURL || null;
 
@@ -73,13 +99,15 @@ export const OnboardingPage: React.FC = () => {
                     ...INITIAL_GAME_STATE.user,
                     email: userEmail,
                     avatar: userAvatar,
-                    nickname: nickname, // Custom nickname chosen by user
+                    nickname: nickname,
                 }
             };
 
-            // 3. Persistência
             await userService.createUser(gameState);
             localStorage.setItem("gameState", JSON.stringify(gameState));
+
+            // Limpa o rascunho após conclusão bem-sucedida
+            handleDraftClear();
 
             alert("Perfil criado com sucesso! Bem-vindo ao Enigma de Psylogos.");
             navigate("/dashboard");
@@ -92,7 +120,12 @@ export const OnboardingPage: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-brand-dark flex items-center justify-center p-4">
-            <OnboardingScreen onComplete={handleOnboardingComplete} />
+            <OnboardingScreen
+                onComplete={handleOnboardingComplete}
+                draft={draft}
+                onDraftChange={handleDraftChange}
+                onDraftClear={handleDraftClear}
+            />
         </div>
     );
 };
