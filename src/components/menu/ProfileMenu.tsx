@@ -13,6 +13,8 @@ export const ProfileMenu: React.FC<{
   onViewData: () => void;
   onLogout: () => void;
   hasAvatar: boolean;
+  isReportAvailable?: boolean;
+  onDownloadReport?: () => void;
 }> = ({
   onUpload,
   onRemove,
@@ -21,6 +23,8 @@ export const ProfileMenu: React.FC<{
   onViewData,
   onLogout,
   hasAvatar,
+  isReportAvailable,
+  onDownloadReport,
 }) => {
   const baseClass =
     "flex items-center space-x-3 w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-cyan-400/20 hover:text-cyan-300 transition-colors rounded-md";
@@ -44,6 +48,11 @@ export const ProfileMenu: React.FC<{
       <button onClick={onViewRcle} className={baseClass}>
         <DocumentTextIcon className="w-4 h-4" /> <span>Ver Termos</span>
       </button>
+      {isReportAvailable && onDownloadReport && (
+        <button onClick={onDownloadReport} className={baseClass}>
+          <ChartBarIcon className="w-4 h-4 text-cyan-400" /> <span className="text-cyan-300 font-semibold">Meu Relatório</span>
+        </button>
+      )}
       <div className="h-px bg-cyan-400/20 my-1"></div>
       <button
         onClick={onLogout}

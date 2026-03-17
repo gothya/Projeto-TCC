@@ -14,8 +14,10 @@ import { XCircleIcon } from "@/src/components/icons/XCircleIcon";
 import { ProfileMenu } from "@/src/components/menu/ProfileMenu";
 import { InstrumentModal } from "@/src/components/modal/InstrumentModal";
 import { PerformanceModal } from "@/src/components/modal/PerformanceModal";
+import { ParticipantReportModal } from "@/src/components/modal/ParticipantReportModal";
 import { RcleModal } from "@/src/components/modal/RcleModal";
 import { SociodemographicModal } from "@/src/components/modal/SociodemographicModal";
+import { isEligibleForReport } from "@/src/utils/ReportGeneratorUtils";
 import { PlexusFace } from "@/src/components/PlexusFace";
 import { PodiumItem } from "@/src/components/PodiumItem";
 import { useAuth } from "@/src/contexts/AuthContext";
@@ -42,6 +44,7 @@ export const DashboardPage: React.FC<{
   const [isBellVisible, setIsBellVisible] = useState(false);
   const [isRcleModalOpen, setIsRcleModalOpen] = useState(false);
   const [isPerformanceModalOpen, setIsPerformanceModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isSociodemographicModalOpen, setIsSociodemographicModalOpen] = useState(false);
   const [instrumentFlow, setInstrumentFlow] = useState<InstrumentFlowState>(null);
@@ -53,6 +56,7 @@ export const DashboardPage: React.FC<{
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const pings = participante?.pings ?? [];
+  const isReportAvailable = pings.length > 0 && isEligibleForReport(pings);
 
   const navigate = useNavigate();
 
@@ -626,6 +630,12 @@ export const DashboardPage: React.FC<{
           gameState={participante}
         />
       )}
+      {isReportModalOpen && participante && (
+        <ParticipantReportModal
+          gameState={participante}
+          onClose={() => setIsReportModalOpen(false)}
+        />
+      )}
       <header className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-4">
           <div className="relative" ref={profileMenuRef}>
@@ -662,6 +672,11 @@ export const DashboardPage: React.FC<{
                   setIsProfileMenuOpen(false);
                 }}
                 hasAvatar={!!participante?.avatar}
+                isReportAvailable={isReportAvailable}
+                onDownloadReport={() => {
+                  setIsReportModalOpen(true);
+                  setIsProfileMenuOpen(false);
+                }}
               />
             )}
           </div>
