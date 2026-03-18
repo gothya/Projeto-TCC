@@ -89,7 +89,7 @@ const ScreenTimeLocks: React.FC<{ screenTimeCount: number }> = ({ screenTimeCoun
         style={{ color: screenTimeCount >= 3 ? "rgba(34,211,238,0.7)" : "rgba(100,116,139,0.75)" }}
       >
         {screenTimeCount >= 3
-          ? "✦ Tempo de tela completo"
+          ? `✦ Desbloqueado · ${screenTimeCount}/7 dias`
           : `${screenTimeCount}/3 dias · faltam ${3 - screenTimeCount} para liberar`}
       </span>
     </div>

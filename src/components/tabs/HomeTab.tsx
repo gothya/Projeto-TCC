@@ -269,6 +269,7 @@ export const HomeTab: React.FC<Props> = ({
             {[0, 1, 2].map((i) => (
               <CrystalIcon key={i} filled={screenTimeCount > i} />
             ))}
+            <span className="text-[11px] text-slate-400 ml-1">{screenTimeCount}/7</span>
           </div>
         </button>
         {/* Texto de status inline — visível em mobile sem hover */}
