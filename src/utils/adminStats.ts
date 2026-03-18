@@ -138,6 +138,22 @@ export function calculateGlobalAverageStats(allUsers: GameState[]): GlobalAverag
           sleepStats.count++;
         }
       });
+
+    // Correção B — ler dailyScreenTimeLogs (caminho pós-migração)
+    (user.dailyScreenTimeLogs ?? []).forEach((log) => {
+      let dailyMinutes = 0;
+      log.entries.forEach((entry) => {
+        const dur = parseDurationMinutes(entry);
+        dailyMinutes += dur;
+        const plat = entry.platform || "Outros";
+        screenTimeStats.platformBreakdown[plat] =
+          (screenTimeStats.platformBreakdown[plat] || 0) + dur;
+      });
+      if (dailyMinutes > 0) {
+        screenTimeStats.totalMinutes += dailyMinutes;
+        screenTimeStats.count++;
+      }
+    });
   });
 
   const samAvg: SamAverages =
@@ -281,10 +297,19 @@ export function calculateParticipantSummary(user: GameState): ParticipantSummary
     }
   });
 
-  let screenTimeDays = 0;
-  validResponses.forEach((r) => {
-    if (r.screenTimeLog && r.screenTimeLog.length > 0) screenTimeDays++;
+  // Correção C — ler dailyScreenTimeLogs (caminho pós-migração)
+  (user.dailyScreenTimeLogs ?? []).forEach((log) => {
+    log.entries.forEach((entry) => {
+      const dur = parseDurationMinutes(entry);
+      totalScreenTimeMinutes += dur;
+      const plat = entry.platform || "Outros";
+      platformBreakdown[plat] = (platformBreakdown[plat] || 0) + dur;
+    });
   });
+
+  const screenTimeDays =
+    validResponses.filter((r) => r.screenTimeLog && r.screenTimeLog.length > 0).length +
+    (user.dailyScreenTimeLogs ?? []).filter((l) => l.entries.length > 0).length;
 
   const avgScreenTime =
     screenTimeDays > 0 ? Math.round(totalScreenTimeMinutes / screenTimeDays) : 0;
