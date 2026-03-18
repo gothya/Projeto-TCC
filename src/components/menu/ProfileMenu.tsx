@@ -15,6 +15,8 @@ export const ProfileMenu: React.FC<{
   hasAvatar: boolean;
   isReportAvailable?: boolean;
   onDownloadReport?: () => void;
+  isAdmin?: boolean;
+  onNavigateAdmin?: () => void;
 }> = ({
   onUpload,
   onRemove,
@@ -25,6 +27,8 @@ export const ProfileMenu: React.FC<{
   hasAvatar,
   isReportAvailable,
   onDownloadReport,
+  isAdmin,
+  onNavigateAdmin,
 }) => {
   const baseClass =
     "flex items-center space-x-3 w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-cyan-400/20 hover:text-cyan-300 transition-colors rounded-md";
@@ -52,6 +56,17 @@ export const ProfileMenu: React.FC<{
         <button onClick={onDownloadReport} className={baseClass}>
           <ChartBarIcon className="w-4 h-4 text-cyan-400" /> <span className="text-cyan-300 font-semibold">Meu Relatório</span>
         </button>
+      )}
+      {isAdmin && onNavigateAdmin && (
+        <>
+          <div className="h-px bg-cyan-400/20 my-1"></div>
+          <button onClick={onNavigateAdmin} className={`${baseClass} text-amber-400 hover:text-amber-300 hover:bg-amber-500/20`}>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span>Painel Adm</span>
+          </button>
+        </>
       )}
       <div className="h-px bg-cyan-400/20 my-1"></div>
       <button

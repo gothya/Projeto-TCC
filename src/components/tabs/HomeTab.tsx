@@ -61,6 +61,8 @@ type Props = {
   onOpenScreenTime: () => void;
   screenTimeCount: number;
   screenTimeToday: boolean;
+  isAdmin?: boolean;
+  onNavigateAdmin?: () => void;
 };
 
 export const HomeTab: React.FC<Props> = ({
@@ -84,6 +86,8 @@ export const HomeTab: React.FC<Props> = ({
   onOpenScreenTime,
   screenTimeCount,
   screenTimeToday,
+  isAdmin,
+  onNavigateAdmin,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const { user, pings } = participante;
@@ -126,6 +130,8 @@ export const HomeTab: React.FC<Props> = ({
             hasAvatar={!!user?.avatar}
             isReportAvailable={isReportAvailable}
             onDownloadReport={onDownloadReport}
+            isAdmin={isAdmin}
+            onNavigateAdmin={onNavigateAdmin}
           />
         )}
       </div>

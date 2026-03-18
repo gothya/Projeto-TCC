@@ -48,7 +48,8 @@ export const DashboardPage: React.FC<{
   const [timerTargetDate, setTimerTargetDate] = useState<Date | null>(null);
   const [timerLabel, setTimerLabel] = useState<string>("");
   const [isActiveWindow, setIsActiveWindow] = useState(false);
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const isAdmin = user?.email === 'gothya@gmail.com';
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -731,6 +732,8 @@ export const DashboardPage: React.FC<{
             onOpenScreenTime={() => setIsScreenTimeModalOpen(true)}
             screenTimeCount={screenTimeCount}
             screenTimeToday={screenTimeToday}
+            isAdmin={isAdmin}
+            onNavigateAdmin={() => { setIsProfileMenuOpen(false); navigate('/admin'); }}
           />
         )}
         {activeTab === "social" && (
