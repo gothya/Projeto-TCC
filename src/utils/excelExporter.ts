@@ -175,6 +175,42 @@ function buildScreenTimeSheet(
   return rows;
 }
 
+function buildDailyScreenTimeSheet(allUsers: GameState[]): Record<string, unknown>[] {
+  // 1ª passagem: coletar plataformas distintas
+  const allPlatforms = new Set<string>();
+  allUsers.forEach((user) => {
+    (user.dailyScreenTimeLogs ?? []).forEach((log) => {
+      log.entries.forEach((entry) => allPlatforms.add(resolvePlatformName(entry)));
+    });
+  });
+  const platformList = Array.from(allPlatforms).sort();
+
+  // 2ª passagem: montar linhas
+  const rows: Record<string, unknown>[] = [];
+  allUsers.forEach((user) => {
+    const nickname = user.user?.nickname || "Desconhecido";
+    (user.dailyScreenTimeLogs ?? []).forEach((log) => {
+      const row: Record<string, unknown> = {
+        Nickname: nickname,
+        Data: new Date(log.date + "T12:00:00").toLocaleDateString("pt-BR"),
+        "Total (min)": 0,
+      };
+      platformList.forEach((p) => { row[`${p} (min)`] = 0; });
+
+      let total = 0;
+      log.entries.forEach((entry) => {
+        const plat = resolvePlatformName(entry);
+        const dur = parseDurationMinutes(entry);
+        row[`${plat} (min)`] = ((row[`${plat} (min)`] as number) || 0) + dur;
+        total += dur;
+      });
+      row["Total (min)"] = total;
+      rows.push(row);
+    });
+  });
+  return rows;
+}
+
 function buildParticipantsSheet(allUsers: GameState[]): ParticipantRow[] {
   return allUsers.map((user) => {
     const sd = user.sociodemographicData;
@@ -277,7 +313,8 @@ export function buildWorkbook(allUsers: GameState[]): {
   addSheetToWorkbook(wb, sheets.participants as unknown as Record<string, unknown>[], "Participantes");
   addSheetToWorkbook(wb, sheets.sam as unknown as Record<string, unknown>[], "SAM");
   addSheetToWorkbook(wb, sheets.panas as unknown as Record<string, unknown>[], "PANAS");
-  addSheetToWorkbook(wb, sheets.screenTime as unknown as Record<string, unknown>[], "Tempo de Tela");
+  addSheetToWorkbook(wb, sheets.screenTime as unknown as Record<string, unknown>[], "Tempo de Tela (EOD)");
+  addSheetToWorkbook(wb, buildDailyScreenTimeSheet(allUsers), "Tempo de Tela (Diário)");
   addSheetToWorkbook(wb, sheets.covariables as unknown as Record<string, unknown>[], "Co-variáveis");
 
   return { wb, sheets };
