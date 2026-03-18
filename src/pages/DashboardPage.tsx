@@ -41,6 +41,7 @@ export const DashboardPage: React.FC<{
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isSociodemographicModalOpen, setIsSociodemographicModalOpen] = useState(false);
   const [instrumentFlow, setInstrumentFlow] = useState<InstrumentFlowState>(null);
+  const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
   const [timerTargetDate, setTimerTargetDate] = useState<Date | null>(null);
   const [timerLabel, setTimerLabel] = useState<string>("");
   const [isActiveWindow, setIsActiveWindow] = useState(false);
@@ -227,8 +228,41 @@ export const DashboardPage: React.FC<{
   const functions = getFunctions();
   const sendPush = httpsCallable(functions, 'sendPushNotification');
 
-  const startInstrumentFlow = useCallback(async () => {
-    if (!highlightedPing) return;
+  const savePartialResponse = useCallback(async (data: Partial<InstrumentResponse>, completedStep: string) => {
+    if (!participante?.firebaseId) return;
+
+    const partial: InstrumentResponse = {
+      ...(data as InstrumentResponse),
+      isPartial: true,
+      lastCompletedStep: completedStep,
+    };
+
+    const newResponses = participante.responses.some(
+      r => r.pingDay === partial.pingDay && r.pingIndex === partial.pingIndex && r.isPartial === true
+    )
+      ? participante.responses.map(r =>
+          r.pingDay === partial.pingDay && r.pingIndex === partial.pingIndex && r.isPartial === true
+            ? partial : r
+        )
+      : [...participante.responses, partial];
+
+    updateParticipante({ ...participante, responses: newResponses });
+    try {
+      await UserService.saveResponses(participante.firebaseId, newResponses);
+    } catch (e) {
+      console.error("Erro ao salvar resposta parcial:", e);
+    }
+  }, [participante, updateParticipante]);
+
+  const startInstrumentFlow = useCallback(async (force = false) => {
+    if (!highlightedPing || !participante) return;
+
+    const previousStatus = participante.pings[highlightedPing.day]?.statuses[highlightedPing.ping];
+    if (!force && previousStatus === "completed") {
+      setShowOverwriteConfirm(true);
+      return;
+    }
+
     const isEndOfDay = (highlightedPing.ping + 1) % 7 === 0;
 
     if (isEndOfDay) {
@@ -256,7 +290,7 @@ export const DashboardPage: React.FC<{
         },
       });
     }
-  }, [highlightedPing]);
+  }, [highlightedPing, participante]);
 
   // Listener for Notification Clicks (Deep Linking)
   useEffect(() => {
@@ -327,19 +361,24 @@ export const DashboardPage: React.FC<{
 
     newPings[day].statuses[ping] = "completed";
 
+    // Remove resposta parcial deste ping (se existir) antes de finalizar
+    const responsesWithoutPartial = participante.responses.filter(
+      r => !(r.pingDay === day && r.pingIndex === ping && r.isPartial === true)
+    );
+
     // Se o ping já havia sido respondido, invalida a resposta anterior e mantém ambas.
     // Se era missed ou pending, apenas adiciona a nova resposta como válida.
     const newResponses: InstrumentResponse[] =
       previousStatus === "completed"
         ? [
-            ...participante.responses.map((r) =>
+            ...responsesWithoutPartial.map((r) =>
               r.pingDay === day && r.pingIndex === ping
                 ? { ...r, isValid: false }
                 : r
             ),
-            { ...finalResponseData, isValid: true },
+            { ...finalResponseData, isValid: true, isPartial: false },
           ]
-        : [...participante.responses, { ...finalResponseData, isValid: true }];
+        : [...responsesWithoutPartial, { ...finalResponseData, isValid: true, isPartial: false }];
 
     const newXp = newPings.reduce((acc, dayObj) => {
       return (
@@ -378,6 +417,32 @@ export const DashboardPage: React.FC<{
     }
   };
 
+  // Restaura formulário parcialmente respondido ao carregar o participante
+  useEffect(() => {
+    if (!participante || !highlightedPing || instrumentFlow) return;
+
+    const partial = participante.responses.find(
+      r => r.pingDay === highlightedPing.day && r.pingIndex === highlightedPing.ping && r.isPartial === true
+    );
+    if (!partial?.lastCompletedStep) return;
+
+    const stepMap: Record<string, "feed_context" | "panas_contextual" | "end_of_day_log"> = {
+      sam: "feed_context",
+      feed_context: "panas_contextual",
+      panas_daily: "end_of_day_log",
+    };
+    const nextStep = stepMap[partial.lastCompletedStep];
+    if (!nextStep) return;
+
+    const isEndOfDay = (highlightedPing.ping + 1) % 7 === 0;
+    setInstrumentFlow({
+      ping: highlightedPing,
+      type: isEndOfDay ? "end_of_day" : "regular",
+      step: nextStep,
+      data: partial,
+    });
+  }, [participante, highlightedPing, instrumentFlow]);
+
   // Note: 5 Minute Timeout for Active Ping was removed
   // The schedule evaluator completely handles missed pings on a fixed real-world timeline.
 
@@ -403,28 +468,19 @@ export const DashboardPage: React.FC<{
 
     if (instrumentFlow.type === "regular") {
       if (instrumentFlow.step === "sam") {
-        setInstrumentFlow({
-          ...instrumentFlow,
-          step: "feed_context",
-          data: newData,
-        });
+        setInstrumentFlow({ ...instrumentFlow, step: "feed_context", data: newData });
+        savePartialResponse(newData, "sam");
       } else if (instrumentFlow.step === "feed_context") {
-        setInstrumentFlow({
-          ...instrumentFlow,
-          step: "panas_contextual",
-          data: newData,
-        });
+        setInstrumentFlow({ ...instrumentFlow, step: "panas_contextual", data: newData });
+        savePartialResponse(newData, "feed_context");
       } else if (instrumentFlow.step === "panas_contextual") {
         handleInstrumentFlowFinish(newData as InstrumentResponse);
       }
     } else {
       // end_of_day
       if (instrumentFlow.step === "panas_daily") {
-        setInstrumentFlow({
-          ...instrumentFlow,
-          step: "end_of_day_log",
-          data: newData,
-        });
+        setInstrumentFlow({ ...instrumentFlow, step: "end_of_day_log", data: newData });
+        savePartialResponse(newData, "panas_daily");
       } else if (instrumentFlow.step === "end_of_day_log") {
         handleInstrumentFlowFinish(newData as InstrumentResponse);
       }
@@ -539,6 +595,32 @@ export const DashboardPage: React.FC<{
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-brand-dark">
+
+      {/* ── Modal de confirmação de sobrescrita ── */}
+      {showOverwriteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="bg-slate-800 border border-slate-600 rounded-2xl p-6 max-w-sm mx-4 text-center">
+            <p className="text-white font-semibold mb-2">Ping já respondido</p>
+            <p className="text-gray-400 text-sm mb-6">
+              Você já respondeu este ping. Deseja substituir suas respostas?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowOverwriteConfirm(false)}
+                className="flex-1 py-2 rounded-lg bg-slate-700 text-gray-300 hover:bg-slate-600 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => { setShowOverwriteConfirm(false); startInstrumentFlow(true); }}
+                className="flex-1 py-2 rounded-lg bg-cyan-500 text-slate-900 font-semibold hover:bg-cyan-400 transition-colors"
+              >
+                Substituir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Modais (preservados, sem alteração) ── */}
       {instrumentFlow && (

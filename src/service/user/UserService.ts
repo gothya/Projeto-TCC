@@ -1,4 +1,5 @@
 import { GameState } from "@/src/components/data/GameState";
+import { InstrumentResponse } from "@/src/components/data/InstrumentResponse";
 import { db, auth } from "@/src/services/firebase";
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc } from "firebase/firestore";
 
@@ -83,6 +84,14 @@ class UserService {
             console.error("Erro ao atualizar participante no Firestore:", error);
             throw error;
         }
+    }
+
+    /**
+     * Persiste um array de respostas já montado (usado para salvar respostas parciais).
+     */
+    async saveResponses(firebaseId: string, responses: InstrumentResponse[]): Promise<void> {
+        const docRef = doc(db, this.collectionName, firebaseId);
+        await updateDoc(docRef, { responses });
     }
 
     async getParticipanteByUid(uid: string) {
