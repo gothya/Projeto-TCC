@@ -40,6 +40,8 @@ type Props = {
   onLogout: () => void;
   isReportAvailable: boolean;
   onDownloadReport: () => void;
+  onOpenScreenTime: () => void;
+  screenTimeCount: number;
 };
 
 export const HomeTab: React.FC<Props> = ({
@@ -60,6 +62,8 @@ export const HomeTab: React.FC<Props> = ({
   onLogout,
   isReportAvailable,
   onDownloadReport,
+  onOpenScreenTime,
+  screenTimeCount,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const { user, pings } = participante;
@@ -211,6 +215,58 @@ export const HomeTab: React.FC<Props> = ({
             );
           })}
         </div>
+      </div>
+
+      {/* Botão Tempo de Tela + cadeados de desbloqueio do relatório */}
+      <div className="w-full max-w-sm mb-3">
+        <button
+          onClick={onOpenScreenTime}
+          className="w-full flex items-center gap-2 py-3 px-4 rounded-2xl text-sm font-semibold text-cyan-300 transition-all active:scale-95"
+          style={{
+            background: "rgba(15,23,42,0.7)",
+            border: "1px solid rgba(34,211,238,0.2)",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <span>⏱</span>
+          <span>Lançar Tempo de Tela</span>
+          {/* Cadeados de progresso para desbloquear o relatório */}
+          <div className="ml-auto flex items-center gap-1 pr-1">
+            {[0, 1, 2].map((i) => {
+              const unlocked = screenTimeCount > i;
+              const daysLeft = Math.max(0, 3 - screenTimeCount);
+              const tooltip = unlocked
+                ? `Dia ${i + 1} registrado ✓`
+                : `Registre mais ${daysLeft} dia${daysLeft !== 1 ? "s" : ""} para liberar o relatório`;
+              return (
+                <div key={i} className="relative group">
+                  <span
+                    className="text-base leading-none transition-all duration-300 cursor-default"
+                    style={unlocked
+                      ? { filter: "drop-shadow(0 0 4px rgba(34,211,238,0.8))" }
+                      : { opacity: 0.35 }
+                    }
+                  >
+                    {unlocked ? "🔓" : "🔒"}
+                  </span>
+                  {/* Tooltip */}
+                  <div
+                    className="absolute bottom-full right-0 mb-2 px-2.5 py-1.5 text-[11px] text-white bg-slate-900 border border-slate-700 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg"
+                    style={{ minWidth: "max-content" }}
+                  >
+                    {tooltip}
+                    <div className="absolute top-full right-2 border-4 border-transparent border-t-slate-900" />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </button>
+        {screenTimeCount < 3 && (
+          <p className="text-[10px] text-slate-500 text-right mt-1 pr-1">
+            Registre {3 - screenTimeCount} dia{3 - screenTimeCount > 1 ? "s" : ""} de tempo de tela para liberar o relatório
+          </p>
+        )}
       </div>
 
       {/* XP Bar */}

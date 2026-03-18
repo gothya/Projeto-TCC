@@ -6,6 +6,8 @@ import { evaluateFullJourneySchedule, getJourneyStartDate } from "@/src/utils/ti
 import { InstrumentModal } from "@/src/components/modal/InstrumentModal";
 import { PerformanceModal } from "@/src/components/modal/PerformanceModal";
 import { ParticipantReportModal } from "@/src/components/modal/ParticipantReportModal";
+import { ScreenTimeModal } from "@/src/components/modal/ScreenTimeModal";
+import { ScreenTimeEntry } from "@/src/components/screen/ScreenTimeEntry";
 import { RcleModal } from "@/src/components/modal/RcleModal";
 import { SociodemographicModal } from "@/src/components/modal/SociodemographicModal";
 import { isEligibleForReport } from "@/src/utils/ReportGeneratorUtils";
@@ -42,6 +44,7 @@ export const DashboardPage: React.FC<{
   const [isSociodemographicModalOpen, setIsSociodemographicModalOpen] = useState(false);
   const [instrumentFlow, setInstrumentFlow] = useState<InstrumentFlowState>(null);
   const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
+  const [isScreenTimeModalOpen, setIsScreenTimeModalOpen] = useState(false);
   const [timerTargetDate, setTimerTargetDate] = useState<Date | null>(null);
   const [timerLabel, setTimerLabel] = useState<string>("");
   const [isActiveWindow, setIsActiveWindow] = useState(false);
@@ -50,7 +53,8 @@ export const DashboardPage: React.FC<{
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const pings = participante?.pings ?? [];
-  const isReportAvailable = pings.length > 0 && isEligibleForReport(pings);
+  const screenTimeCount = participante?.dailyScreenTimeLogs?.length ?? 0;
+  const isReportAvailable = pings.length > 0 && isEligibleForReport(pings) && screenTimeCount >= 3;
 
   const navigate = useNavigate();
 
@@ -104,24 +108,24 @@ export const DashboardPage: React.FC<{
       // 1. Handle Newly Missed Pings
       if (result.newlyMissedPings.length > 0) {
         console.log("Found missed pings:", result.newlyMissedPings);
-        
+
         const newPings = participante.pings.map((dayObj) => ({
           ...dayObj,
           statuses: [...dayObj.statuses],
         }));
 
-        result.newlyMissedPings.forEach(({day, ping}) => {
+        result.newlyMissedPings.forEach(({ day, ping }) => {
           newPings[day].statuses[ping] = "missed";
         });
 
-        const newState = {
-          ...participante,
-          pings: newPings,
-        };
-
-        updateParticipante(newState);
+        // Atualiza SOMENTE pings — nunca responses.
+        // Escrever responses aqui causaria perda de dados se o estado local estiver stale
+        // (ex: outro dispositivo/aba com fetch anterior à resposta do participante).
+        updateParticipante({ ...participante, pings: newPings });
         try {
-          await UserService.updateUser(newState);
+          if (participante.firebaseId) {
+            await UserService.updatePingsOnly(participante.firebaseId, newPings);
+          }
         } catch (error) {
           console.error("Erro ao salvar pings perdidos:", error);
         }
@@ -582,6 +586,30 @@ export const DashboardPage: React.FC<{
     await UserService.updateUser(newState);
   };
 
+  const handleSaveScreenTime = async (entries: ScreenTimeEntry[]) => {
+    if (!participante) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const existing = participante.dailyScreenTimeLogs ?? [];
+    const newLogs = existing.some(l => l.date === today)
+      ? existing.map(l => l.date === today ? { ...l, entries } : l)
+      : [...existing, { date: today, entries }];
+
+    const newXp = (participante.user.points ?? 0) + 20;
+    const newLevel = calculateLevel(newXp);
+    const newState = {
+      ...participante,
+      dailyScreenTimeLogs: newLogs,
+      user: { ...participante.user, points: newXp, level: newLevel },
+    };
+    updateParticipante(newState);
+    setIsScreenTimeModalOpen(false);
+    try {
+      await UserService.saveDailyScreenTimeLogs(newState);
+    } catch (e) {
+      console.error("Erro ao salvar tempo de tela:", e);
+    }
+  };
+
   const handleUpdateSocio = async (newData: any) => {
     if (!participante) return;
     const newState = {
@@ -654,6 +682,12 @@ export const DashboardPage: React.FC<{
           onClose={() => setIsReportModalOpen(false)}
         />
       )}
+      {isScreenTimeModalOpen && (
+        <ScreenTimeModal
+          onSave={handleSaveScreenTime}
+          onClose={() => setIsScreenTimeModalOpen(false)}
+        />
+      )}
 
       {/* Hidden file input for avatar */}
       <input
@@ -685,6 +719,8 @@ export const DashboardPage: React.FC<{
             onLogout={handleLogout}
             isReportAvailable={isReportAvailable}
             onDownloadReport={() => { setIsReportModalOpen(true); setIsProfileMenuOpen(false); }}
+            onOpenScreenTime={() => setIsScreenTimeModalOpen(true)}
+            screenTimeCount={screenTimeCount}
           />
         )}
         {activeTab === "social" && (
@@ -698,6 +734,7 @@ export const DashboardPage: React.FC<{
             participante={participante}
             isReportAvailable={isReportAvailable}
             onOpenReport={() => setIsReportModalOpen(true)}
+            screenTimeCount={screenTimeCount}
           />
         )}
       </div>

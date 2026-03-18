@@ -87,6 +87,30 @@ class UserService {
     }
 
     /**
+     * Atualiza APENAS o array de pings (statuses).
+     * NÃO toca em responses — evita sobrescrever respostas com estado stale.
+     * Usar exclusivamente no evaluateSchedule para marcar pings como "missed".
+     */
+    async updatePingsOnly(firebaseId: string, pings: GameState["pings"]): Promise<void> {
+        const docRef = doc(db, this.collectionName, firebaseId);
+        await updateDoc(docRef, { pings });
+    }
+
+    /**
+     * Persiste os registros diários de tempo de tela e XP/nível atualizados.
+     */
+    async saveDailyScreenTimeLogs(state: GameState): Promise<void> {
+        const currentUser = auth.currentUser;
+        if (!currentUser) throw new Error("Usuário não autenticado.");
+        const docRef = doc(db, this.collectionName, currentUser.uid);
+        await updateDoc(docRef, {
+            dailyScreenTimeLogs: state.dailyScreenTimeLogs ?? [],
+            "user.points": state.user.points,
+            "user.level": state.user.level,
+        });
+    }
+
+    /**
      * Persiste um array de respostas já montado (usado para salvar respostas parciais).
      */
     async saveResponses(firebaseId: string, responses: InstrumentResponse[]): Promise<void> {

@@ -21,9 +21,44 @@ type Props = {
   participante: GameState;
   isReportAvailable: boolean;
   onOpenReport: () => void;
+  screenTimeCount: number;
 };
 
-export const ConquistasTab: React.FC<Props> = ({ participante, isReportAvailable, onOpenReport }) => {
+const ScreenTimeLocks: React.FC<{ screenTimeCount: number }> = ({ screenTimeCount }) => (
+  <div className="flex items-center gap-2 mb-3">
+    {[0, 1, 2].map((i) => {
+      const unlocked = screenTimeCount > i;
+      const daysLeft = Math.max(0, 3 - screenTimeCount);
+      const tooltip = unlocked
+        ? `Dia ${i + 1} de tempo de tela registrado ✓`
+        : `Registre o tempo de tela por mais ${daysLeft} dia${daysLeft !== 1 ? "s" : ""} para liberar o relatório`;
+      return (
+        <div key={i} className="relative group">
+          <span
+            className="text-xl leading-none transition-all duration-300 cursor-default"
+            style={unlocked
+              ? { filter: "drop-shadow(0 0 5px rgba(34,211,238,0.9))" }
+              : { opacity: 0.3 }
+            }
+          >
+            {unlocked ? "🔓" : "🔒"}
+          </span>
+          {/* Tooltip */}
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 text-[11px] text-white bg-slate-900 border border-slate-700 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg"
+            style={{ minWidth: "max-content" }}>
+            {tooltip}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+          </div>
+        </div>
+      );
+    })}
+    <span className="text-[10px] text-slate-500 ml-1">
+      {screenTimeCount >= 3 ? "Tempo de tela completo" : `${screenTimeCount}/3 dias registrados`}
+    </span>
+  </div>
+);
+
+export const ConquistasTab: React.FC<Props> = ({ participante, isReportAvailable, onOpenReport, screenTimeCount }) => {
   const pings = participante?.pings ?? [];
   const notificationTimes = ["9h", "11h", "13h", "15h", "17h", "19h", "21h"];
 
@@ -97,6 +132,8 @@ export const ConquistasTab: React.FC<Props> = ({ participante, isReportAvailable
         <h2 className="text-[10px] font-bold text-cyan-400 uppercase tracking-[0.25em] mb-3">
           Meu Relatório
         </h2>
+
+        <ScreenTimeLocks screenTimeCount={screenTimeCount} />
 
         {isReportAvailable ? (
           /* Desbloqueado */
