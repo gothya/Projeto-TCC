@@ -16,6 +16,24 @@ const LEVEL_TITLES = [
   "Mestre", "Sábio", "Lenda",
 ];
 
+const CrystalIcon: React.FC<{ filled: boolean }> = ({ filled }) => (
+  <svg viewBox="0 0 18 22" width="18" height="22" style={{ overflow: "visible" }}>
+    <polygon
+      points="9,1 17,6 17,16 9,21 1,16 1,6"
+      fill={filled ? "rgba(34,211,238,0.12)" : "rgba(15,23,42,0.8)"}
+      stroke={filled ? "#22d3ee" : "#1e293b"}
+      strokeWidth="1.5"
+      style={filled ? { filter: "drop-shadow(0 0 5px rgba(34,211,238,0.75))" } : {}}
+    />
+    {filled && (
+      <>
+        <polygon points="9,5 14,8 14,14 9,17 4,14 4,8" fill="rgba(34,211,238,0.28)" />
+        <circle cx="9" cy="11" r="2" fill="#22d3ee" style={{ filter: "drop-shadow(0 0 4px #22d3ee)" }} />
+      </>
+    )}
+  </svg>
+);
+
 const MenuIcon = () => (
   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -42,6 +60,7 @@ type Props = {
   onDownloadReport: () => void;
   onOpenScreenTime: () => void;
   screenTimeCount: number;
+  screenTimeToday: boolean;
 };
 
 export const HomeTab: React.FC<Props> = ({
@@ -64,6 +83,7 @@ export const HomeTab: React.FC<Props> = ({
   onDownloadReport,
   onOpenScreenTime,
   screenTimeCount,
+  screenTimeToday,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const { user, pings } = participante;
@@ -217,56 +237,43 @@ export const HomeTab: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Botão Tempo de Tela + cadeados de desbloqueio do relatório */}
+      {/* Botão Tempo de Tela + cristais de desbloqueio */}
       <div className="w-full max-w-sm mb-3">
         <button
           onClick={onOpenScreenTime}
-          className="w-full flex items-center gap-2 py-3 px-4 rounded-2xl text-sm font-semibold text-cyan-300 transition-all active:scale-95"
-          style={{
+          className="w-full flex items-center gap-3 py-3 px-4 rounded-2xl text-sm font-semibold transition-all duration-300 active:scale-95"
+          style={screenTimeToday ? {
+            background: "rgba(34,197,94,0.06)",
+            border: "1px solid rgba(34,197,94,0.22)",
+            backdropFilter: "blur(8px)",
+          } : {
             background: "rgba(15,23,42,0.7)",
             border: "1px solid rgba(34,211,238,0.2)",
             backdropFilter: "blur(8px)",
           }}
         >
-          <span>⏱</span>
-          <span>Lançar Tempo de Tela</span>
-          {/* Cadeados de progresso para desbloquear o relatório */}
-          <div className="ml-auto flex items-center gap-1 pr-1">
-            {[0, 1, 2].map((i) => {
-              const unlocked = screenTimeCount > i;
-              const daysLeft = Math.max(0, 3 - screenTimeCount);
-              const tooltip = unlocked
-                ? `Dia ${i + 1} registrado ✓`
-                : `Registre mais ${daysLeft} dia${daysLeft !== 1 ? "s" : ""} para liberar o relatório`;
-              return (
-                <div key={i} className="relative group">
-                  <span
-                    className="text-base leading-none transition-all duration-300 cursor-default"
-                    style={unlocked
-                      ? { filter: "drop-shadow(0 0 4px rgba(34,211,238,0.8))" }
-                      : { opacity: 0.35 }
-                    }
-                  >
-                    {unlocked ? "🔓" : "🔒"}
-                  </span>
-                  {/* Tooltip */}
-                  <div
-                    className="absolute bottom-full right-0 mb-2 px-2.5 py-1.5 text-[11px] text-white bg-slate-900 border border-slate-700 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg"
-                    style={{ minWidth: "max-content" }}
-                  >
-                    {tooltip}
-                    <div className="absolute top-full right-2 border-4 border-transparent border-t-slate-900" />
-                  </div>
-                </div>
-              );
-            })}
+          <span className={screenTimeToday ? "text-green-400" : "text-cyan-300"} style={{ fontSize: "1.1rem" }}>
+            {screenTimeToday ? "✓" : "⏱"}
+          </span>
+          <span className={screenTimeToday ? "text-green-300" : "text-cyan-300"}>
+            {screenTimeToday ? "Registrado hoje" : "Lançar Tempo de Tela"}
+          </span>
+          {/* Cristais de progresso */}
+          <div className="ml-auto flex items-center gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <CrystalIcon key={i} filled={screenTimeCount > i} />
+            ))}
           </div>
         </button>
-        {screenTimeCount < 3 && (
-          <p className="text-[10px] text-slate-500 text-right mt-1 pr-1">
-            Registre {3 - screenTimeCount} dia{3 - screenTimeCount > 1 ? "s" : ""} de tempo de tela para liberar o relatório
-          </p>
-        )}
+        {/* Texto de status inline — visível em mobile sem hover */}
+        <p
+          className="text-[10px] text-center mt-1.5 transition-colors duration-500"
+          style={{ color: screenTimeCount >= 3 ? "rgba(34,211,238,0.65)" : "rgba(100,116,139,0.75)" }}
+        >
+          {screenTimeCount >= 3
+            ? "✦ Relatório desbloqueado"
+            : `${screenTimeCount}/3 dias · faltam ${3 - screenTimeCount} para liberar o relatório`}
+        </p>
       </div>
 
       {/* XP Bar */}

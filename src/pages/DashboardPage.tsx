@@ -53,7 +53,11 @@ export const DashboardPage: React.FC<{
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const pings = participante?.pings ?? [];
-  const screenTimeCount = participante?.dailyScreenTimeLogs?.length ?? 0;
+  const screenTimeLogs = participante?.dailyScreenTimeLogs ?? [];
+  const today = new Date().toISOString().slice(0, 10);
+  // Dias DISTINTOS registrados (evita unlock por múltiplas submissões no mesmo dia)
+  const screenTimeCount = new Set(screenTimeLogs.map(l => l.date)).size;
+  const screenTimeToday = screenTimeLogs.some(l => l.date === today);
   const isReportAvailable = pings.length > 0 && isEligibleForReport(pings) && screenTimeCount >= 3;
 
   const navigate = useNavigate();
@@ -586,15 +590,18 @@ export const DashboardPage: React.FC<{
     await UserService.updateUser(newState);
   };
 
-  const handleSaveScreenTime = async (entries: ScreenTimeEntry[]) => {
+  const handleSaveScreenTime = async (entries: ScreenTimeEntry[], date: string) => {
     if (!participante) return;
-    const today = new Date().toISOString().slice(0, 10);
     const existing = participante.dailyScreenTimeLogs ?? [];
-    const newLogs = existing.some(l => l.date === today)
-      ? existing.map(l => l.date === today ? { ...l, entries } : l)
-      : [...existing, { date: today, entries }];
+    const newLogs = existing.some(l => l.date === date)
+      ? existing.map(l => l.date === date ? { ...l, entries } : l)
+      : [...existing, { date, entries }];
 
-    const newXp = (participante.user.points ?? 0) + 20;
+    // XP apenas no primeiro registro desse dia específico
+    const alreadyLoggedThatDay = existing.some(l => l.date === date);
+    const newXp = alreadyLoggedThatDay
+      ? (participante.user.points ?? 0)
+      : (participante.user.points ?? 0) + 20;
     const newLevel = calculateLevel(newXp);
     const newState = {
       ...participante,
@@ -686,6 +693,8 @@ export const DashboardPage: React.FC<{
         <ScreenTimeModal
           onSave={handleSaveScreenTime}
           onClose={() => setIsScreenTimeModalOpen(false)}
+          studyStartDate={participante?.studyStartDate ?? null}
+          existingLogs={screenTimeLogs}
         />
       )}
 
@@ -721,6 +730,7 @@ export const DashboardPage: React.FC<{
             onDownloadReport={() => { setIsReportModalOpen(true); setIsProfileMenuOpen(false); }}
             onOpenScreenTime={() => setIsScreenTimeModalOpen(true)}
             screenTimeCount={screenTimeCount}
+            screenTimeToday={screenTimeToday}
           />
         )}
         {activeTab === "social" && (

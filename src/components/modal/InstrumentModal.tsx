@@ -71,6 +71,11 @@ export const InstrumentModal: React.FC<{
         <div className="mb-4">
           <div className="flex justify-between items-start mb-2">
             <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
+                  Dia {flow.ping.day + 1} de 7
+                </span>
+              </div>
               <h2 className="text-xl font-bold text-cyan-400">
                 {stepTitles[flow.step]}
               </h2>

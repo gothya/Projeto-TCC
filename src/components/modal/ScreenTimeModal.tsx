@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Modal } from "./Modal";
-import { ScreenTimeEntry } from "../screen/ScreenTimeEntry";
+import { ScreenTimeEntry, DailyScreenTimeLog } from "../screen/ScreenTimeEntry";
 import { PlusIcon } from "../icons/PlusIcon";
+import { getJourneyStartDate } from "@/src/utils/timeUtils";
 
 const EMPTY_ENTRY = (): ScreenTimeEntry => ({
   id: `${Date.now()}-${Math.random()}`,
@@ -13,10 +14,49 @@ const EMPTY_ENTRY = (): ScreenTimeEntry => ({
 });
 
 export const ScreenTimeModal: React.FC<{
-  onSave: (entries: ScreenTimeEntry[]) => void;
+  onSave: (entries: ScreenTimeEntry[], date: string) => void;
   onClose: () => void;
-}> = ({ onSave, onClose }) => {
-  const [entries, setEntries] = useState<ScreenTimeEntry[]>([EMPTY_ENTRY()]);
+  studyStartDate: string | null;
+  existingLogs: DailyScreenTimeLog[];
+}> = ({ onSave, onClose, studyStartDate, existingLogs }) => {
+  const today = new Date().toISOString().slice(0, 10);
+
+  const journeyDays = useMemo<{ label: string; date: string }[]>(() => {
+    if (!studyStartDate) return [];
+    try {
+      const start = getJourneyStartDate(studyStartDate);
+      const now = new Date();
+      const todayIso = now.toISOString().slice(0, 10);
+      const days: { label: string; date: string }[] = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(start);
+        d.setDate(d.getDate() + i);
+        const iso = d.toISOString().slice(0, 10);
+        if (iso > todayIso) break;
+        days.push({ label: `Dia ${i + 1}`, date: iso });
+      }
+      return days;
+    } catch {
+      return [];
+    }
+  }, [studyStartDate]);
+
+  const [selectedDate, setSelectedDate] = useState<string>(today);
+
+  const [entries, setEntries] = useState<ScreenTimeEntry[]>(() => {
+    const existing = existingLogs.find(l => l.date === today);
+    return existing ? existing.entries.map(e => ({ ...e })) : [EMPTY_ENTRY()];
+  });
+
+  useEffect(() => {
+    const existing = existingLogs.find(l => l.date === selectedDate);
+    if (existing && existing.entries.length > 0) {
+      setEntries(existing.entries.map(e => ({ ...e })));
+    } else {
+      setEntries([EMPTY_ENTRY()]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate]);
 
   const addEntry = () => setEntries((prev) => [...prev, EMPTY_ENTRY()]);
 
@@ -37,17 +77,78 @@ export const ScreenTimeModal: React.FC<{
 
   const isValid = entries.some((e) => e.platform !== "" && (e.hours !== "" || e.minutes !== ""));
 
+  const totalMinutes = entries.reduce((sum, e) => sum + parseInt(e.duration || "0", 10), 0);
+  const totalH = Math.floor(totalMinutes / 60);
+  const totalM = totalMinutes % 60;
+  const totalDisplay = totalMinutes > 0
+    ? `${totalH > 0 ? `${totalH}h ` : ""}${totalM > 0 ? `${totalM}min` : ""}`.trim()
+    : null;
+
+  const isEditing = existingLogs.some(l => l.date === selectedDate);
+
   return (
     <Modal onClose={onClose} className="max-w-lg">
       <div className="p-6 flex flex-col gap-4">
         <div>
-          <h2 className="text-xl font-bold text-cyan-400">Tempo de Tela de Hoje</h2>
+          <h2 className="text-xl font-bold text-cyan-400">Tempo de Tela</h2>
           <p className="text-sm text-gray-400 mt-1">
-            Registre quanto tempo você usou cada rede social hoje.
+            Registre quanto tempo você usou cada rede social.
           </p>
         </div>
 
-        <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
+        {/* Day picker — só aparece se houver mais de um dia disponível */}
+        {journeyDays.length > 1 && (
+          <div className="flex gap-2 flex-wrap">
+            {journeyDays.map(({ label, date }) => {
+              const hasLog = existingLogs.some(l => l.date === date);
+              const isSelected = selectedDate === date;
+              return (
+                <button
+                  key={date}
+                  onClick={() => setSelectedDate(date)}
+                  className="relative px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200"
+                  style={isSelected ? {
+                    background: "rgba(34,211,238,0.15)",
+                    border: "1px solid rgba(34,211,238,0.6)",
+                    color: "#22d3ee",
+                    boxShadow: "0 0 8px rgba(34,211,238,0.25)",
+                  } : {
+                    background: "rgba(15,23,42,0.6)",
+                    border: "1px solid rgba(255,255,255,0.07)",
+                    color: hasLog ? "#94a3b8" : "#475569",
+                  }}
+                >
+                  {label}
+                  {hasLog && !isSelected && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-green-400" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Total ao vivo */}
+        <div
+          className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-300"
+          style={{
+            background: totalMinutes > 0 ? "rgba(34,211,238,0.07)" : "rgba(15,23,42,0.4)",
+            border: `1px solid ${totalMinutes > 0 ? "rgba(34,211,238,0.18)" : "rgba(255,255,255,0.04)"}`,
+          }}
+        >
+          <span className="text-slate-500 text-xs">Total{isEditing ? " (editando)" : " hoje"}:</span>
+          <span
+            className="font-bold text-sm transition-all duration-300"
+            style={{ color: totalMinutes > 0 ? "#22d3ee" : "#475569" }}
+          >
+            {totalDisplay ?? "—"}
+          </span>
+          {totalMinutes > 0 && (
+            <span className="text-slate-600 text-xs ml-auto">de redes sociais</span>
+          )}
+        </div>
+
+        <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
           {entries.map((entry, index) => (
             <div
               key={entry.id}
@@ -130,12 +231,12 @@ export const ScreenTimeModal: React.FC<{
             Cancelar
           </button>
           <button
-            onClick={() => isValid && onSave(entries)}
+            onClick={() => isValid && onSave(entries, selectedDate)}
             disabled={!isValid}
             className="px-8 py-2 font-bold text-slate-900 bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ boxShadow: isValid ? "0 0 12px rgba(34,211,238,0.4)" : undefined }}
           >
-            Salvar +20 XP
+            {isEditing ? "Atualizar" : "Salvar +20 XP"}
           </button>
         </div>
       </div>

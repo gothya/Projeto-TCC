@@ -1,9 +1,49 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { GameState } from "@/src/components/data/GameState";
 import { REPORT_UNLOCK_THRESHOLD } from "@/src/utils/ReportGeneratorUtils";
 import { StarIcon } from "@/src/components/icons/StarIcon";
 import { CheckCircleIcon } from "@/src/components/icons/CheckCircleIcon";
 import { XCircleIcon } from "@/src/components/icons/XCircleIcon";
+
+const CRYSTAL_KEYFRAMES = `
+@keyframes crystalPulse {
+  0%   { filter: drop-shadow(0 0 4px rgba(34,211,238,0.6)); }
+  100% { filter: drop-shadow(0 0 10px rgba(34,211,238,1)); }
+}
+@keyframes crystalUnlock {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.5); filter: drop-shadow(0 0 12px rgba(34,211,238,1)); }
+  65%  { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+@keyframes sectionReveal {
+  0%   { box-shadow: 0 0 0 rgba(34,211,238,0); border-color: rgba(34,211,238,0.4); }
+  50%  { box-shadow: 0 0 32px rgba(34,211,238,0.35); border-color: rgba(34,211,238,0.9); }
+  100% { box-shadow: 0 0 24px rgba(34,211,238,0.12); border-color: rgba(34,211,238,0.4); }
+}
+`;
+
+const CrystalIcon: React.FC<{ filled: boolean; animating?: boolean }> = ({ filled, animating }) => (
+  <svg viewBox="0 0 18 22" width="20" height="24" style={{ overflow: "visible" }}>
+    <polygon
+      points="9,1 17,6 17,16 9,21 1,16 1,6"
+      fill={filled ? "rgba(34,211,238,0.12)" : "rgba(15,23,42,0.9)"}
+      stroke={filled ? "#22d3ee" : "#1e293b"}
+      strokeWidth="1.5"
+      style={filled ? {
+        animation: animating
+          ? "crystalUnlock 0.55s cubic-bezier(.36,.07,.19,.97) both"
+          : "crystalPulse 2s ease-in-out infinite alternate",
+      } : {}}
+    />
+    {filled && (
+      <>
+        <polygon points="9,5 14,8 14,14 9,17 4,14 4,8" fill="rgba(34,211,238,0.28)" />
+        <circle cx="9" cy="11" r="2.5" fill="#22d3ee" style={{ filter: "drop-shadow(0 0 4px #22d3ee)" }} />
+      </>
+    )}
+  </svg>
+);
 
 const LockIcon = () => (
   <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -24,41 +64,51 @@ type Props = {
   screenTimeCount: number;
 };
 
-const ScreenTimeLocks: React.FC<{ screenTimeCount: number }> = ({ screenTimeCount }) => (
-  <div className="flex items-center gap-2 mb-3">
-    {[0, 1, 2].map((i) => {
-      const unlocked = screenTimeCount > i;
-      const daysLeft = Math.max(0, 3 - screenTimeCount);
-      const tooltip = unlocked
-        ? `Dia ${i + 1} de tempo de tela registrado ✓`
-        : `Registre o tempo de tela por mais ${daysLeft} dia${daysLeft !== 1 ? "s" : ""} para liberar o relatório`;
-      return (
-        <div key={i} className="relative group">
-          <span
-            className="text-xl leading-none transition-all duration-300 cursor-default"
-            style={unlocked
-              ? { filter: "drop-shadow(0 0 5px rgba(34,211,238,0.9))" }
-              : { opacity: 0.3 }
-            }
-          >
-            {unlocked ? "🔓" : "🔒"}
-          </span>
-          {/* Tooltip */}
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 text-[11px] text-white bg-slate-900 border border-slate-700 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg"
-            style={{ minWidth: "max-content" }}>
-            {tooltip}
-            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
-          </div>
-        </div>
-      );
-    })}
-    <span className="text-[10px] text-slate-500 ml-1">
-      {screenTimeCount >= 3 ? "Tempo de tela completo" : `${screenTimeCount}/3 dias registrados`}
-    </span>
-  </div>
-);
+const ScreenTimeLocks: React.FC<{ screenTimeCount: number }> = ({ screenTimeCount }) => {
+  const prevCount = useRef(screenTimeCount);
+  const [animatingIndex, setAnimatingIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (screenTimeCount > prevCount.current) {
+      const newIndex = screenTimeCount - 1; // índice do cristal que acabou de acender
+      setAnimatingIndex(newIndex);
+      const t = setTimeout(() => setAnimatingIndex(null), 700);
+      prevCount.current = screenTimeCount;
+      return () => clearTimeout(t);
+    }
+    prevCount.current = screenTimeCount;
+  }, [screenTimeCount]);
+
+  return (
+    <div className="flex items-center gap-3 mb-3">
+      {[0, 1, 2].map((i) => (
+        <CrystalIcon key={i} filled={screenTimeCount > i} animating={animatingIndex === i} />
+      ))}
+      <span
+        className="text-[10px] transition-colors duration-500"
+        style={{ color: screenTimeCount >= 3 ? "rgba(34,211,238,0.7)" : "rgba(100,116,139,0.75)" }}
+      >
+        {screenTimeCount >= 3
+          ? "✦ Tempo de tela completo"
+          : `${screenTimeCount}/3 dias · faltam ${3 - screenTimeCount} para liberar`}
+      </span>
+    </div>
+  );
+};
 
 export const ConquistasTab: React.FC<Props> = ({ participante, isReportAvailable, onOpenReport, screenTimeCount }) => {
+  const prevAvailable = useRef(isReportAvailable);
+  const [reportJustUnlocked, setReportJustUnlocked] = useState(false);
+
+  useEffect(() => {
+    if (!prevAvailable.current && isReportAvailable) {
+      setReportJustUnlocked(true);
+      const t = setTimeout(() => setReportJustUnlocked(false), 1800);
+      prevAvailable.current = isReportAvailable;
+      return () => clearTimeout(t);
+    }
+    prevAvailable.current = isReportAvailable;
+  }, [isReportAvailable]);
   const pings = participante?.pings ?? [];
   const notificationTimes = ["9h", "11h", "13h", "15h", "17h", "19h", "21h"];
 
@@ -78,6 +128,7 @@ export const ConquistasTab: React.FC<Props> = ({ participante, isReportAvailable
 
   return (
     <div className="px-4 pt-6 pb-4 space-y-5">
+    <style>{CRYSTAL_KEYFRAMES}</style>
 
       {/* Section: Resumo */}
       <section>
@@ -144,6 +195,7 @@ export const ConquistasTab: React.FC<Props> = ({ participante, isReportAvailable
               background: "linear-gradient(135deg, rgba(6,182,212,0.15), rgba(34,211,238,0.05))",
               border: "1px solid rgba(34,211,238,0.4)",
               boxShadow: "0 0 24px rgba(34,211,238,0.12)",
+              animation: reportJustUnlocked ? "sectionReveal 1.8s ease-out forwards" : undefined,
             }}
           >
             <div
