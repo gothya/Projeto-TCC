@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useToast } from "../../contexts/ToastContext";
 import { GameState } from "../data/GameState";
 import { InstrumentFlowState } from "../states/InstrumentFlowState";
 import { InstrumentResponse } from "../data/InstrumentResponse";
@@ -44,6 +45,7 @@ export const DashboardScreen: React.FC<{
   const [instrumentFlow, setInstrumentFlow] = useState<InstrumentFlowState>(null);
   const [, setGameState] = useState<GameState>(localStorage.getItem("gameState") ? JSON.parse(localStorage.getItem("gameState") as string) : gameState);
   const { user: authUser } = useAuth(); // Get the authenticated user for UID
+  const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -60,10 +62,10 @@ export const DashboardScreen: React.FC<{
       if (authUser) {
         await service.saveTokenToFirestore(authUser.uid, token);
       }
-      alert("Notificações ativadas com sucesso!");
+      showToast("Notificações ativadas com sucesso!");
     } else {
       setNotificationPermission("denied");
-      alert("Não foi possível ativar as notificações. Verifique as permissões do navegador.");
+      showToast("Não foi possível ativar as notificações. Verifique as permissões do navegador.", "error");
     }
   };
 

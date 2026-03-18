@@ -2,9 +2,11 @@ import { auth, db } from "@/src/services/firebase";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/src/contexts/ToastContext";
 
 export const GoogleLoginButton = () => {
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const handleLogin = async () => {
     const provider = new GoogleAuthProvider();
@@ -60,9 +62,9 @@ export const GoogleLoginButton = () => {
       console.error("Erro no Google Auth ou Firestore:", error.code, error.message);
 
       if (error.code === "permission-denied") {
-        alert("Erro de permissão no banco de dados. Verifique as Rules do Firestore.");
+        showToast("Erro de permissão no banco de dados. Verifique as Rules do Firestore.", "error");
       } else {
-        alert("Falha na autenticação com o Google.");
+        showToast("Falha na autenticação com o Google.", "error");
       }
     }
   };

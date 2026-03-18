@@ -6,6 +6,7 @@ import { OnboardingDraft, useOnboardingDraft } from '@/src/hooks/useOnboardingDr
 import userService from '@/src/service/user/UserService';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../contexts/ToastContext';
 import { auth } from '../services/firebase';
 
 const INITIAL_GAME_STATE: GameState = {
@@ -31,6 +32,7 @@ const INITIAL_GAME_STATE: GameState = {
 export const OnboardingPage: React.FC = () => {
     const { user, signInAnonymously } = useAuth();
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const { loadDraft, saveDraft, clearDraft } = useOnboardingDraft();
 
     const [draft, setDraft] = useState<OnboardingDraft | null>(null);
@@ -109,12 +111,12 @@ export const OnboardingPage: React.FC = () => {
             // Limpa o rascunho após conclusão bem-sucedida
             handleDraftClear();
 
-            alert("Perfil criado com sucesso! Bem-vindo ao Enigma de Psylogos.");
             navigate("/dashboard");
+            showToast("Perfil criado com sucesso! Bem-vindo ao Enigma de Psylogos.");
 
         } catch (error) {
             console.error("Erro no processo de onboarding:", error);
-            alert("Ocorreu um erro ao salvar seus dados. Por favor, tente novamente.");
+            showToast("Ocorreu um erro ao salvar seus dados. Por favor, tente novamente.", "error");
         }
     };
 

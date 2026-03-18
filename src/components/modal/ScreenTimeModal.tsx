@@ -85,6 +85,10 @@ export const ScreenTimeModal: React.FC<{
     : null;
 
   const isEditing = existingLogs.some(l => l.date === selectedDate);
+  const isToday = selectedDate === today;
+  const selectedDayLabel = isToday
+    ? "hoje"
+    : (journeyDays.find(d => d.date === selectedDate)?.label ?? selectedDate);
 
   return (
     <Modal onClose={onClose} className="max-w-lg">
@@ -136,7 +140,7 @@ export const ScreenTimeModal: React.FC<{
             border: `1px solid ${totalMinutes > 0 ? "rgba(34,211,238,0.18)" : "rgba(255,255,255,0.04)"}`,
           }}
         >
-          <span className="text-slate-500 text-xs">Total{isEditing ? " (editando)" : " hoje"}:</span>
+          <span className="text-slate-500 text-xs">Total {selectedDayLabel}{isEditing ? " (editando)" : ""}:</span>
           <span
             className="font-bold text-sm transition-all duration-300"
             style={{ color: totalMinutes > 0 ? "#22d3ee" : "#475569" }}

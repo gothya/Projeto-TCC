@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useToast } from "@/src/contexts/ToastContext";
 import { ConsentScreen } from "./ConsentScreen";
 import { SociodemographicQuestionnaireScreen, SociodemographicData } from "./SociodemographicQuestionnaireScreen";
 import { PlexusFace } from "../PlexusFace";
@@ -10,6 +11,7 @@ export const OnboardingScreen: React.FC<{
   onDraftChange: (patch: Omit<OnboardingDraft, "uid" | "savedAt">) => void;
   onDraftClear: () => void;
 }> = ({ onComplete, draft, onDraftChange, onDraftClear }) => {
+  const { showToast } = useToast();
   const [step, setStep] = useState(0); // 0: Consent, 1: Questionnaire, 2: Nickname
   const [nickname, setNickname] = useState("");
   const [sociodemographicData, setSociodemographicData] = useState<SociodemographicData | null>(null);
@@ -22,7 +24,7 @@ export const OnboardingScreen: React.FC<{
 
   const handleConsent = (agreed: boolean) => {
     if (!agreed) {
-      alert("Para participar da pesquisa, você precisa concordar com os termos.");
+      showToast("Para participar da pesquisa, você precisa concordar com os termos.", "info");
       return;
     }
 

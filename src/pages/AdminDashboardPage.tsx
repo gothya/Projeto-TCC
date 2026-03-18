@@ -16,7 +16,7 @@ import { DocumentTextIcon } from "@/src/components/icons/DocumentTextIcon";
 import { MagnifyingGlassIcon } from "@/src/components/icons/MagnifyingGlassIcon";
 import { UserIcon } from "@/src/components/icons/UserIcon";
 import { auth, db } from "@/src/services/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, doc, getDocs, updateDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -92,6 +92,43 @@ export const AdminDashboardPage: React.FC<{
     // --- CALCULATION LOGIC ---
 
     const activeUsersCount = allUsers.filter(u => u.hasOnboarded).length;
+
+    // --- RECALCULATE XP LOGIC ---
+    const [recalculating, setRecalculating] = useState(false);
+
+    const recalculateAllXp = async () => {
+        setRecalculating(true);
+        let updated = 0;
+        try {
+            for (const participant of allUsers) {
+                if (!participant.firebaseId) continue;
+
+                const xpFromPings = (participant.pings ?? []).reduce((acc, dayObj) =>
+                    acc + (dayObj.statuses ?? []).reduce((dayAcc, status, pingIndex) => {
+                        if (status === "completed") return dayAcc + (pingIndex === 6 ? 100 : 50);
+                        return dayAcc;
+                    }, 0), 0);
+
+                const uniqueDays = new Set((participant.dailyScreenTimeLogs ?? []).map(l => l.date)).size;
+                const totalXp = xpFromPings + uniqueDays * 500;
+                const newLevel = Math.floor(totalXp / 160) + 1;
+
+                if (participant.user.points !== totalXp || participant.user.level !== newLevel) {
+                    await updateDoc(doc(db, "participantes", participant.firebaseId), {
+                        "user.points": totalXp,
+                        "user.level": newLevel,
+                    });
+                    updated++;
+                }
+            }
+            setToast(`✓ ${updated} participante(s) atualizados.`);
+        } catch (e) {
+            setToast("Erro ao recalcular XP.");
+        } finally {
+            setRecalculating(false);
+            setTimeout(() => setToast(null), 4000);
+        }
+    };
 
     // --- EXCEL EXPORT LOGIC ---
     const downloadExcel = () => {
@@ -318,6 +355,14 @@ export const AdminDashboardPage: React.FC<{
                     <p className="text-gray-400">Monitoramento do Estudo: Enigma da Mente</p>
                 </div>
                 <div className="flex gap-3">
+                    <button
+                        onClick={recalculateAllXp}
+                        disabled={recalculating || allUsers.length === 0}
+                        className="flex items-center gap-2 px-4 py-2 bg-amber-500/20 text-amber-400 border border-amber-500/50 rounded-lg hover:bg-amber-500/30 transition-colors font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        <ChartBarIcon className="w-5 h-5" />
+                        {recalculating ? "Recalculando..." : "Recalcular XP"}
+                    </button>
                     <button
                         onClick={downloadExcel}
                         className="flex items-center gap-2 px-4 py-2 bg-green-500/20 text-green-400 border border-green-500/50 rounded-lg hover:bg-green-500/30 transition-colors font-semibold"

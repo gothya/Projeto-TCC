@@ -341,19 +341,7 @@ export const DashboardPage: React.FC<{
     };
   }, [highlightedPing, instrumentFlow, startInstrumentFlow]);
 
-  const LEVEL_THRESHOLDS = [
-    0, 160, 320, 480, 640, 800, 960, 1120, 1280, 1440, 1600, 1760, 1920, 2080,
-    2240, 2400, 2560, 2720, 2880, 3040, 3200,
-  ];
-
-  const calculateLevel = (xp: number): number => {
-    for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
-      if (xp >= LEVEL_THRESHOLDS[i]) {
-        return i + 1;
-      }
-    }
-    return 1;
-  };
+  const calculateLevel = (xp: number): number => Math.floor(xp / 160) + 1;
 
   const handleInstrumentFlowFinish = async (
     finalResponseData: InstrumentResponse
@@ -748,6 +736,7 @@ export const DashboardPage: React.FC<{
             isReportAvailable={isReportAvailable}
             onOpenReport={() => setIsReportModalOpen(true)}
             screenTimeCount={screenTimeCount}
+            highlightedPing={highlightedPing}
           />
         )}
       </div>

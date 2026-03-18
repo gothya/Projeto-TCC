@@ -62,6 +62,7 @@ type Props = {
   isReportAvailable: boolean;
   onOpenReport: () => void;
   screenTimeCount: number;
+  highlightedPing: { day: number; ping: number } | null;
 };
 
 const ScreenTimeLocks: React.FC<{ screenTimeCount: number }> = ({ screenTimeCount }) => {
@@ -96,7 +97,7 @@ const ScreenTimeLocks: React.FC<{ screenTimeCount: number }> = ({ screenTimeCoun
   );
 };
 
-export const ConquistasTab: React.FC<Props> = ({ participante, isReportAvailable, onOpenReport, screenTimeCount }) => {
+export const ConquistasTab: React.FC<Props> = ({ participante, isReportAvailable, onOpenReport, screenTimeCount, highlightedPing }) => {
   const prevAvailable = useRef(isReportAvailable);
   const [reportJustUnlocked, setReportJustUnlocked] = useState(false);
 
@@ -287,25 +288,32 @@ export const ConquistasTab: React.FC<Props> = ({ participante, isReportAvailable
               <div key={dayIdx} className="grid grid-cols-7 gap-1 items-center">
                 {(day.statuses ?? []).map((status, pingIdx) => {
                   const isLast = pingIdx === 6;
+                  const isHighlighted = highlightedPing?.day === dayIdx && highlightedPing?.ping === pingIdx;
                   return (
                     <div key={pingIdx} className="flex items-center justify-center h-6">
-                      {isLast ? (
-                        <StarIcon
-                          className={`w-4 h-4 ${
-                            status === "completed" ? "text-yellow-400" :
-                            status === "missed"    ? "text-red-500/40" :
-                                                     "text-slate-700"
-                          }`}
-                        />
-                      ) : (
-                        <div
-                          className={`w-3.5 h-3.5 rounded-full ${
-                            status === "completed" ? "bg-green-400" :
-                            status === "missed"    ? "bg-red-500" :
-                                                     "bg-slate-700"
-                          }`}
-                        />
-                      )}
+                      <div className="relative flex items-center justify-center w-5 h-5">
+                        {isHighlighted && (
+                          <span className="absolute inset-0 rounded-full bg-cyan-400/40 animate-ping" />
+                        )}
+                        {isLast ? (
+                          <StarIcon
+                            className={`w-4 h-4 relative z-10 ${
+                              status === "completed" ? "text-yellow-400" :
+                              status === "missed"    ? "text-red-500/40" :
+                                                       "text-slate-700"
+                            }`}
+                          />
+                        ) : (
+                          <div
+                            className={`w-3.5 h-3.5 rounded-full relative z-10 ${
+                              status === "completed" ? "bg-green-400" :
+                              status === "missed"    ? "bg-red-500" :
+                                                       "bg-slate-700"
+                            }`}
+                            style={isHighlighted ? { boxShadow: "0 0 8px rgba(34,211,238,0.8)" } : {}}
+                          />
+                        )}
+                      </div>
                     </div>
                   );
                 })}

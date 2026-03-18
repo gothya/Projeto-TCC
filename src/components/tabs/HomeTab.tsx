@@ -5,10 +5,6 @@ import { ProfileMenu } from "@/src/components/menu/ProfileMenu";
 import { StarIcon } from "@/src/components/icons/StarIcon";
 import { UserIcon } from "@/src/components/icons/UserIcon";
 
-const LEVEL_THRESHOLDS = [
-  0, 160, 320, 480, 640, 800, 960, 1120, 1280, 1440,
-  1600, 1760, 1920, 2080, 2240, 2400, 2560, 2720, 2880, 3040, 3200,
-];
 
 const LEVEL_TITLES = [
   "Mente Curiosa", "Explorador", "Observador", "Investigador",
@@ -93,12 +89,10 @@ export const HomeTab: React.FC<Props> = ({
   const { user, pings } = participante;
   const level = user?.level ?? 1;
   const totalXp = user?.points ?? 0;
-  const currentLevelStart = LEVEL_THRESHOLDS[level - 1] ?? 0;
-  const nextLevelTarget = LEVEL_THRESHOLDS[level] ?? LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
+  const currentLevelStart = (level - 1) * 160;
   const xpIntoLevel = totalXp - currentLevelStart;
-  const xpForLevel = nextLevelTarget - currentLevelStart;
-  const xpPct = xpForLevel > 0 ? Math.min(100, (xpIntoLevel / xpForLevel) * 100) : 0;
-  const levelTitle = LEVEL_TITLES[Math.min(level - 1, LEVEL_TITLES.length - 1)];
+  const xpPct = (xpIntoLevel / 160) * 100;
+  const levelTitle = LEVEL_TITLES[Math.min(Math.floor((level - 1) / 2), LEVEL_TITLES.length - 1)];
 
   // Determine current day's pings
   const currentDayIndex = highlightedPing?.day
@@ -297,7 +291,7 @@ export const HomeTab: React.FC<Props> = ({
             Experiência
           </span>
           <span className="text-xs text-slate-400 font-mono">
-            {totalXp} / {nextLevelTarget} XP
+            {totalXp} / {level * 160} XP
           </span>
         </div>
         <div className="w-full h-3 rounded-full bg-slate-700/60 overflow-hidden">
