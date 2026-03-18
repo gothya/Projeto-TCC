@@ -601,7 +601,7 @@ export const DashboardPage: React.FC<{
     const alreadyLoggedThatDay = existing.some(l => l.date === date);
     const newXp = alreadyLoggedThatDay
       ? (participante.user.points ?? 0)
-      : (participante.user.points ?? 0) + 20;
+      : (participante.user.points ?? 0) + 500;
     const newLevel = calculateLevel(newXp);
     const newState = {
       ...participante,

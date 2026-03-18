@@ -236,7 +236,7 @@ export const ScreenTimeModal: React.FC<{
             className="px-8 py-2 font-bold text-slate-900 bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ boxShadow: isValid ? "0 0 12px rgba(34,211,238,0.4)" : undefined }}
           >
-            {isEditing ? "Atualizar" : "Salvar +20 XP"}
+            {isEditing ? "Atualizar" : "Salvar +500 XP"}
           </button>
         </div>
       </div>
