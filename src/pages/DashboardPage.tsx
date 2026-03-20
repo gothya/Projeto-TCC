@@ -43,6 +43,7 @@ export const DashboardPage: React.FC<{
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isSociodemographicModalOpen, setIsSociodemographicModalOpen] = useState(false);
   const [instrumentFlow, setInstrumentFlow] = useState<InstrumentFlowState>(null);
+  const [isInstrumentModalVisible, setIsInstrumentModalVisible] = useState(false);
   const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
   const [isScreenTimeModalOpen, setIsScreenTimeModalOpen] = useState(false);
   const [timerTargetDate, setTimerTargetDate] = useState<Date | null>(null);
@@ -92,14 +93,27 @@ export const DashboardPage: React.FC<{
     const journeyStart = getJourneyStartDate(participante.studyStartDate);
 
     const evaluateSchedule = async () => {
-      // Don't evaluate if we are currently answering a ping
-      if (instrumentFlow) return;
-
       const result = evaluateFullJourneySchedule(
         journeyStart,
         participante.pings,
         new Date()
       );
+
+      // Se o modal está visível e sendo respondido, não altera o schedule
+      if (instrumentFlow && isInstrumentModalVisible) return;
+
+      // Flow em memória mas modal oculto — verifica se o ping ainda está na janela ativa
+      if (instrumentFlow && !isInstrumentModalVisible) {
+        const isFlowPingStillActive =
+          (result.currentActivePing?.day === instrumentFlow.ping.day && result.currentActivePing?.ping === instrumentFlow.ping.ping) ||
+          (result.currentTimeWindowPing?.day === instrumentFlow.ping.day && result.currentTimeWindowPing?.ping === instrumentFlow.ping.ping);
+        if (!isFlowPingStillActive) {
+          setInstrumentFlow(null);
+          // Continua a avaliação para marcar o ping como missed normalmente
+        } else {
+          return; // Ping ainda ativo, usuário pode retomar
+        }
+      }
 
       console.log("[Schedule]", new Date().toLocaleTimeString(), {
         currentActivePing: result.currentActivePing,
@@ -182,7 +196,7 @@ export const DashboardPage: React.FC<{
     const intervalId = setInterval(evaluateSchedule, 5000); // Check every 5 seconds
     return () => clearInterval(intervalId);
 
-  }, [participante, instrumentFlow, updateParticipante]);
+  }, [participante, instrumentFlow, isInstrumentModalVisible, updateParticipante]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -266,6 +280,16 @@ export const DashboardPage: React.FC<{
   const startInstrumentFlow = useCallback(async (force = false) => {
     if (!highlightedPing || !participante) return;
 
+    // Se já existe um flow em memória para o mesmo ping, apenas reexibe o modal
+    if (
+      instrumentFlow &&
+      instrumentFlow.ping.day === highlightedPing.day &&
+      instrumentFlow.ping.ping === highlightedPing.ping
+    ) {
+      setIsInstrumentModalVisible(true);
+      return;
+    }
+
     const previousStatus = participante.pings[highlightedPing.day]?.statuses[highlightedPing.ping];
     if (!force && previousStatus === "completed") {
       setShowOverwriteConfirm(true);
@@ -299,12 +323,13 @@ export const DashboardPage: React.FC<{
         },
       });
     }
-  }, [highlightedPing, participante]);
+    setIsInstrumentModalVisible(true);
+  }, [highlightedPing, participante, instrumentFlow]);
 
   // Listener for Notification Clicks (Deep Linking)
   useEffect(() => {
     const handleOpenIntent = () => {
-      if (highlightedPing && !instrumentFlow) {
+      if (highlightedPing) {
         console.log("Opening ping via notification interaction");
         startInstrumentFlow();
 
@@ -438,6 +463,7 @@ export const DashboardPage: React.FC<{
       step: nextStep,
       data: partial,
     });
+    setIsInstrumentModalVisible(true);
   }, [participante, highlightedPing, instrumentFlow]);
 
   // Note: 5 Minute Timeout for Active Ping was removed
@@ -647,11 +673,12 @@ export const DashboardPage: React.FC<{
       )}
 
       {/* ── Modais (preservados, sem alteração) ── */}
-      {instrumentFlow && (
+      {instrumentFlow && isInstrumentModalVisible && (
         <InstrumentModal
           flow={instrumentFlow}
           onStep={handleInstrumentStep}
-          onCancel={() => setInstrumentFlow(null)}
+          onCancel={() => setIsInstrumentModalVisible(false)}
+          onMinimize={() => setIsInstrumentModalVisible(false)}
         />
       )}
       {isRcleModalOpen && (
@@ -747,7 +774,7 @@ export const DashboardPage: React.FC<{
         onTabChange={setActiveTab}
         isBellVisible={isBellVisible}
         onBellClick={startInstrumentFlow}
-        bellDisabled={!highlightedPing || !!instrumentFlow}
+        bellDisabled={!highlightedPing || (!!instrumentFlow && isInstrumentModalVisible)}
       />
 
       <style>{`

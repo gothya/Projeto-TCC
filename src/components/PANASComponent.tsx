@@ -30,8 +30,10 @@ export const PANASComponent: React.FC<{
     (currentStep + 1) * ITEMS_PER_STEP
   );
 
-  // Check if all items in current step have been answered (> 0)
-  const canProceed = currentItems.every((item) => responses[item] > 0);
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+
+  const allAnswered = currentItems.every((item) => responses[item] > 0);
+  const canProceed = allAnswered && hasScrolledToBottom;
 
   const handleNext = () => {
     if (currentStep < totalSteps - 1) {
@@ -49,10 +51,38 @@ export const PANASComponent: React.FC<{
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // A cada troca de passo: volta ao topo e reseta o requisito de scroll
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    el.scrollTop = 0;
+    setHasScrolledToBottom(false);
+
+    // Se o conteúdo couber sem scroll, libera imediatamente
+    const checkNoScrollNeeded = () => {
+      if (el.scrollHeight <= el.clientHeight + 1) {
+        setHasScrolledToBottom(true);
+      }
+    };
+    // Aguarda o DOM pintar antes de medir
+    const timer = setTimeout(checkNoScrollNeeded, 100);
+    return () => clearTimeout(timer);
+  }, [currentStep]);
+
+  // Listener de scroll: marca como concluído ao chegar no fim (threshold de 24px)
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    const handleScroll = () => {
+      if (el.scrollHeight - el.scrollTop <= el.clientHeight + 24) {
+        setHasScrolledToBottom(true);
+      }
+    };
+
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    return () => el.removeEventListener('scroll', handleScroll);
   }, [currentStep]);
 
   const VolumeSlider: React.FC<{
@@ -82,9 +112,9 @@ export const PANASComponent: React.FC<{
   };
 
   return (
-    <div className="h-full flex flex-col animate-fade-in space-y-4">
-      <div className="flex-shrink-0 text-center space-y-2">
-        <h2 className="text-xl font-bold text-cyan-300">
+    <div className="flex flex-col flex-1 min-h-0 animate-fade-in">
+      <div className="flex-shrink-0 text-center space-y-2 pb-2">
+        <h2 className="text-base sm:text-xl font-bold text-cyan-300">
           Passo {currentStep + 1} de {totalSteps}
         </h2>
         <p className="text-gray-300 text-sm px-4">{question}</p>
@@ -96,7 +126,36 @@ export const PANASComponent: React.FC<{
         </div>
       </div>
 
-      <div ref={scrollContainerRef} className="flex-grow space-y-6 overflow-y-auto px-1 py-2">
+      {/* Botão flutuante no topo para garantir visibilidade */}
+      <div className="relative flex justify-between items-center py-2 px-2 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 z-10 shrink-0 mb-2 rounded-lg">
+        <button
+          onClick={handleBack}
+          disabled={currentStep === 0}
+          className={`px-4 py-2 text-sm sm:text-base font-medium text-gray-300 transition-colors hover:text-white
+            ${currentStep === 0 ? "invisible" : ""}
+          `}
+        >
+          Voltar
+        </button>
+
+        <div className="flex flex-col items-end gap-1">
+          {allAnswered && !hasScrolledToBottom && (
+            <span className="text-[11px] text-cyan-400/70 animate-pulse">
+              ↓ role até o fim para continuar
+            </span>
+          )}
+          <button
+            onClick={handleNext}
+            disabled={!canProceed}
+            className="px-6 py-2 text-sm sm:text-base font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-colors shadow-glow-blue disabled:bg-gray-600 disabled:cursor-not-allowed disabled:shadow-none"
+          >
+            {currentStep === totalSteps - 1 ? "Concluir" : "Próximo"}
+          </button>
+        </div>
+      </div>
+
+      {/* pb-4 ao invés de pb-20 agora que o botão não está no bottom */}
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto space-y-6 px-1 py-2 pb-4">
         {currentItems.map((item) => (
           <div key={item} className="space-y-2 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
             <h3 className="text-lg font-medium text-center text-gray-200">{item}</h3>
@@ -114,25 +173,6 @@ export const PANASComponent: React.FC<{
         ))}
       </div>
 
-      <div className="flex justify-between pt-2 flex-shrink-0">
-        <button
-          onClick={handleBack}
-          disabled={currentStep === 0}
-          className={`px-6 py-3 font-medium text-gray-300 transition-colors hover:text-white
-            ${currentStep === 0 ? "invisible" : ""}
-          `}
-        >
-          Voltar
-        </button>
-
-        <button
-          onClick={handleNext}
-          disabled={!canProceed}
-          className="px-8 py-3 font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-colors shadow-glow-blue disabled:bg-gray-600 disabled:cursor-not-allowed disabled:shadow-none"
-        >
-          {currentStep === totalSteps - 1 ? "Concluir" : "Próximo"}
-        </button>
-      </div>
     </div>
   );
 };

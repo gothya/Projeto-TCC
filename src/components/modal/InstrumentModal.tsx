@@ -12,7 +12,8 @@ export const InstrumentModal: React.FC<{
   flow: InstrumentFlowState;
   onStep: (data: Partial<InstrumentResponse>) => void;
   onCancel: () => void;
-}> = ({ flow, onCancel, onStep }) => {
+  onMinimize: () => void;
+}> = ({ flow, onCancel, onStep, onMinimize }) => {
   if (!flow) return null;
 
   const REGULAR_FLOW_SEQUENCE = ["sam", "feed_context", "panas_contextual"];
@@ -66,9 +67,9 @@ export const InstrumentModal: React.FC<{
   };
 
   return (
-    <Modal onClose={onCancel} className="max-w-4xl h-[85vh] flex flex-col">
-      <div className="p-4 sm:p-8 flex flex-col flex-grow min-h-0">
-        <div className="mb-4">
+    <Modal onClose={onCancel} onMinimize={onMinimize} className="max-w-4xl h-[85svh] overflow-hidden flex flex-col">
+      <div className="p-3 sm:p-6 flex flex-col flex-grow min-h-0">
+        <div className="flex-shrink-0 mb-4">
           <div className="flex justify-between items-start mb-2">
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -100,7 +101,9 @@ export const InstrumentModal: React.FC<{
             ></div>
           </div>
         </div>
-        {renderStepContent()}
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          {renderStepContent()}
+        </div>
       </div>
     </Modal>
   );

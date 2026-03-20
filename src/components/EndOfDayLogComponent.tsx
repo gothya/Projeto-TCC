@@ -9,8 +9,8 @@ export const EndOfDayLogComponent: React.FC<{
   const [stressfulEvents, setStressfulEvents] = useState("");
 
   return (
-    <div className="">
-      <div className="max-h-[60vh] overflow-y-auto pr-4 space-y-6">
+    <div className="flex flex-col flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-y-auto pr-4 space-y-6">
         <FormField label="Como você avalia a qualidade do seu sono na noite passada? (1=Péssima, 5=Excelente)">
           <div className="flex justify-start space-x-2 sm:space-x-4">
             {[1, 2, 3, 4, 5].map((v) => (

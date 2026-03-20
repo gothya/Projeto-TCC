@@ -40,7 +40,7 @@ export const SAMComponent: React.FC<{
         {/* Figure Section - Maximized */}
         <div className="relative group shrink-0 flex-1 flex items-center justify-center min-h-0">
           <div className="absolute inset-0 bg-gradient-to-b from-cyan-900/10 to-transparent rounded-full opacity-0 pointer-events-none"></div>
-          <div className="relative w-48 h-48 sm:w-60 sm:h-60 md:w-72 md:h-72 bg-slate-800 rounded-full p-4 border-2 border-cyan-400/30 shadow-[0_0_30px_rgba(34,211,238,0.1)] flex items-center justify-center transition-all duration-500">
+          <div className="relative w-36 h-36 sm:w-48 sm:h-48 md:w-60 md:h-60 bg-slate-800 rounded-full p-4 border-2 border-cyan-400/30 shadow-[0_0_30px_rgba(34,211,238,0.1)] flex items-center justify-center transition-all duration-500">
             {responses[type] > 0 ? (
               <SAMDynamicFigure type={type} value={responses[type]} />
             ) : (
@@ -88,8 +88,8 @@ export const SAMComponent: React.FC<{
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header - Fixed */}
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Header */}
       <div className="flex-none flex justify-between items-center text-sm text-gray-400 border-b border-gray-700 pb-2 mb-2">
         <span>Passo {currentStep + 1} de {steps.length}</span>
         <div className="flex gap-1">
@@ -99,31 +99,33 @@ export const SAMComponent: React.FC<{
         </div>
       </div>
 
-      {/* Main Content - Scrollable */}
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-2">
+      {/* Botão no topo para garantir visibilidade */}
+      <div className="relative flex justify-between items-center py-2 px-2 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 z-10 shrink-0 mb-2 rounded-lg">
+        <button
+          onClick={() => setCurrentStep((p) => p - 1)}
+          disabled={currentStep === 0}
+          className={`px-4 py-2 text-sm sm:text-base font-medium text-gray-300 transition-colors hover:text-white
+            ${currentStep === 0 ? "invisible" : ""}
+          `}
+        >
+          Voltar
+        </button>
+
+        <button
+          onClick={handleNext}
+          disabled={!canProceed}
+          className="px-6 py-2 text-sm sm:text-base font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-colors shadow-glow-blue disabled:bg-gray-600 disabled:cursor-not-allowed disabled:shadow-none"
+        >
+          {currentStep === steps.length - 1 ? "Concluir" : "Próximo"}
+        </button>
+      </div>
+
+      {/* Conteúdo — pb-4 ao invés de pb-20 agora que o botão não está no base */}
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-2 pb-4">
         <SAMSlider
           label={currentStepData.label}
           type={currentStepData.type}
         />
-      </div>
-
-      {/* Footer - Fixed */}
-      <div className="flex-none flex justify-end pt-4 mt-auto border-t border-gray-800/50">
-        {currentStep > 0 && (
-          <button
-            onClick={() => setCurrentStep(p => p - 1)}
-            className="mr-auto px-6 py-2 text-gray-400 hover:text-white transition-colors"
-          >
-            Voltar
-          </button>
-        )}
-        <button
-          onClick={handleNext}
-          disabled={!canProceed}
-          className="px-8 py-3 font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-colors shadow-glow-blue disabled:bg-gray-600 disabled:cursor-not-allowed"
-        >
-          {currentStep === steps.length - 1 ? "Concluir" : "Próximo"}
-        </button>
       </div>
     </div>
   );
