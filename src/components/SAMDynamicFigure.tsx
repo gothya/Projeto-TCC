@@ -10,6 +10,10 @@ export const SAMDynamicFigure: React.FC<{
   if (type === 'dominance') img_name = 'dominancia';
 
   return (
-    <img src={`/${img_name}_${value}.png`} alt={type} />
+    <img
+      src={`/${img_name}_${value}.png`}
+      alt={`${type} nível ${value}`}
+      className="w-full h-full object-contain"
+    />
   );
 };

@@ -35,12 +35,28 @@ export const SAMComponent: React.FC<{
   }> = ({ label, type }) => {
     const values = Array.from({ length: 9 }).map((_, i) => i + 1);
 
+    const glowColor = responses[type] === 0
+      ? "rgba(100,116,139,0.15)"
+      : responses[type] <= 3
+        ? "rgba(139,92,246,0.25)"
+        : responses[type] <= 6
+          ? "rgba(34,211,238,0.25)"
+          : "rgba(34,211,238,0.45)";
+
     return (
-      <div className="flex flex-col items-center justify-between h-full w-full py-1">
-        {/* Figure Section - Maximized */}
-        <div className="relative group shrink-0 flex-1 flex items-center justify-center min-h-0">
-          <div className="absolute inset-0 bg-gradient-to-b from-cyan-900/10 to-transparent rounded-full opacity-0 pointer-events-none"></div>
-          <div className="relative w-36 h-36 sm:w-48 sm:h-48 md:w-60 md:h-60 bg-slate-800 rounded-full p-4 border-2 border-cyan-400/30 shadow-[0_0_30px_rgba(34,211,238,0.1)] flex items-center justify-center transition-all duration-500">
+      <div className="flex flex-col items-center w-full gap-3 py-2">
+
+        {/* Figura — elemento central */}
+        <div className="flex-1 min-h-0 w-full flex items-center justify-center">
+          <div
+            className="relative w-full max-w-[280px] aspect-square flex items-center justify-center transition-all duration-500"
+            style={{ filter: responses[type] > 0 ? `drop-shadow(0 0 24px ${glowColor})` : "none" }}
+          >
+            {/* fundo radial sutil */}
+            <div
+              className="absolute inset-0 rounded-full transition-all duration-500"
+              style={{ background: `radial-gradient(circle, ${glowColor} 0%, transparent 70%)` }}
+            />
             {responses[type] > 0 ? (
               <SAMDynamicFigure type={type} value={responses[type]} />
             ) : (
@@ -51,12 +67,11 @@ export const SAMComponent: React.FC<{
           </div>
         </div>
 
-        {/* Controls Section - Moved to Bottom Base */}
-        <div className="w-full max-w-2xl flex flex-col items-center animate-slide-up bg-slate-900/40 p-4 rounded-3xl border border-white/5 mt-2">
-          <h3 className="text-lg sm:text-2xl font-bold text-cyan-300 mb-3 text-center tracking-wide drop-shadow-sm">
+        {/* Controles */}
+        <div className="w-full max-w-2xl flex flex-col items-center gap-2">
+          <h3 className="text-base sm:text-lg font-bold text-cyan-300 text-center tracking-wide">
             {label}
           </h3>
-
           <div className="w-full">
             <div className="flex justify-between items-center gap-1">
               {values.map((val) => (
@@ -65,24 +80,25 @@ export const SAMComponent: React.FC<{
                   onClick={() => setResponses((p) => ({ ...p, [type]: val }))}
                   aria-label={`${label} nível ${val}`}
                   className={`
-                        relative group flex items-center justify-center transition-all duration-200
-                        w-8 h-8 sm:w-12 sm:h-12 rounded-xl border-2
-                        ${responses[type] === val
+                    flex items-center justify-center transition-all duration-200
+                    w-8 h-8 sm:w-11 sm:h-11 rounded-xl border-2
+                    ${responses[type] === val
                       ? "bg-cyan-500 border-cyan-300 text-white shadow-[0_0_20px_rgba(6,182,212,0.5)] scale-110 z-10"
                       : "bg-slate-800 border-slate-600 text-gray-400 hover:border-cyan-400/50 hover:text-cyan-200 hover:bg-slate-700"
                     }
-                    `}
+                  `}
                 >
-                  <span className="text-sm sm:text-lg font-bold">{val}</span>
+                  <span className="text-sm sm:text-base font-bold">{val}</span>
                 </button>
               ))}
             </div>
-            <div className="flex justify-between w-full mt-2 px-1 text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-widest">
+            <div className="flex justify-between w-full mt-1.5 px-1 text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-widest">
               <span>Baixo</span>
               <span>Alto</span>
             </div>
           </div>
         </div>
+
       </div>
     );
   };
