@@ -1,6 +1,6 @@
 import React from "react";
 
-export type Tab = "social" | "home" | "conquistas";
+export type Tab = "social" | "home" | "conquistas" | "tutoriais";
 
 const HomeIcon = () => (
   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -20,6 +20,12 @@ const TrophyIcon = () => (
   </svg>
 );
 
+const BookIcon = () => (
+  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+  </svg>
+);
+
 const BellIcon = () => (
   <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -32,16 +38,17 @@ export const BottomNav: React.FC<{
   isBellVisible: boolean;
   onBellClick: () => void;
   bellDisabled: boolean;
-}> = ({ activeTab, onTabChange, isBellVisible, onBellClick, bellDisabled }) => {
+  hasUnseenTutorial?: boolean;
+}> = ({ activeTab, onTabChange, isBellVisible, onBellClick, bellDisabled, hasUnseenTutorial = false }) => {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "social",      label: "Social",      icon: <SocialIcon /> },
-    { id: "home",        label: "Início",       icon: <HomeIcon /> },
-    { id: "conquistas",  label: "Conquistas",   icon: <TrophyIcon /> },
+    { id: "social",     label: "Social",      icon: <SocialIcon /> },
+    { id: "home",       label: "Início",      icon: <HomeIcon /> },
+    { id: "tutoriais",  label: "Guia",        icon: <BookIcon /> },
+    { id: "conquistas", label: "Feitos",      icon: <TrophyIcon /> },
   ];
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40">
-      {/* Bell flutuante acima da nav — só quando visível */}
       {isBellVisible && (
         <div className="flex justify-center mb-2 pointer-events-none">
           <button
@@ -50,7 +57,6 @@ export const BottomNav: React.FC<{
             className="pointer-events-auto relative flex items-center gap-2 px-5 py-3 rounded-full bg-cyan-400 text-slate-900 font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ boxShadow: "0 0 20px rgba(34,211,238,0.7), 0 0 40px rgba(34,211,238,0.3)" }}
           >
-            {/* Pulse ring */}
             <span className="absolute inset-0 rounded-full bg-cyan-400 animate-ping opacity-30" />
             <BellIcon />
             <span className="text-sm relative z-10">Responder Ping</span>
@@ -58,7 +64,6 @@ export const BottomNav: React.FC<{
         </div>
       )}
 
-      {/* Nav bar */}
       <nav
         className="flex items-center justify-around px-2 pt-2 pb-safe"
         style={{
@@ -71,27 +76,28 @@ export const BottomNav: React.FC<{
       >
         {tabs.map(({ id, label, icon }) => {
           const isActive = activeTab === id;
+          const showBadge = id === "tutoriais" && hasUnseenTutorial;
           return (
             <button
               key={id}
               onClick={() => onTabChange(id)}
               className="flex flex-col items-center gap-1 flex-1 py-1 relative transition-all duration-200"
             >
-              {/* Active indicator */}
               {isActive && (
                 <span
                   className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-cyan-400"
                   style={{ boxShadow: "0 0 8px rgba(34,211,238,0.8)" }}
                 />
               )}
-              <span className={isActive ? "text-cyan-400" : "text-slate-500"}>
+              <span className={`relative ${isActive ? "text-cyan-400" : "text-slate-500"}`}>
                 {icon}
+                {showBadge && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400"
+                    style={{ boxShadow: "0 0 6px rgba(74,222,128,0.8)" }}
+                  />
+                )}
               </span>
-              <span
-                className={`text-xs font-medium transition-colors ${
-                  isActive ? "text-cyan-400" : "text-slate-500"
-                }`}
-              >
+              <span className={`text-xs font-medium transition-colors ${isActive ? "text-cyan-400" : "text-slate-500"}`}>
                 {label}
               </span>
             </button>

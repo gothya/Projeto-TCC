@@ -15,6 +15,7 @@ import { BottomNav, Tab } from "@/src/components/navigation/BottomNav";
 import { HomeTab } from "@/src/components/tabs/HomeTab";
 import { SocialTab } from "@/src/components/tabs/SocialTab";
 import { ConquistasTab } from "@/src/components/tabs/ConquistasTab";
+import { TutoriaisTab } from "@/src/components/tabs/TutoriaisTab";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { db } from "@/src/services/firebase";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
@@ -37,6 +38,17 @@ export const DashboardPage: React.FC<{
   } | null>(null);
   const [isBellVisible, setIsBellVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("home");
+  const [hasSeenTutorial, setHasSeenTutorial] = useState(
+    () => localStorage.getItem("psylogos_tutorial_seen") === "true"
+  );
+
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab);
+    if (tab === "tutoriais" && !hasSeenTutorial) {
+      setHasSeenTutorial(true);
+      localStorage.setItem("psylogos_tutorial_seen", "true");
+    }
+  };
   const [isRcleModalOpen, setIsRcleModalOpen] = useState(false);
   const [isPerformanceModalOpen, setIsPerformanceModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -750,6 +762,8 @@ export const DashboardPage: React.FC<{
             screenTimeToday={screenTimeToday}
             isAdmin={isAdmin}
             onNavigateAdmin={() => { setIsProfileMenuOpen(false); navigate('/admin'); }}
+            hasSeenTutorial={hasSeenTutorial}
+            onNavigateToTutorial={() => handleTabChange("tutoriais")}
           />
         )}
         {activeTab === "social" && (
@@ -767,12 +781,18 @@ export const DashboardPage: React.FC<{
             highlightedPing={highlightedPing}
           />
         )}
+
+        {/* TutoriaisTab — mantido montado para preservar estado do accordion */}
+        <div className={activeTab === "tutoriais" ? "" : "hidden"}>
+          <TutoriaisTab />
+        </div>
       </div>
 
       {/* ── Bottom Navigation ── */}
       <BottomNav
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
+        hasUnseenTutorial={!hasSeenTutorial}
         isBellVisible={isBellVisible}
         onBellClick={startInstrumentFlow}
         bellDisabled={!highlightedPing || (!!instrumentFlow && isInstrumentModalVisible)}

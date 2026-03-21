@@ -59,6 +59,8 @@ type Props = {
   screenTimeToday: boolean;
   isAdmin?: boolean;
   onNavigateAdmin?: () => void;
+  onNavigateToTutorial?: () => void;
+  hasSeenTutorial?: boolean;
 };
 
 export const HomeTab: React.FC<Props> = ({
@@ -84,6 +86,8 @@ export const HomeTab: React.FC<Props> = ({
   screenTimeToday,
   isAdmin,
   onNavigateAdmin,
+  onNavigateToTutorial,
+  hasSeenTutorial,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const { user, pings } = participante;
@@ -276,6 +280,28 @@ export const HomeTab: React.FC<Props> = ({
             : `${screenTimeCount}/3 dias · faltam ${3 - screenTimeCount} para liberar o relatório`}
         </p>
       </div>
+
+      {/* Hint: Guia do Explorador — aparece enquanto não visitado */}
+      {!hasSeenTutorial && onNavigateToTutorial && (
+        <button
+          onClick={onNavigateToTutorial}
+          className="w-full max-w-sm flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-opacity duration-300 mb-1"
+          style={{
+            background: "rgba(34,211,238,0.07)",
+            border: "1px solid rgba(34,211,238,0.25)",
+          }}
+        >
+          <span className="text-2xl flex-shrink-0">📖</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-cyan-300">Novo por aqui?</p>
+            <p className="text-[11px] text-slate-400 truncate">Veja o Guia do Explorador →</p>
+          </div>
+          <span
+            className="w-2 h-2 rounded-full flex-shrink-0"
+            style={{ background: "#4ade80", boxShadow: "0 0 6px rgba(74,222,128,0.8)" }}
+          />
+        </button>
+      )}
 
       {/* XP Bar */}
       <div
