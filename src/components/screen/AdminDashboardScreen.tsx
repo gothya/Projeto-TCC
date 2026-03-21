@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { exportToExcel } from "@/src/utils/excelExporter";
+import { parseDurationMinutes, resolvePlatformName } from "@/src/utils/screenTimeUtils";
 import { CheckCircleIcon } from "../icons/CheckCircleIcon";
 import { GameState } from "../data/GameState";
 import { MagnifyingGlassIcon } from "../icons/MagnifyingGlassIcon";
@@ -171,25 +172,25 @@ export const AdminDashboardScreen: React.FC<{
           }
         }
 
-        // Screen Time
-        if (r.screenTimeLog) {
-          let dailyMinutes = 0;
-          r.screenTimeLog.forEach(entry => {
-            const dur = parseInt(entry.duration || "0");
-            if (!isNaN(dur)) {
-              dailyMinutes += dur;
-              const plat = entry.platform || "Outros";
-              screenTimeStats.platformBreakdown[plat] = (screenTimeStats.platformBreakdown[plat] || 0) + dur;
-            }
-          });
-          screenTimeStats.totalMinutes += dailyMinutes;
-          screenTimeStats.count++; // Count "days" or "entries"? Days (responses).
-        }
-
         // Sleep
         if (r.sleepQuality && r.sleepQuality > 0) {
           sleepStats.totalQuality += r.sleepQuality;
           sleepStats.count++;
+        }
+      });
+
+      // Screen Time — lê de dailyScreenTimeLogs (fonte principal do ScreenTimeModal)
+      (user.dailyScreenTimeLogs ?? []).forEach(log => {
+        let dailyMinutes = 0;
+        (log.entries ?? []).forEach(entry => {
+          const dur = parseDurationMinutes(entry);
+          dailyMinutes += dur;
+          const plat = resolvePlatformName(entry);
+          screenTimeStats.platformBreakdown[plat] = (screenTimeStats.platformBreakdown[plat] || 0) + dur;
+        });
+        if (dailyMinutes > 0) {
+          screenTimeStats.totalMinutes += dailyMinutes;
+          screenTimeStats.count++;
         }
       });
     });
@@ -306,18 +307,6 @@ export const AdminDashboardScreen: React.FC<{
     const stressLogs: { date: string, text: string }[] = [];
 
     user.responses.forEach(r => {
-      // Screen Time
-      if (r.screenTimeLog) {
-        r.screenTimeLog.forEach(entry => {
-          const dur = parseInt(entry.duration || "0");
-          if (!isNaN(dur)) {
-            totalScreenTimeMinutes += dur;
-            const plat = entry.platform || "Outros";
-            platformBreakdown[plat] = (platformBreakdown[plat] || 0) + dur;
-          }
-        });
-      }
-
       // Sleep
       if (r.sleepQuality && r.sleepQuality > 0) {
         sleepSum += r.sleepQuality;
@@ -334,15 +323,23 @@ export const AdminDashboardScreen: React.FC<{
       }
     });
 
-    const avgSleep = sleepCount > 0 ? (sleepSum / sleepCount).toFixed(1) : "-";
-
-    // Correct Average Calculation
-    // We need to divide by the number of days that HAD screen time logs.
-    // Assuming each response with screenTimeLog > 0 counts as a day.
+    // Screen Time — lê de dailyScreenTimeLogs (fonte principal do ScreenTimeModal)
     let screenTimeDays = 0;
-    user.responses.forEach(r => {
-      if (r.screenTimeLog && r.screenTimeLog.length > 0) screenTimeDays++;
+    (user.dailyScreenTimeLogs ?? []).forEach(log => {
+      let dayTotal = 0;
+      (log.entries ?? []).forEach(entry => {
+        const dur = parseDurationMinutes(entry);
+        dayTotal += dur;
+        const plat = resolvePlatformName(entry);
+        platformBreakdown[plat] = (platformBreakdown[plat] || 0) + dur;
+      });
+      if (dayTotal > 0) {
+        totalScreenTimeMinutes += dayTotal;
+        screenTimeDays++;
+      }
     });
+
+    const avgSleep = sleepCount > 0 ? (sleepSum / sleepCount).toFixed(1) : "-";
 
     const avgScreenTime = screenTimeDays > 0 ? Math.round(totalScreenTimeMinutes / screenTimeDays) : 0;
     const hoursScreenTime = Math.floor(avgScreenTime / 60);

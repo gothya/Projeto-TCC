@@ -79,14 +79,19 @@ export function calculateReportStats(gameState: GameState): ReportStats {
       }
     }
 
-    if (r.screenTimeLog && r.screenTimeLog.length > 0) {
-      let dayTotal = 0;
-      r.screenTimeLog.forEach((entry) => {
-        const dur = parseDurationMinutes(entry);
-        const plat = resolvePlatformName(entry);
-        dayTotal += dur;
-        platformBreakdown[plat] = (platformBreakdown[plat] || 0) + dur;
-      });
+  });
+
+  // Lê tempo de tela de dailyScreenTimeLogs (fonte principal — salvo pelo ScreenTimeModal)
+  const dailyLogs = gameState.dailyScreenTimeLogs ?? [];
+  dailyLogs.forEach((log) => {
+    let dayTotal = 0;
+    (log.entries ?? []).forEach((entry) => {
+      const dur = parseDurationMinutes(entry);
+      const plat = resolvePlatformName(entry);
+      dayTotal += dur;
+      platformBreakdown[plat] = (platformBreakdown[plat] || 0) + dur;
+    });
+    if (dayTotal > 0) {
       screenTimeTotalMinutes += dayTotal;
       screenTimeDays++;
     }
