@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState, useRef } from "react";
+import html2pdf from "html2pdf.js";
 import { GameState } from "@/src/components/data/GameState";
 import {
   calculateReportStats,
@@ -7,8 +8,16 @@ import {
   SCREEN_TIME_GLOBAL_REF,
   SCREEN_TIME_NATIONAL_REF,
 } from "@/src/utils/ReportGeneratorUtils";
+import {
+  buildMockGameState,
+  SCENARIO_DESCRIPTIONS,
+  SCENARIO_LABELS,
+  ScenarioProfile,
+} from "@/src/utils/ReportTestScenarios";
 
 const MAX_SCREEN_DISPLAY = 300;
+
+const SCENARIO_PROFILES: ScenarioProfile[] = ["high", "medium", "low", "mixed", "minimal"];
 
 const formatMinutes = (mins: number) =>
   `${Math.floor(mins / 60)}h ${mins % 60}min`;
@@ -23,7 +32,7 @@ const ScoreBar: React.FC<{
   return (
     <div className="w-full bg-gray-200 rounded-full h-3">
       <div
-        className={`h-3 rounded-full transition-all ${colorClass}`}
+        className={`h-3 rounded-full transition-all duration-500 ${colorClass}`}
         style={{ width: `${pct}%` }}
       />
     </div>
@@ -39,53 +48,63 @@ const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 type Props = {
   gameState: GameState;
   onClose: () => void;
+  testMode?: boolean;
 };
 
-export const ParticipantReportModal: React.FC<Props> = ({ gameState, onClose }) => {
-  const stats: ReportStats = calculateReportStats(gameState);
+export const ParticipantReportModal: React.FC<Props> = ({ gameState, onClose, testMode = false }) => {
+  const [selectedProfile, setSelectedProfile] = useState<ScenarioProfile | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
+
+  const activeGameState = testMode && selectedProfile
+    ? buildMockGameState(selectedProfile)
+    : gameState;
+
+  const stats: ReportStats = calculateReportStats(activeGameState);
   const feedback = generateTextFeedback(stats);
+
   const generatedAt = new Date().toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "long",
     year: "numeric",
   });
 
-  const handlePrint = () => {
-    window.print();
+  const studyStart = activeGameState.studyStartDate
+    ? new Date(activeGameState.studyStartDate).toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      })
+    : null;
+
+  const handleExportPdf = async () => {
+    if (!reportRef.current) return;
+    setIsExporting(true);
+    const nickname = activeGameState.user?.nickname ?? "participante";
+    const filename = `psylogos-relatorio-${nickname.toLowerCase().replace(/\s+/g, "-")}.pdf`;
+    await html2pdf()
+      .set({
+        margin: [15, 15, 15, 15],
+        filename,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+      })
+      .from(reportRef.current)
+      .save();
+    setIsExporting(false);
   };
 
   return (
     <>
-      <style>{`
-        @media print {
-          body * { visibility: hidden !important; }
-          #psylogos-report {
-            visibility: visible !important;
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100% !important;
-            background: white !important;
-            color: #111 !important;
-            padding: 2rem !important;
-            margin: 0 !important;
-            overflow: visible !important;
-            max-height: none !important;
-            box-shadow: none !important;
-            border: none !important;
-          }
-          #psylogos-report * { visibility: visible !important; }
-        }
-      `}</style>
-
-      {/* Backdrop */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-        {/* Modal container — maxHeight via inline style para evitar problemas com Tailwind JIT */}
+      <div id="psylogos-modal-backdrop" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
         <div
+          id="psylogos-modal-container"
           className="relative bg-slate-900 border border-cyan-400/30 rounded-xl max-w-2xl w-full flex flex-col shadow-2xl"
           style={{ maxHeight: "90vh" }}
         >
-          {/* Close button */}
+          {/* Fechar */}
           <button
             onClick={onClose}
             className="absolute top-3 right-3 text-gray-400 hover:text-white z-10 transition-colors"
@@ -96,9 +115,52 @@ export const ParticipantReportModal: React.FC<Props> = ({ gameState, onClose }) 
             </svg>
           </button>
 
-          {/* Scrollable printable area */}
-          <div className="overflow-y-auto flex-1">
-            <div id="psylogos-report" className="p-6 bg-white text-gray-800">
+          {/* Barra de teste (apenas em modo dev) */}
+          {testMode && (
+            <div
+              id="report-dev-bar"
+              className="flex-shrink-0 bg-amber-950 border-b border-amber-700 p-3 rounded-t-xl"
+            >
+              <p className="text-xs font-bold text-amber-400 uppercase tracking-widest mb-2">
+                [DEV] Perfil de Teste
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setSelectedProfile(null)}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors border ${
+                    selectedProfile === null
+                      ? "bg-amber-400 text-amber-950 border-amber-400"
+                      : "bg-transparent text-amber-300 border-amber-600 hover:border-amber-400"
+                  }`}
+                >
+                  Dados Reais
+                </button>
+                {SCENARIO_PROFILES.map((profile) => (
+                  <button
+                    key={profile}
+                    onClick={() => setSelectedProfile(profile)}
+                    title={SCENARIO_DESCRIPTIONS[profile]}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors border ${
+                      selectedProfile === profile
+                        ? "bg-amber-400 text-amber-950 border-amber-400"
+                        : "bg-transparent text-amber-300 border-amber-600 hover:border-amber-400"
+                    }`}
+                  >
+                    {SCENARIO_LABELS[profile]}
+                  </button>
+                ))}
+              </div>
+              {selectedProfile && (
+                <p className="text-xs text-amber-500 mt-1.5">
+                  {SCENARIO_DESCRIPTIONS[selectedProfile]}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Área scrollável + imprimível */}
+          <div id="psylogos-modal-scroll" className="overflow-y-auto flex-1">
+            <div id="psylogos-report" ref={reportRef} className="p-6 bg-white text-gray-800">
 
               {/* ── Cabeçalho ── */}
               <div className="text-center mb-6 pb-4 border-b-2 border-cyan-500">
@@ -106,11 +168,14 @@ export const ParticipantReportModal: React.FC<Props> = ({ gameState, onClose }) 
                 <h1 className="text-2xl font-bold text-cyan-600">Psylogos</h1>
                 <p className="text-sm text-gray-500 italic mt-0.5">"O Enigma do Coração"</p>
                 <div className="mt-3 flex justify-center gap-6 text-sm text-gray-700">
-                  <span className="font-semibold">{gameState.user?.nickname ?? "—"}</span>
-                  <span>Nível {gameState.user?.level ?? 1}</span>
-                  <span>{gameState.user?.points ?? 0} XP</span>
+                  <span className="font-semibold">{activeGameState.user?.nickname ?? "—"}</span>
+                  <span>Nível {activeGameState.user?.level ?? 1}</span>
+                  <span>{activeGameState.user?.points ?? 0} XP</span>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Gerado em {generatedAt}</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {studyStart ? `Jornada iniciada em ${studyStart} · ` : ""}
+                  Relatório gerado em {generatedAt}
+                </p>
               </div>
 
               {/* ── Desempenho na Jornada ── */}
@@ -150,7 +215,7 @@ export const ParticipantReportModal: React.FC<Props> = ({ gameState, onClose }) 
                   <SectionTitle>Bem-Estar Emocional — SAM</SectionTitle>
                   <p className="text-xs text-gray-500 mb-3">
                     O SAM (Self-Assessment Manikin) avalia três dimensões emocionais em escala de 1 a 9.
-                    Valores acima de 5 indicam estados positivos, ativados e controlados.
+                    Valores acima de 5 indicam estados positivos, ativados e com maior senso de controle.
                   </p>
                   <div className="space-y-4">
                     {[
@@ -245,7 +310,7 @@ export const ParticipantReportModal: React.FC<Props> = ({ gameState, onClose }) 
                   <SectionTitle>Consumo de Vídeos Curtos</SectionTitle>
                   <p className="text-xs text-gray-500 mb-3">
                     Tempo médio diário de uso de plataformas de vídeos curtos (TikTok, Reels, Shorts).
-                    As linhas de referência indicam a média global e a média nacional (Brasil).
+                    As linhas de referência indicam a média global e a média nacional (Brasil, DataReportal 2024).
                   </p>
 
                   <div className="mb-1">
@@ -258,7 +323,7 @@ export const ParticipantReportModal: React.FC<Props> = ({ gameState, onClose }) 
                     </div>
                     <div className="relative w-full bg-gray-200 rounded-full h-5">
                       <div
-                        className={`h-5 rounded-full transition-all ${
+                        className={`h-5 rounded-full transition-all duration-500 ${
                           stats.screenTime.avgDailyMinutes > SCREEN_TIME_NATIONAL_REF
                             ? "bg-red-500"
                             : stats.screenTime.avgDailyMinutes > SCREEN_TIME_GLOBAL_REF
@@ -334,10 +399,18 @@ export const ParticipantReportModal: React.FC<Props> = ({ gameState, onClose }) 
               <div className="mb-6 p-4 bg-cyan-50 rounded-lg border border-cyan-200">
                 <SectionTitle>Avaliação do Psylogos</SectionTitle>
                 <p className="text-sm text-gray-700 leading-relaxed">{feedback}</p>
-                <p className="text-xs text-gray-400 mt-3 italic">
-                  * Este relatório é gerado automaticamente com base nos seus dados coletados durante o estudo EMA.
-                  Não constitui diagnóstico clínico.
-                </p>
+
+                {/* Disclaimer — visibilidade adequada para contexto de pesquisa */}
+                <div className="mt-4 flex items-start gap-2 bg-white rounded-lg border border-gray-300 p-3">
+                  <svg className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 110 20A10 10 0 0112 2z" />
+                  </svg>
+                  <p className="text-xs text-gray-600 leading-snug">
+                    Este relatório é gerado automaticamente com base nas suas respostas durante o estudo EMA
+                    e tem finalidade exclusivamente informativa e de devolutiva científica.{" "}
+                    <strong>Não constitui diagnóstico clínico ou avaliação psicológica profissional.</strong>
+                  </p>
+                </div>
               </div>
 
               {/* ── Rodapé ── */}
@@ -350,7 +423,7 @@ export const ParticipantReportModal: React.FC<Props> = ({ gameState, onClose }) 
           </div>
 
           {/* ── Botões de ação ── */}
-          <div className="flex justify-end gap-3 p-4 border-t border-slate-700 bg-slate-900 rounded-b-xl">
+          <div className="flex justify-end gap-3 p-4 border-t border-slate-700 bg-slate-900 rounded-b-xl flex-shrink-0">
             <button
               onClick={onClose}
               className="px-4 py-2 text-sm text-gray-400 hover:text-white border border-slate-600 hover:border-slate-400 rounded-lg transition-colors"
@@ -358,18 +431,15 @@ export const ParticipantReportModal: React.FC<Props> = ({ gameState, onClose }) 
               Fechar
             </button>
             <button
-              onClick={handlePrint}
-              className="px-4 py-2 text-sm bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold rounded-lg transition-colors flex items-center gap-2"
+              onClick={handleExportPdf}
+              disabled={isExporting}
+              className="px-4 py-2 text-sm bg-cyan-500 hover:bg-cyan-400 disabled:opacity-60 disabled:cursor-wait text-slate-900 font-bold rounded-lg transition-colors flex items-center gap-2"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
               </svg>
-              Imprimir / Salvar como PDF
+              {isExporting ? "Gerando PDF..." : "Salvar como PDF"}
             </button>
           </div>
 
