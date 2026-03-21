@@ -45,12 +45,14 @@ export function calculateReportStats(gameState: GameState): ReportStats {
   const completionRate = issued > 0 ? Math.round((completed / issued) * 100) : 0;
 
   const samTotals = { valence: 0, arousal: 0, dominance: 0, count: 0 };
-  const panasTotals = { pa: 0, na: 0, count: 0 };
+
+  // PANAS: rastreia PA e NA com contagens separadas para normalização correta
+  const panasTotals = { pa: 0, na: 0, paCount: 0, naCount: 0 };
+
   let screenTimeTotalMinutes = 0;
   let screenTimeDays = 0;
   const platformBreakdown: Record<string, number> = {};
 
-  // Filtra apenas respostas válidas (isValid !== false)
   const validResponses = (gameState.responses || []).filter(
     (r) => r.isValid !== false
   );
@@ -64,18 +66,25 @@ export function calculateReportStats(gameState: GameState): ReportStats {
     }
 
     if (r.panas) {
-      let pa = 0;
-      let na = 0;
-      let recognized = 0;
+      let paSum = 0;
+      let naSum = 0;
+      let paItemCount = 0;
+      let naItemCount = 0;
+
       Object.entries(r.panas).forEach(([key, value]) => {
-        if (POSITIVE_ITEMS.includes(key)) { pa += Number(value); recognized++; }
-        if (NEGATIVE_ITEMS.includes(key)) { na += Number(value); recognized++; }
+        if (POSITIVE_ITEMS.includes(key)) { paSum += Number(value); paItemCount++; }
+        if (NEGATIVE_ITEMS.includes(key)) { naSum += Number(value); naItemCount++; }
       });
-      // Só conta se pelo menos um item reconhecido foi encontrado
-      if (recognized > 0) {
-        panasTotals.pa += pa;
-        panasTotals.na += na;
-        panasTotals.count++;
+
+      // Normaliza cada resposta para a escala completa (10 itens × max 5 = 50)
+      // independente de quantos itens o participante respondeu naquela sessão
+      if (paItemCount > 0) {
+        panasTotals.pa += (paSum / paItemCount) * POSITIVE_ITEMS.length;
+        panasTotals.paCount++;
+      }
+      if (naItemCount > 0) {
+        panasTotals.na += (naSum / naItemCount) * NEGATIVE_ITEMS.length;
+        panasTotals.naCount++;
       }
     }
 
@@ -92,6 +101,8 @@ export function calculateReportStats(gameState: GameState): ReportStats {
     }
   });
 
+  const hasAnyPanas = panasTotals.paCount > 0 || panasTotals.naCount > 0;
+
   return {
     pingStats: { issued, completed, missed, completionRate },
     sam:
@@ -103,14 +114,13 @@ export function calculateReportStats(gameState: GameState): ReportStats {
             count: samTotals.count,
           }
         : null,
-    panas:
-      panasTotals.count > 0
-        ? {
-            pa: panasTotals.pa / panasTotals.count,
-            na: panasTotals.na / panasTotals.count,
-            count: panasTotals.count,
-          }
-        : null,
+    panas: hasAnyPanas
+      ? {
+          pa: panasTotals.paCount > 0 ? panasTotals.pa / panasTotals.paCount : 0,
+          na: panasTotals.naCount > 0 ? panasTotals.na / panasTotals.naCount : 0,
+          count: Math.max(panasTotals.paCount, panasTotals.naCount),
+        }
+      : null,
     screenTime:
       screenTimeDays > 0
         ? {
@@ -127,27 +137,32 @@ export function generateTextFeedback(stats: ReportStats): string {
 
   if (stats.sam) {
     const { valence, arousal } = stats.sam;
+
     if (valence >= 6) {
       parts.push(
-        "Ao longo da jornada, seu estado emocional predominante foi positivo, com níveis elevados de prazer e bem-estar."
+        "Ao longo da jornada, seu estado emocional predominante foi positivo, com avaliações frequentes de prazer e bem-estar."
       );
     } else if (valence >= 4) {
       parts.push(
-        "Seu estado emocional ao longo da jornada foi neutro a moderado, com variações entre momentos agradáveis e menos agradáveis."
+        "Seu estado emocional ao longo da jornada variou entre momentos agradáveis e menos agradáveis, situando-se em uma faixa neutra a moderada."
       );
     } else {
       parts.push(
-        "Sua avaliação emocional indicou momentos de baixo bem-estar, com predomínio de estados menos prazerosos durante a jornada."
+        "Suas avaliações emocionais indicaram predomínio de estados de baixo bem-estar durante a jornada."
       );
     }
 
     if (arousal >= 6) {
       parts.push(
-        "Você demonstrou alto nível de ativação e alerta, típico de quem está engajado e energizado."
+        "Seu nível de ativação foi predominantemente alto, indicando um estado de alerta e engajamento frequente."
       );
-    } else if (arousal < 4) {
+    } else if (arousal >= 4) {
       parts.push(
-        "Seu nível de alerta foi mais calmo e relaxado — uma postura que pode ser sinal de tranquilidade ou baixa estimulação."
+        "Seu nível de ativação se manteve em uma faixa intermediária, alternando entre momentos de maior e menor estimulação."
+      );
+    } else {
+      parts.push(
+        "Seu nível de alerta foi predominantemente baixo — um padrão associado a estados de calma ou baixa estimulação."
       );
     }
   }
@@ -156,30 +171,43 @@ export function generateTextFeedback(stats: ReportStats): string {
     const { pa, na } = stats.panas;
     const paLevel = pa >= 35 ? "alto" : pa >= 22 ? "moderado" : "baixo";
     const naLevel = na >= 25 ? "elevado" : na >= 15 ? "moderado" : "baixo";
-    const emotional =
-      paLevel === "alto" && naLevel === "baixo"
-        ? "um bem-estar emocional saudável"
-        : paLevel === "baixo" && naLevel === "elevado"
-        ? "sinais de sofrimento emocional que merecem atenção"
-        : "um equilíbrio emocional dentro do esperado para o cotidiano";
+
+    const isNegativeProfile = paLevel === "baixo" && naLevel === "elevado";
+    const isPositiveProfile = paLevel === "alto" && naLevel === "baixo";
+    const isMixedProfile = paLevel === "alto" && naLevel === "elevado";
+
+    const emotional = isPositiveProfile
+      ? "um padrão de bem-estar emocional consistente"
+      : isNegativeProfile
+      ? "um padrão de afeto que merece atenção"
+      : isMixedProfile
+      ? "um equilíbrio emocional complexo, com alta presença tanto de afetos positivos quanto negativos"
+      : "um equilíbrio emocional dentro da variação esperada para o cotidiano";
+
     parts.push(
-      `Seu Afeto Positivo médio foi ${paLevel} e o Afeto Negativo foi ${naLevel}, uma combinação que reflete ${emotional}.`
+      `Seu Afeto Positivo médio foi ${paLevel} e o Afeto Negativo foi ${naLevel}, refletindo ${emotional}.`
     );
+
+    if (isNegativeProfile) {
+      parts.push(
+        "Caso você queira conversar sobre como se sentiu durante o estudo, entre em contato com a equipe de pesquisa pelo e-mail informado no Termo de Consentimento."
+      );
+    }
   }
 
   if (stats.screenTime) {
     const avg = stats.screenTime.avgDailyMinutes;
     if (avg <= SCREEN_TIME_GLOBAL_REF) {
       parts.push(
-        `Seu tempo médio de uso de vídeos curtos foi de ${avg} min/dia, abaixo da média global (${SCREEN_TIME_GLOBAL_REF} min) — um padrão moderado de consumo.`
+        `Seu tempo médio de uso de vídeos curtos foi de ${avg} min/dia — abaixo da média global registrada (${SCREEN_TIME_GLOBAL_REF} min/dia, DataReportal 2024).`
       );
     } else if (avg <= SCREEN_TIME_NATIONAL_REF) {
       parts.push(
-        `Seu tempo médio de uso foi de ${avg} min/dia, acima da média global (${SCREEN_TIME_GLOBAL_REF} min), mas dentro do padrão nacional (${SCREEN_TIME_NATIONAL_REF} min).`
+        `Seu tempo médio de uso foi de ${avg} min/dia, acima da média global (${SCREEN_TIME_GLOBAL_REF} min/dia) e dentro da média nacional brasileira (${SCREEN_TIME_NATIONAL_REF} min/dia, DataReportal 2024).`
       );
     } else {
       parts.push(
-        `Seu tempo médio de uso foi de ${avg} min/dia, acima da média nacional de ${SCREEN_TIME_NATIONAL_REF} min — um padrão de consumo intenso que pode influenciar seu bem-estar.`
+        `Seu tempo médio de uso foi de ${avg} min/dia — acima tanto da média global (${SCREEN_TIME_GLOBAL_REF} min/dia) quanto da média nacional brasileira (${SCREEN_TIME_NATIONAL_REF} min/dia, DataReportal 2024).`
       );
     }
   }

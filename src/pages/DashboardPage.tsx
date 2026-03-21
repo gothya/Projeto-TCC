@@ -153,41 +153,41 @@ export const DashboardPage: React.FC<{
 
       // 2. Journey Complete
       if (result.isJourneyComplete) {
-         setTimerLabel("Jornada Concluída");
-         setTimerTargetDate(null);
-         setIsActiveWindow(false);
-         setHighlightedPing(null);
-         setIsBellVisible(false);
-         return;
+        setTimerLabel("Jornada Concluída");
+        setTimerTargetDate(null);
+        setIsActiveWindow(false);
+        setHighlightedPing(null);
+        setIsBellVisible(false);
+        return;
       }
 
       // 3. Active Ping (pendente — sino aparece)
       if (result.currentActivePing) {
-         setHighlightedPing({ day: result.currentActivePing.day, ping: result.currentActivePing.ping });
-         setIsBellVisible(true);
-         setTimerLabel("Responder até:");
-         setTimerTargetDate(result.currentActivePing.expiresAt);
-         setIsActiveWindow(true);
-         return;
+        setHighlightedPing({ day: result.currentActivePing.day, ping: result.currentActivePing.ping });
+        setIsBellVisible(true);
+        setTimerLabel("Responder até:");
+        setTimerTargetDate(result.currentActivePing.expiresAt);
+        setIsActiveWindow(true);
+        return;
       }
 
       // 3.5. Janela ativa mas ping já respondido/perdido — sino permanece visível para re-resposta
       if (result.currentTimeWindowPing) {
-         setHighlightedPing({ day: result.currentTimeWindowPing.day, ping: result.currentTimeWindowPing.ping });
-         setIsBellVisible(true);
-         setTimerLabel("Responder até:");
-         setTimerTargetDate(result.currentTimeWindowPing.expiresAt);
-         setIsActiveWindow(true);
-         return;
+        setHighlightedPing({ day: result.currentTimeWindowPing.day, ping: result.currentTimeWindowPing.ping });
+        setIsBellVisible(true);
+        setTimerLabel("Responder até:");
+        setTimerTargetDate(result.currentTimeWindowPing.expiresAt);
+        setIsActiveWindow(true);
+        return;
       }
 
       // 4. Future Ping
       if (result.nextFuturePing) {
-         setHighlightedPing({ day: result.nextFuturePing.day, ping: result.nextFuturePing.ping });
-         setIsBellVisible(false);
-         setTimerLabel("Próximo Ping:");
-         setTimerTargetDate(result.nextFuturePing.startsAt);
-         setIsActiveWindow(false);
+        setHighlightedPing({ day: result.nextFuturePing.day, ping: result.nextFuturePing.ping });
+        setIsBellVisible(false);
+        setTimerLabel("Próximo Ping:");
+        setTimerTargetDate(result.nextFuturePing.startsAt);
+        setIsActiveWindow(false);
       }
     };
 
@@ -264,9 +264,9 @@ export const DashboardPage: React.FC<{
       r => r.pingDay === partial.pingDay && r.pingIndex === partial.pingIndex && r.isPartial === true
     )
       ? participante.responses.map(r =>
-          r.pingDay === partial.pingDay && r.pingIndex === partial.pingIndex && r.isPartial === true
-            ? partial : r
-        )
+        r.pingDay === partial.pingDay && r.pingIndex === partial.pingIndex && r.isPartial === true
+          ? partial : r
+      )
       : [...participante.responses, partial];
 
     updateParticipante({ ...participante, responses: newResponses });
@@ -393,13 +393,13 @@ export const DashboardPage: React.FC<{
     const newResponses: InstrumentResponse[] =
       previousStatus === "completed"
         ? [
-            ...responsesWithoutPartial.map((r) =>
-              r.pingDay === day && r.pingIndex === ping
-                ? { ...r, isValid: false }
-                : r
-            ),
-            { ...finalResponseData, isValid: true, isPartial: false },
-          ]
+          ...responsesWithoutPartial.map((r) =>
+            r.pingDay === day && r.pingIndex === ping
+              ? { ...r, isValid: false }
+              : r
+          ),
+          { ...finalResponseData, isValid: true, isPartial: false },
+        ]
         : [...responsesWithoutPartial, { ...finalResponseData, isValid: true, isPartial: false }];
 
     const newXp = newPings.reduce((acc, dayObj) => {
@@ -471,7 +471,7 @@ export const DashboardPage: React.FC<{
 
   useEffect(() => {
     if (loading) return;
-    
+
     // Se não há dados do participante no banco, forçamos o onboarding
     if (!participante) {
       console.log("Usuário autenticado, mas sem dados de participante. Redirecionando para onboarding.");
@@ -703,6 +703,7 @@ export const DashboardPage: React.FC<{
         <ParticipantReportModal
           gameState={participante}
           onClose={() => setIsReportModalOpen(false)}
+          testMode={false}
         />
       )}
       {isScreenTimeModalOpen && (
