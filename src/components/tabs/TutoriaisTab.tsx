@@ -1,6 +1,239 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 
-// ── Accordion primitivo com animação grid-template-rows ──────────────────────
+// ── Extensão de imagem ────────────────────────────────────────────────────────
+const JPEG_STEPS = new Set([8, 9, 10, 11]);
+function imgSrc(n: number) {
+  return `/tutorial/screen-time/tela_${n}.${JPEG_STEPS.has(n) ? "jpeg" : "png"}`;
+}
+
+// ── Dados dos 12 passos ───────────────────────────────────────────────────────
+const CAROUSEL_STEPS = [
+  { n: 1,  color: "#22d3ee", phase: 0, title: "Acesse o botão",        caption: 'Na aba inicial, toque em "Lançar Tempo de Tela".' },
+  { n: 2,  color: "#22d3ee", phase: 0, title: "Leia o aviso",          caption: "O modal explica o registro. Cada envio desbloqueia um novo dia." },
+  { n: 3,  color: "#22d3ee", phase: 0, title: "Adicionar rede",         caption: 'Toque em "Adicionar Nova Rede Social" para começar.' },
+  { n: 4,  color: "#a78bfa", phase: 1, title: "Card de rede",           caption: "Um card aparece. Clique nele para configurar o aplicativo." },
+  { n: 5,  color: "#a78bfa", phase: 1, title: "Escolha o app",          caption: "Selecione TikTok, Instagram Reels ou YouTube Shorts." },
+  { n: 6,  color: "#a78bfa", phase: 1, title: "Digite o tempo",         caption: "Informe quantos minutos você usou esse app hoje." },
+  { n: 7,  color: "#a78bfa", phase: 1, title: "Total no topo",          caption: "A soma total aparece no topo — confira antes de confirmar." },
+  { n: 8,  color: "#fb923c", phase: 2, title: "Configurações",          caption: 'Abra as "Configurações" do seu celular.' },
+  { n: 9,  color: "#fb923c", phase: 2, title: "Bem-estar digital",      caption: '"Bem-estar digital" (Android) ou "Tempo de Tela" (iOS).' },
+  { n: 10, color: "#fb923c", phase: 2, title: "Toque no gráfico",       caption: "Toque no gráfico de barras para ver o detalhe por app." },
+  { n: 11, color: "#fb923c", phase: 2, title: "Tempo exato",            caption: "Veja o tempo real de cada app. Anote esse número." },
+  { n: 12, color: "#fb923c", phase: 2, title: "Preencha com precisão",  caption: "Volte ao app e registre o valor exato que consultou." },
+];
+
+const PHASE_LABELS = [
+  { label: "Abrindo o formulário",        color: "#22d3ee" },
+  { label: "Adicionando suas redes",      color: "#a78bfa" },
+  { label: "Encontrando o dado real",     color: "#fb923c" },
+];
+
+// ── Lightbox ──────────────────────────────────────────────────────────────────
+const Lightbox: React.FC<{
+  stepIndex: number;
+  onClose: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+}> = ({ stepIndex, onClose, onPrev, onNext }) => {
+  const step = CAROUSEL_STEPS[stepIndex];
+  const touchStart = useRef(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStart.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const delta = touchStart.current - e.changedTouches[0].clientX;
+    if (delta > 40 && stepIndex < CAROUSEL_STEPS.length - 1) onNext();
+    if (delta < -40 && stepIndex > 0) onPrev();
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      style={{ background: "rgba(0,0,0,0.9)", backdropFilter: "blur(6px)" }}
+      onClick={onClose}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Fechar */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 z-10 p-2 rounded-full text-white/70 hover:text-white"
+        style={{ background: "rgba(255,255,255,0.1)" }}
+      >
+        ✕
+      </button>
+
+      {/* Seta esquerda */}
+      {stepIndex > 0 && (
+        <button
+          onClick={e => { e.stopPropagation(); onPrev(); }}
+          className="absolute left-3 z-10 p-3 rounded-full text-white/60 hover:text-white"
+          style={{ background: "rgba(255,255,255,0.08)" }}
+        >
+          ‹
+        </button>
+      )}
+
+      {/* Imagem */}
+      <div
+        className="flex flex-col items-center gap-3 px-12"
+        onClick={e => e.stopPropagation()}
+      >
+        <img
+          src={imgSrc(step.n)}
+          alt={step.title}
+          className="rounded-2xl object-contain shadow-2xl"
+          style={{ maxHeight: "calc(100dvh - 140px)", maxWidth: "min(340px, calc(100vw - 96px))" }}
+        />
+        <div className="text-center">
+          <p className="text-sm font-bold mb-0.5" style={{ color: step.color }}>{step.title}</p>
+          <p className="text-xs text-white/55 max-w-xs">{step.caption}</p>
+        </div>
+        <p className="text-xs text-white/30">{step.n} / {CAROUSEL_STEPS.length}</p>
+      </div>
+
+      {/* Seta direita */}
+      {stepIndex < CAROUSEL_STEPS.length - 1 && (
+        <button
+          onClick={e => { e.stopPropagation(); onNext(); }}
+          className="absolute right-3 z-10 p-3 rounded-full text-white/60 hover:text-white"
+          style={{ background: "rgba(255,255,255,0.08)" }}
+        >
+          ›
+        </button>
+      )}
+    </div>
+  );
+};
+
+// ── Tutorial Carousel ─────────────────────────────────────────────────────────
+const TutorialCarousel: React.FC = () => {
+  const [current, setCurrent] = useState(0);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const touchStart = useRef(0);
+
+  const step = CAROUSEL_STEPS[current];
+  const phase = PHASE_LABELS[step.phase];
+  const progress = ((current + 1) / CAROUSEL_STEPS.length) * 100;
+
+  const prev = () => setCurrent(c => Math.max(0, c - 1));
+  const next = () => setCurrent(c => Math.min(CAROUSEL_STEPS.length - 1, c + 1));
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStart.current = e.touches[0].clientX;
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const delta = touchStart.current - e.changedTouches[0].clientX;
+    if (delta > 40) next();
+    if (delta < -40) prev();
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Fase atual */}
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: phase.color }}>
+          {phase.label}
+        </span>
+        <span className="text-[10px] text-slate-500">{current + 1} / {CAROUSEL_STEPS.length}</span>
+      </div>
+
+      {/* Barra de progresso */}
+      <div className="w-full h-1 rounded-full bg-slate-800 overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-300"
+          style={{ width: `${progress}%`, background: step.color }}
+        />
+      </div>
+
+      {/* Imagem — clicável para ampliar */}
+      <button
+        className="w-full flex justify-center focus:outline-none"
+        onClick={() => setLightboxIndex(current)}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        aria-label={`Ampliar tela ${step.n}`}
+      >
+        <div className="relative">
+          <img
+            src={imgSrc(step.n)}
+            alt={step.title}
+            className="rounded-2xl object-contain"
+            style={{
+              maxHeight: "18rem",
+              maxWidth: "100%",
+              border: `1px solid ${step.color}35`,
+              boxShadow: `0 4px 20px ${step.color}20`,
+            }}
+          />
+          {/* Hint de zoom */}
+          <div
+            className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-semibold text-white"
+            style={{ background: "rgba(0,0,0,0.55)" }}
+          >
+            🔍 toque para ampliar
+          </div>
+        </div>
+      </button>
+
+      {/* Título e caption */}
+      <div>
+        <p className="text-sm font-bold mb-0.5" style={{ color: step.color }}>{step.title}</p>
+        <p className="text-xs text-slate-400 leading-relaxed">{step.caption}</p>
+      </div>
+
+      {/* Controles */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={prev}
+          disabled={current === 0}
+          className="flex-1 py-2 rounded-lg text-xs font-bold transition-opacity disabled:opacity-30"
+          style={{ background: "rgba(34,211,238,0.1)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.2)" }}
+        >
+          ← Anterior
+        </button>
+        <button
+          onClick={next}
+          disabled={current === CAROUSEL_STEPS.length - 1}
+          className="flex-1 py-2 rounded-lg text-xs font-bold transition-opacity disabled:opacity-30"
+          style={{ background: "rgba(34,211,238,0.15)", color: "#22d3ee", border: "1px solid rgba(34,211,238,0.3)" }}
+        >
+          Próximo →
+        </button>
+      </div>
+
+      {/* Dots por fase */}
+      <div className="flex justify-center gap-1.5 pt-1">
+        {CAROUSEL_STEPS.map((s, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrent(i)}
+            className="rounded-full transition-all duration-200"
+            style={{
+              width: i === current ? 16 : 6,
+              height: 6,
+              background: i === current ? s.color : "rgba(100,116,139,0.35)",
+            }}
+            aria-label={`Ir para passo ${s.n}`}
+          />
+        ))}
+      </div>
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && (
+        <Lightbox
+          stepIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onPrev={() => setLightboxIndex(i => (i !== null && i > 0 ? i - 1 : i))}
+          onNext={() => setLightboxIndex(i => (i !== null && i < CAROUSEL_STEPS.length - 1 ? i + 1 : i))}
+        />
+      )}
+    </div>
+  );
+};
+
+// ── Accordion primitivo ───────────────────────────────────────────────────────
 const Accordion: React.FC<{
   title: string;
   icon: string;
@@ -29,7 +262,6 @@ const Accordion: React.FC<{
       </span>
     </button>
 
-    {/* Animação correta: grid-template-rows 0fr → 1fr */}
     <div
       style={{
         display: "grid",
@@ -44,7 +276,7 @@ const Accordion: React.FC<{
   </div>
 );
 
-// ── Componente de imagem SAM ─────────────────────────────────────────────────
+// ── Componente de imagem SAM ──────────────────────────────────────────────────
 const SamPreview: React.FC<{ dimension: "valencia" | "ativacao" | "dominancia"; value: number }> = ({ dimension, value }) => (
   <img
     src={`/${dimension}_${value}.png`}
@@ -53,26 +285,7 @@ const SamPreview: React.FC<{ dimension: "valencia" | "ativacao" | "dominancia"; 
   />
 );
 
-// ── Card de etapa (onboarding) ───────────────────────────────────────────────
-const StepCard: React.FC<{ step: number; title: string; desc: string; isLast?: boolean }> = ({ step, title, desc, isLast }) => (
-  <div className="flex items-start gap-2">
-    <div className="flex flex-col items-center">
-      <div
-        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-slate-900 flex-shrink-0"
-        style={{ background: "linear-gradient(135deg, #22d3ee, #818cf8)" }}
-      >
-        {step}
-      </div>
-      {!isLast && <div className="w-0.5 flex-1 mt-1" style={{ background: "rgba(34,211,238,0.2)", minHeight: "2rem" }} />}
-    </div>
-    <div className="pb-4">
-      <p className="text-sm font-semibold text-cyan-200 mb-0.5">{title}</p>
-      <p className="text-xs text-slate-400 leading-relaxed">{desc}</p>
-    </div>
-  </div>
-);
-
-// ── Card de dimensão SAM ─────────────────────────────────────────────────────
+// ── Card de dimensão SAM ──────────────────────────────────────────────────────
 const SamDimensionCard: React.FC<{
   title: string;
   dimension: "valencia" | "ativacao" | "dominancia";
@@ -101,7 +314,7 @@ const SamDimensionCard: React.FC<{
   </div>
 );
 
-// ── FAQ item ─────────────────────────────────────────────────────────────────
+// ── FAQ item ──────────────────────────────────────────────────────────────────
 const FaqItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
   const [open, setOpen] = useState(false);
   return (
@@ -111,8 +324,10 @@ const FaqItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
         className="w-full text-left py-3 flex items-start justify-between gap-3"
       >
         <span className="text-xs font-semibold text-cyan-200">{q}</span>
-        <span className="text-cyan-500 flex-shrink-0 text-sm font-bold transition-transform duration-200"
-          style={{ transform: open ? "rotate(45deg)" : "rotate(0)" }}>
+        <span
+          className="text-cyan-500 flex-shrink-0 text-sm font-bold transition-transform duration-200"
+          style={{ transform: open ? "rotate(45deg)" : "rotate(0)" }}
+        >
           +
         </span>
       </button>
@@ -125,7 +340,7 @@ const FaqItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
   );
 };
 
-// ── Pill de fluxo ────────────────────────────────────────────────────────────
+// ── Pill de fluxo ─────────────────────────────────────────────────────────────
 const FlowPill: React.FC<{ label: string; sub?: string; color?: string }> = ({ label, sub, color = "#22d3ee" }) => (
   <div className="flex flex-col items-center gap-0.5">
     <div
@@ -142,10 +357,28 @@ const FlowArrow = () => (
   <span className="text-slate-600 text-lg font-bold flex-shrink-0">→</span>
 );
 
-// ── Componente principal ─────────────────────────────────────────────────────
+// ── Card de etapa (onboarding) ────────────────────────────────────────────────
+const StepCard: React.FC<{ step: number; title: string; desc: string; isLast?: boolean }> = ({ step, title, desc, isLast }) => (
+  <div className="flex items-start gap-2">
+    <div className="flex flex-col items-center">
+      <div
+        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-slate-900 flex-shrink-0"
+        style={{ background: "linear-gradient(135deg, #22d3ee, #818cf8)" }}
+      >
+        {step}
+      </div>
+      {!isLast && <div className="w-0.5 flex-1 mt-1" style={{ background: "rgba(34,211,238,0.2)", minHeight: "2rem" }} />}
+    </div>
+    <div className="pb-4">
+      <p className="text-sm font-semibold text-cyan-200 mb-0.5">{title}</p>
+      <p className="text-xs text-slate-400 leading-relaxed">{desc}</p>
+    </div>
+  </div>
+);
+
+// ── Componente principal ──────────────────────────────────────────────────────
 export const TutoriaisTab: React.FC = () => {
   const [openSection, setOpenSection] = useState<number | null>(0);
-
   const toggle = (idx: number) => setOpenSection(prev => prev === idx ? null : idx);
 
   return (
@@ -155,27 +388,12 @@ export const TutoriaisTab: React.FC = () => {
         <p className="text-xs text-slate-400 mt-1">Tudo o que você precisa saber para navegar a jornada.</p>
       </div>
 
-      {/* ── Seção 1: Primeiros Passos ── */}
-      <Accordion icon="🚀" title="Passo 1 — Primeiros Passos" isOpen={openSection === 0} onToggle={() => toggle(0)}>
-        <div className="space-y-0">
-          <StepCard step={1} title="Crie seu Registro"
-            desc="Na primeira tela, você preenche o RCLE — um formulário de perfil com dados sociodemográficos usados na pesquisa." />
-          <StepCard step={2} title="Escolha seu Apelido"
-            desc="Seu apelido identifica você no ranking social. Escolha algo que te represente — ele aparece para os outros participantes." />
-          <StepCard step={3} title="Personalize seu Perfil"
-            desc="Você pode enviar uma foto de avatar. O seu nível e XP ficam visíveis na tela inicial conforme você avança na jornada." />
-          <StepCard step={4} title="Início da Jornada" isLast
-            desc="Assim que o pesquisador liberar seu acesso, os pings começam a chegar. Cada ping respondido dá XP e cristais." />
-        </div>
-      </Accordion>
-
-      {/* ── Seção 2: O SAM ── */}
-      <Accordion icon="🎭" title="Passo 2 — O Formulário SAM" isOpen={openSection === 1} onToggle={() => toggle(1)}>
+      {/* ── 1: O SAM ── */}
+      <Accordion icon="🎭" title="O Formulário SAM" isOpen={openSection === 0} onToggle={() => toggle(0)}>
         <div className="space-y-4">
           <p className="text-xs text-slate-400 leading-relaxed">
             O <strong className="text-cyan-300">SAM (Self-Assessment Manikin)</strong> é um instrumento visual para medir como você está se sentindo agora em 3 dimensões. Cada escala vai de 1 a 9.
           </p>
-
           <div className="space-y-3">
             <SamDimensionCard
               title="Valência — Prazer"
@@ -202,27 +420,24 @@ export const TutoriaisTab: React.FC = () => {
               desc="Mede o quanto você sente que está no controle da situação. 1 = controlado pelos eventos, 9 = no comando."
             />
           </div>
-
           <div
             className="rounded-lg p-3 flex gap-2"
             style={{ background: "rgba(34,211,238,0.07)", border: "1px solid rgba(34,211,238,0.2)" }}
           >
             <span className="text-base">💡</span>
             <p className="text-xs text-cyan-200 leading-relaxed">
-              <strong>Dica:</strong> não pense muito — responda com o que sente <em>agora</em>, no momento exato. A primeira impressão é a mais precisa para esse instrumento.
+              <strong>Dica:</strong> não pense muito — responda com o que sente <em>agora</em>, no momento exato. A primeira impressão é a mais precisa.
             </p>
           </div>
         </div>
       </Accordion>
 
-      {/* ── Seção 3: O PANAS ── */}
-      <Accordion icon="💬" title="Passo 3 — O Formulário PANAS" isOpen={openSection === 2} onToggle={() => toggle(2)}>
+      {/* ── 2: O PANAS ── */}
+      <Accordion icon="💬" title="O Formulário PANAS" isOpen={openSection === 1} onToggle={() => toggle(1)}>
         <div className="space-y-4">
           <p className="text-xs text-slate-400 leading-relaxed">
             O <strong className="text-cyan-300">PANAS</strong> avalia a intensidade de 20 estados emocionais — 10 positivos e 10 negativos — que você sentiu ao longo do dia.
           </p>
-
-          {/* Escala visual 1-5 */}
           <div className="rounded-xl p-3" style={{ background: "rgba(15,23,42,0.7)", border: "1px solid rgba(129,140,248,0.2)" }}>
             <p className="text-[10px] font-bold uppercase tracking-widest text-purple-400 mb-2">Escala de resposta</p>
             <div className="flex justify-between gap-1">
@@ -245,8 +460,6 @@ export const TutoriaisTab: React.FC = () => {
               ))}
             </div>
           </div>
-
-          {/* Dois tipos de ping */}
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-xl p-3" style={{ background: "rgba(15,23,42,0.7)", border: "1px solid rgba(34,211,238,0.2)" }}>
               <p className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-1.5">Pings diurnos</p>
@@ -261,7 +474,6 @@ export const TutoriaisTab: React.FC = () => {
               </p>
             </div>
           </div>
-
           <div
             className="rounded-lg p-3 flex gap-2"
             style={{ background: "rgba(34,211,238,0.07)", border: "1px solid rgba(34,211,238,0.2)" }}
@@ -274,8 +486,18 @@ export const TutoriaisTab: React.FC = () => {
         </div>
       </Accordion>
 
-      {/* ── Seção 4: Fluxo Diário ── */}
-      <Accordion icon="🗓️" title="Passo 4 — Fluxo Diário" isOpen={openSection === 3} onToggle={() => toggle(3)}>
+      {/* ── 3: Tempo de Tela ── */}
+      <Accordion icon="📱" title="Registro de Tempo de Tela" isOpen={openSection === 2} onToggle={() => toggle(2)}>
+        <div className="space-y-3">
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Todo dia, registre quantos minutos você usou TikTok, Reels, Shorts e similares. Siga as telas abaixo — toque em qualquer imagem para ampliar.
+          </p>
+          <TutorialCarousel />
+        </div>
+      </Accordion>
+
+      {/* ── 4: Fluxo Diário ── */}
+      <Accordion icon="🗓️" title="Fluxo Diário" isOpen={openSection === 3} onToggle={() => toggle(3)}>
         <div className="space-y-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-500 mb-2">Pings das 9h às 19h</p>
@@ -289,7 +511,6 @@ export const TutoriaisTab: React.FC = () => {
               <FlowPill label="✅ XP ganho" color="#4ade80" />
             </div>
           </div>
-
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-pink-500 mb-2">Ping das 21h — Estrela ⭐</p>
             <div className="flex flex-wrap items-center gap-2">
@@ -302,17 +523,15 @@ export const TutoriaisTab: React.FC = () => {
               <FlowPill label="⭐ XP bônus" color="#fbbf24" />
             </div>
           </div>
-
           <div
             className="rounded-lg p-3"
             style={{ background: "rgba(15,23,42,0.7)", border: "1px solid rgba(34,211,238,0.15)" }}
           >
             <p className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-2">Janela de resposta</p>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Cada ping fica disponível por <strong className="text-slate-300">25 minutos</strong> — 5 minutos antes do horário marcado e 20 minutos depois. Após esse tempo, ele é marcado como perdido e não pode mais ser respondido. O sino na tela avisa enquanto o ping está ativo.
+              Cada ping fica disponível por <strong className="text-slate-300">25 minutos</strong> — 5 minutos antes do horário marcado e 20 minutos depois. Após esse tempo, ele é marcado como perdido. O sino na tela avisa enquanto o ping está ativo.
             </p>
           </div>
-
           <div
             className="rounded-lg p-3 flex gap-3"
             style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.35)" }}
@@ -321,24 +540,14 @@ export const TutoriaisTab: React.FC = () => {
             <div>
               <p className="text-xs font-bold text-yellow-300 mb-1">Dica: crie 3 alarmes no seu celular</p>
               <p className="text-xs text-slate-400 leading-relaxed">
-                As notificações do app podem passar despercebidas. Para garantir o mínimo de <strong className="text-slate-300">21 pings em 7 dias</strong>, você precisa responder ao menos <strong className="text-slate-300">3 por dia</strong>. Configure 3 alarmes fixos — por exemplo às <strong className="text-slate-300">10h, 14h e 18h</strong> — para lembrar de abrir o app e verificar se há um ping ativo.
+                As notificações podem passar despercebidas. Para garantir o mínimo de <strong className="text-slate-300">21 pings em 7 dias</strong>, responda ao menos <strong className="text-slate-300">3 por dia</strong>. Configure alarmes fixos — por exemplo às <strong className="text-slate-300">10h, 14h e 18h</strong>.
               </p>
             </div>
-          </div>
-
-          <div
-            className="rounded-lg p-3"
-            style={{ background: "rgba(15,23,42,0.7)", border: "1px solid rgba(244,114,182,0.15)" }}
-          >
-            <p className="text-[10px] font-bold text-pink-400 uppercase tracking-widest mb-2">Tempo de Tela</p>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              No botão <strong className="text-slate-300">"Lançar Tempo de Tela"</strong> na tela inicial, você registra quanto tempo usou TikTok, Reels, Shorts e outras plataformas de vídeos curtos no dia. Faça isso diariamente para liberar o relatório.
-            </p>
           </div>
         </div>
       </Accordion>
 
-      {/* ── Seção 5: Perguntas Frequentes ── */}
+      {/* ── 5: FAQ ── */}
       <Accordion icon="❓" title="Dúvidas Frequentes" isOpen={openSection === 4} onToggle={() => toggle(4)}>
         <div>
           <FaqItem
@@ -351,21 +560,34 @@ export const TutoriaisTab: React.FC = () => {
           />
           <FaqItem
             q="Meus dados estão seguros?"
-            a="Sim. Todos os dados são armazenados de forma segura em um banco de dados e identificados apenas pelo seu apelido. O nome real, contatos ou outras informações pessoais não são coletados pelo app. Após o término do estudo, o único dados sensível (e-mail) que permite sua jornada no app, será apagado do banco de dados, deixando você anônimo."
+            a="Sim. Todos os dados são armazenados de forma segura e identificados apenas pelo seu apelido. Nome real, contatos ou outras informações pessoais não são coletados. Após o término do estudo, o único dado sensível (e-mail) será apagado, deixando você anônimo."
           />
           <FaqItem
             q="Por que preciso registrar o tempo de tela?"
-            a="O consumo de vídeos curtos (TikTok, Reels, Shorts) é a chamada 'variável independente' do estudo, ou seja, informação principal que precisamos ter pra correlacionar com suas emoções. Você precisa registrar ao menos 3 dias de tempo de tela para liberar seu relatório de jornada."
+            a="O consumo de vídeos curtos (TikTok, Reels, Shorts) é a variável principal do estudo — precisamos correlacioná-la com suas emoções. Você precisa registrar ao menos 3 dias para liberar seu relatório."
           />
           <FaqItem
             q="O que é o relatório final?"
-            a="Após completar pelo menos 21 pings e 3 dias de registro de tela, um relatório com suas médias de bem-estar emocional (SAM, PANAS) e consumo de vídeos curtos é desbloqueado na aba Feitos. DICA: Aproveite o ping de final de dia (às 21h) para registrar o tempo de tela do dia inteiro."
+            a="Após completar pelo menos 21 pings e 3 dias de registro de tela, um relatório com suas médias de bem-estar emocional (SAM, PANAS) e consumo de vídeos curtos é desbloqueado na aba Feitos."
           />
           <FaqItem
-            q="Tenho alguma dúvida que não está aqui — o que faço?"
-            a="Entre em contato com a equipe de pesquisa pelo e-mail: thiagosfcarneiro@sempreceub.com ou dionne.correa@ceub.edu.br. 
-            Também informado no Termo de Consentimento que você assinou antes de começar o estudo. É possível acessá-lo clicando no menu superior esquerdo e em seguida clicar em 'ver termos'"
+            q="Tenho uma dúvida que não está aqui — o que faço?"
+            a="Entre em contato com a equipe pelo e-mail: thiagosfcarneiro@sempreceub.com ou dionne.correa@ceub.edu.br. Você também pode acessar o Termo de Consentimento no menu superior esquerdo → 'Ver termos'."
           />
+        </div>
+      </Accordion>
+
+      {/* ── 6: Revisitar o Início ── */}
+      <Accordion icon="🚀" title="Revisitar o Início" isOpen={openSection === 5} onToggle={() => toggle(5)}>
+        <div className="space-y-0">
+          <StepCard step={1} title="Crie seu Registro"
+            desc="Na primeira tela, você preenche o RCLE — um formulário de perfil com dados sociodemográficos usados na pesquisa." />
+          <StepCard step={2} title="Escolha seu Apelido"
+            desc="Seu apelido identifica você no ranking social. Escolha algo que te represente — ele aparece para os outros participantes." />
+          <StepCard step={3} title="Personalize seu Perfil"
+            desc="Você pode enviar uma foto de avatar. O seu nível e XP ficam visíveis na tela inicial conforme você avança na jornada." />
+          <StepCard step={4} title="Início da Jornada" isLast
+            desc="Assim que o pesquisador liberar seu acesso, os pings começam a chegar. Cada ping respondido dá XP e cristais." />
         </div>
       </Accordion>
     </div>

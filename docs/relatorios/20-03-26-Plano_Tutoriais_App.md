@@ -1,134 +1,126 @@
-# Área de Tutoriais no App — Plano de Implementação
+# Área de Tutoriais no App — Plano de Implementação (Revisado)
 
-Adicionar uma aba **"Tutoriais"** ao app Psylogos, com conteúdo didático e interativo inspirado na seção [`PsyTutorials.tsx`](file:///c:/dev/Psylogos-landing-page-website-template/src/components/PsyTutorials.tsx) da landing page, adaptado ao visual dark/neon do app.
+Adicionar a aba **"Guia do Explorador"** ao app Psylogos com conteúdo didático em accordion, incluindo tutorial interativo de Tempo de Tela com carrossel de imagens.
 
 ---
 
-## Proposta Visual
+## Ordem Final das Seções
 
-A aba terá **4 blocos temáticos** exibidos em formato de **accordion expansível**. Cada bloco tem um header neon clicável que abre/fecha o conteúdo com uma animação suave. Isso mantém a tela limpa e deixa o participante explorar no seu ritmo.
+| # | Título do Accordion | Ícone | Notas |
+|---|---|---|---|
+| 1 | O Formulário SAM | 🎭 | Sem numeração no título |
+| 2 | O Formulário PANAS | 💬 | Sem numeração no título |
+| 3 | Registro de Tempo de Tela | 📱 | **Novo** — carrossel de 12 imagens |
+| 4 | Fluxo Diário | 🗓️ | Card de "Tempo de Tela" removido (agora é seção própria) |
+| 5 | Dúvidas Frequentes | ❓ | Sem alterações |
+| 6 | Revisitar o Início | 🚀 | Antigos "Primeiros Passos" — movido para o fim |
+
+> **Decisão:** Sem numeração nos títulos (ex: "Passo 1 — O SAM" → "O Formulário SAM") para evitar inconsistência com materiais externos (landing page, WhatsApp).
+
+> **Decisão:** "Primeiros Passos" não é removido — é movido para o final como referência, pois o participante pode querer revisitar (ex: como enviar avatar).
+
+---
+
+## Seção Nova: Registro de Tempo de Tela
+
+### Componente interno: `TutorialCarousel`
+
+Carrossel puro React + CSS, sem Framer Motion. Localizado dentro de `TutoriaisTab.tsx`.
+
+**Funcionalidades obrigatórias:**
+- Swipe horizontal via `onTouchStart` / `onTouchEnd` (delta mínimo: 40px)
+- Botões `← Anterior` / `Próximo →` com estado desabilitado nas pontas
+- Contador de posição: `3 / 12` com barra de progresso colorida por fase
+- Toque na imagem → abre lightbox fullscreen (modal sobre a tela toda)
+- Lightbox: botões `‹` `›` para navegar, `✕` para fechar, swipe também funciona
+- `loading="lazy"` em todas as imagens exceto a atual e as adjacentes
+- `max-h-72 object-contain` na imagem do carrossel para não transbordar
+
+**Fases e cores:**
+
+| Fase | Telas | Cor |
+|---|---|---|
+| Abrindo o formulário | 1–3 | cyan (#22d3ee) |
+| Adicionando suas redes | 4–7 | roxo (#a78bfa) |
+| Encontrando o dado real | 8–12 | laranja (#fb923c) |
+
+**Dados dos passos:** Os textos dos 12 passos são os mesmos já definidos na landing page (`PsyTutorialMap.tsx`) — reutilizar o array de `title` + `caption`.
+
+### Ativos de imagem
+
+As imagens **já existem** em `public/tutorial/screen-time/` no projeto do App. Nenhuma cópia necessária.
 
 ```
-┌─────────────────────────────────────┐
-│ 📖 Guia do Explorador               │  ← título da aba
-├─────────────────────────────────────┤
-│ ▶ Passo 1 — Primeiro Acesso     [+] │  ← accordion fechado
-├─────────────────────────────────────┤
-│ ▼ Passo 2 — O SAM               [-] │  ← accordion aberto
-│   ┌──────────┬──────────┬─────────┐ │
-│   │ Valência │ Ativação │Dominânc.│ │
-│   └──────────┴──────────┴─────────┘ │
-│   "Dica: não pense muito..."        │
-├─────────────────────────────────────┤
-│ ▶ Passo 3 — O PANAS             [+] │
-├─────────────────────────────────────┤
-│ ▶ Fluxo Diário Resumido         [+] │
-└─────────────────────────────────────┘
+tela_1.png  tela_2.png  tela_3.png  tela_4.png
+tela_5.png  tela_6.png  tela_7.png  tela_8.jpeg
+tela_9.jpeg tela_10.jpeg tela_11.jpeg tela_12.png
 ```
 
 ---
 
-## Mudanças Propostas
+## Mudanças em TutoriaisTab.tsx
 
-### Navigation Layer
+### 1. Remover numeração dos títulos
+```diff
+- "Passo 2 — O Formulário SAM"
++ "O Formulário SAM"
+- "Passo 3 — O Formulário PANAS"
++ "O Formulário PANAS"
+- "Passo 4 — Fluxo Diário"
++ "Fluxo Diário"
+```
 
-#### [MODIFY] [BottomNav.tsx](file:///c:/dev/Projeto-TCC/src/components/navigation/BottomNav.tsx)
+### 2. Remover card duplicado de Tempo de Tela
+O bloco dentro de "Fluxo Diário" que começa com `<p>Tempo de Tela</p>` deve ser removido — o assunto agora tem seção própria.
 
-- Adicionar `"tutoriais"` ao tipo `Tab`
-- Adicionar ícone de livro/lâmpada (SVG inline, sem dependências)
-- Inserir o tab `{ id: "tutoriais", label: "Guia", icon: <BookIcon /> }` no array `tabs`
-- Posição: entre `"home"` e `"conquistas"` (ou como 4º tab — a decidir na revisão)
+### 3. Adicionar accordion "Registro de Tempo de Tela"
+Inserido entre PANAS e Fluxo Diário. Contém o `TutorialCarousel` com as 12 imagens.
 
-> [!IMPORTANT]
-> O `BottomNav` atualmente tem 3 tabs em layout `justify-around`. Com 4 tabs, o espaçamento diminui mas ainda funciona bem em mobile (cada botão ~85px de largura em 375px). Podemos manter `justify-around` ou ajustar para `justify-between`.
+### 4. Mover "Primeiros Passos" para o fim
+Renomear para "Revisitar o Início" e posicionar após FAQ.
 
----
-
-### Tab Component
-
-#### [NEW] [TutoriaisTab.tsx](file:///c:/dev/Projeto-TCC/src/components/tabs/TutoriaisTab.tsx)
-
-Componente puro React + Tailwind, **sem framer-motion** (não é dependência do app). Animações via CSS transition.
-
-**Estrutura interna:**
-
+### 5. Componente TutorialCarousel (esboço)
 ```tsx
-// Accordion com estado local por seção
-const [openSection, setOpenSection] = useState<number | null>(0);
+const STEPS = [ /* 12 passos com img, title, caption, color */ ]
 
-// 4 seções:
+function TutorialCarousel() {
+  const [current, setCurrent] = useState(0)
+  const [lightbox, setLightbox] = useState(false)
 
-// ── Seção 1: Onboarding (4 cards em linha com seta) ──
-// RCLE → Apelido → Perfil → Dashboard
-// Adaptação do onboardingSteps da landing page
+  // Swipe
+  const touchStart = useRef(0)
+  const onTouchStart = (e) => { touchStart.current = e.touches[0].clientX }
+  const onTouchEnd = (e) => {
+    const delta = touchStart.current - e.changedTouches[0].clientX
+    if (delta > 40) next()
+    if (delta < -40) prev()
+  }
 
-// ── Seção 2: SAM ──
-// Explicação + 3 cards: Valência, Ativação, Dominância
-// Escala visual 1–9 por card
-// "Dica: não pense muito — seja fiel ao que sente agora."
+  const phase = STEPS[current].phase // 0, 1 ou 2
+  const progress = ((current + 1) / STEPS.length) * 100
 
-// ── Seção 3: PANAS ──
-// Dois cards: Notificações diurnas (9–19h) x Relatório noturno (21h)
-// Escala visual 1–5 (Nada → Extremamente) — igual à landing
-
-// ── Seção 4: Fluxo Diário ──
-// Pills conectadas: Notificação → SAM → PANAS (5min) → Continua
-//                   21h → PANAS (dia todo) → Relatório noturno
+  return (
+    <>
+      {/* Barra de progresso por fase */}
+      {/* Imagem clicável */}
+      {/* Controles Anterior / N de 12 / Próximo */}
+      {/* Lightbox condicional */}
+    </>
+  )
+}
 ```
-
-**Decisão de design:**
-- Accordion com apenas **uma seção aberta por vez** (`openSection` = índice único)
-- Header de cada seção: fundo `rgba(34,211,238,0.06)`, borda neon, ícone à esquerda, `+/-` à direita
-- Conteúdo expandido: transição de altura com `max-height` via CSS (padrão do projeto)
-- Paleta: cyan-400 (primário), purple-400 (secundário), pink-400 (acento) — igual à landing
-
----
-
-### Dashboard Wiring
-
-#### [MODIFY] [DashboardPage.tsx](file:///c:/dev/Projeto-TCC/src/pages/DashboardPage.tsx)
-
-- Importar `TutoriaisTab`
-- Adicionar `"tutoriais"` ao tipo do state `activeTab`
-- Adicionar bloco de renderização condicional:
-  ```tsx
-  {activeTab === "tutoriais" && (
-    <TutoriaisTab />
-  )}
-  ```
-- O `TutoriaisTab` **não precisa de props** — é conteúdo estático.
 
 ---
 
 ## Plano de Verificação
 
-### Testes Manuais
-
-1. **Rodar o dev server:**
-   ```bash
-   cd c:\dev\Projeto-TCC
-   npm run dev
-   ```
-2. Abrir o app no navegador em `http://localhost:5173` e fazer login com uma conta de participante.
-3. Verificar que a **aba "Guia"** aparece na `BottomNav` com ícone e label corretos.
-4. Clicar na aba — verificar que a `TutoriaisTab` é renderizada.
-5. Testar cada accordion:
-   - Clicar em "Passo 1 — Primeiro Acesso" → conteúdo expande com animação.
-   - Clicar no mesmo → fecha.
-   - Abrir "Passo 2 — O SAM" → "Passo 1" fecha automaticamente (só uma seção aberta).
-   - Repetir para seções 3 e 4.
-6. **Responsividade:** Redimensionar a janela para 375px de largura (modo mobile) e verificar:
-   - Os cards da seção 1 ficam empilhados verticalmente (não quebram o layout).
-   - Os 3 cards do SAM ficam em coluna única.
-   - Os 2 cards do PANAS ficam em coluna única.
-   - A escala 1–5 do PANAS cabe horizontalmente.
-7. **Navegação:** Navegar para outras abas (Home, Social, Conquistas) e voltar — verificar que o estado do accordion é resetado (ou mantido, a decidir).
-8. **BottomNav com 4 tabs:** Verificar que os 4 botões cabem na barra sem overflow em 375px de largura.
-
-### Testes Automatizados
-
-Não há testes automatizados no projeto. Esta feature é puramente visual/estática — o risco de regressão é baixo.
+1. **Ativos:** `public/tutorial/screen-time/` contém as 12 telas ✅ (já confirmado)
+2. **Ordem:** SAM → PANAS → Tempo de Tela → Fluxo → FAQ → Revisitar o Início
+3. **Carrossel:** Clicar Próximo até 12/12 sem erros; swipe horizontal funciona
+4. **Lightbox:** Toque na imagem → abre modal; setas e swipe navegam; ✕ fecha
+5. **Overflow:** Imagem não ultrapassa a altura da tela em nenhum passo
+6. **Duplicação:** Confirmar que o card de Tempo de Tela sumiu do Fluxo Diário
 
 ---
 
-*Branch: `Tutoriais` — Março 2026*
+*Revisado: Março 2026*
