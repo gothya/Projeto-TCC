@@ -1,9 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useToast } from "@/src/contexts/ToastContext";
 import { ConsentScreen } from "./ConsentScreen";
 import { SociodemographicQuestionnaireScreen, SociodemographicData } from "./SociodemographicQuestionnaireScreen";
 import { PlexusFace } from "../PlexusFace";
 import { OnboardingDraft } from "@/src/hooks/useOnboardingDraft";
+import userService from "@/src/service/user/UserService";
+
+type NicknameStatus = "idle" | "checking" | "available" | "taken" | "error";
 
 export const OnboardingScreen: React.FC<{
   onComplete: (nickname: string, data: SociodemographicData) => void;
@@ -14,13 +17,16 @@ export const OnboardingScreen: React.FC<{
   const { showToast } = useToast();
   const [step, setStep] = useState(0); // 0: Consent, 1: Questionnaire, 2: Nickname
   const [nickname, setNickname] = useState("");
+  const [nicknameStatus, setNicknameStatus] = useState<NicknameStatus>("idle");
   const [sociodemographicData, setSociodemographicData] = useState<SociodemographicData | null>(null);
 
   // Sub-passo restaurado do questionário (usado apenas na primeira vez que entramos no step 1)
   const [restoredQuestionnaireStep, setRestoredQuestionnaireStep] = useState<number>(0);
 
-  // Debounce do nickname
+  // Debounce para salvar rascunho
   const nicknameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Debounce separado para verificação de unicidade
+  const nicknameCheckRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleConsent = (agreed: boolean) => {
     if (!agreed) {
@@ -76,7 +82,9 @@ export const OnboardingScreen: React.FC<{
   const handleNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setNickname(value);
+    setNicknameStatus("idle");
 
+    // Debounce do rascunho (500ms)
     if (nicknameDebounceRef.current) clearTimeout(nicknameDebounceRef.current);
     nicknameDebounceRef.current = setTimeout(() => {
       onDraftChange({
@@ -86,12 +94,42 @@ export const OnboardingScreen: React.FC<{
         nickname: value,
       });
     }, 500);
+
+    // Debounce da verificação de unicidade (600ms)
+    if (nicknameCheckRef.current) clearTimeout(nicknameCheckRef.current);
+    if (value.trim().length <= 2) return;
+
+    setNicknameStatus("checking");
+    nicknameCheckRef.current = setTimeout(async () => {
+      try {
+        const taken = await Promise.race([
+          userService.isNicknameTaken(value),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("timeout")), 5000)
+          ),
+        ]);
+        setNicknameStatus(taken ? "taken" : "available");
+      } catch {
+        setNicknameStatus("error");
+      }
+    }, 600);
   };
 
-  const handleNicknameSubmit = () => {
-    if (nickname.trim().length > 2 && sociodemographicData) {
+  const handleNicknameSubmit = async () => {
+    if (nickname.trim().length <= 2 || !sociodemographicData) return;
+    setNicknameStatus("checking");
+    try {
+      const taken = await Promise.race([
+        userService.isNicknameTaken(nickname),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("timeout")), 5000)
+        ),
+      ]);
+      if (taken) { setNicknameStatus("taken"); return; }
       onDraftClear();
       onComplete(nickname, sociodemographicData);
+    } catch {
+      setNicknameStatus("error");
     }
   };
 
@@ -125,20 +163,35 @@ export const OnboardingScreen: React.FC<{
           identificação anônima.
         </p>
 
-        <input
-          type="text"
-          value={nickname}
-          onChange={handleNicknameChange}
-          placeholder="Digite seu nickname"
-          className="w-full px-4 py-2 text-center text-white bg-transparent border-b-2 border-cyan-400 focus:outline-none focus:border-cyan-300 focus:shadow-glow-blue-sm transition-all"
-        />
+        <div className="space-y-1.5">
+          <input
+            type="text"
+            value={nickname}
+            onChange={handleNicknameChange}
+            placeholder="Digite seu nickname"
+            className="w-full px-4 py-2 text-center text-white bg-transparent border-b-2 border-cyan-400 focus:outline-none focus:border-cyan-300 focus:shadow-glow-blue-sm transition-all"
+          />
+          {/* Feedback de unicidade */}
+          {nicknameStatus === "checking" && (
+            <p className="text-xs text-gray-400 text-center">Verificando disponibilidade…</p>
+          )}
+          {nicknameStatus === "available" && (
+            <p className="text-xs text-green-400 text-center">✅ Disponível!</p>
+          )}
+          {nicknameStatus === "taken" && (
+            <p className="text-xs text-red-400 text-center">❌ Este apelido já está em uso.</p>
+          )}
+          {nicknameStatus === "error" && (
+            <p className="text-xs text-yellow-400 text-center">⚠️ Não foi possível verificar — tente novamente.</p>
+          )}
+        </div>
 
         <button
           onClick={handleNicknameSubmit}
-          disabled={nickname.trim().length <= 2}
+          disabled={nicknameStatus !== "available"}
           className="w-full px-6 py-3 font-bold text-brand-dark bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-all duration-300 shadow-glow-blue disabled:bg-gray-600 disabled:cursor-not-allowed disabled:shadow-none"
         >
-          Iniciar Jornada
+          {nicknameStatus === "checking" ? "Verificando…" : "Iniciar Jornada"}
         </button>
       </div>
     </div>

@@ -449,7 +449,7 @@ const StepCard: React.FC<{ step: number; title: string; desc: string; isLast?: b
 
 // ── Componente principal ──────────────────────────────────────────────────────
 export const TutoriaisTab: React.FC = () => {
-  const [openSection, setOpenSection] = useState<number | null>(0);
+  const [openSection, setOpenSection] = useState<number | null>(null);
   const toggle = (idx: number) => setOpenSection(prev => prev === idx ? null : idx);
 
   return (

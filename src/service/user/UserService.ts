@@ -1,7 +1,7 @@
 import { GameState } from "@/src/components/data/GameState";
 import { InstrumentResponse } from "@/src/components/data/InstrumentResponse";
 import { db, auth } from "@/src/services/firebase";
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, limit, query, setDoc, updateDoc, where } from "firebase/firestore";
 
 class UserService {
     private readonly collectionName = "participantes";
@@ -48,7 +48,15 @@ class UserService {
 
         const docRef = doc(db, this.collectionName, state.firebaseId);
 
-        await setDoc(docRef, state);
+        const stateWithLower = {
+            ...state,
+            user: {
+                ...state.user,
+                nicknameLower: state.user.nickname?.trim().toLowerCase() ?? "",
+            },
+        };
+
+        await setDoc(docRef, stateWithLower);
         console.log("✅ Registro do participante criado em 'participantes'!");
     }
 
@@ -116,6 +124,26 @@ class UserService {
     async saveResponses(firebaseId: string, responses: InstrumentResponse[]): Promise<void> {
         const docRef = doc(db, this.collectionName, firebaseId);
         await updateDoc(docRef, { responses });
+    }
+
+    /**
+     * Verifica se um nickname já está em uso.
+     * Roda duas queries em paralelo para cobrir documentos antigos
+     * (sem nicknameLower) e novos (com nicknameLower):
+     *   1. user.nicknameLower == toLowerCase(nickname)  — novos registros
+     *   2. user.nickname      == nickname (exato)       — registros legados
+     * Retorna true se qualquer uma encontrar resultado.
+     */
+    async isNicknameTaken(nickname: string): Promise<boolean> {
+        const trimmed = nickname.trim();
+        const col = collection(db, this.collectionName);
+
+        const [byLower, byExact] = await Promise.all([
+            getDocs(query(col, where("user.nicknameLower", "==", trimmed.toLowerCase()), limit(1))),
+            getDocs(query(col, where("user.nickname", "==", trimmed), limit(1))),
+        ]);
+
+        return !byLower.empty || !byExact.empty;
     }
 
     async getParticipanteByUid(uid: string) {
