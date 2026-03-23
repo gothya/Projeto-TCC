@@ -8,24 +8,24 @@ function imgSrc(n: number) {
 
 // ── Dados dos 12 passos ───────────────────────────────────────────────────────
 const CAROUSEL_STEPS = [
-  { n: 1,  color: "#22d3ee", phase: 0, title: "Acesse o botão",        caption: 'Na aba inicial, toque em "Lançar Tempo de Tela".' },
-  { n: 2,  color: "#22d3ee", phase: 0, title: "Leia o aviso",          caption: "O modal explica o registro. Cada envio desbloqueia um novo dia." },
-  { n: 3,  color: "#22d3ee", phase: 0, title: "Adicionar rede",         caption: 'Toque em "Adicionar Nova Rede Social" para começar.' },
-  { n: 4,  color: "#a78bfa", phase: 1, title: "Card de rede",           caption: "Um card aparece. Clique nele para configurar o aplicativo." },
-  { n: 5,  color: "#a78bfa", phase: 1, title: "Escolha o app",          caption: "Selecione TikTok, Instagram Reels ou YouTube Shorts." },
-  { n: 6,  color: "#a78bfa", phase: 1, title: "Digite o tempo",         caption: "Informe quantos minutos você usou esse app hoje." },
-  { n: 7,  color: "#a78bfa", phase: 1, title: "Total no topo",          caption: "A soma total aparece no topo — confira antes de confirmar." },
-  { n: 8,  color: "#fb923c", phase: 2, title: "Configurações",          caption: 'Abra as "Configurações" do seu celular.' },
-  { n: 9,  color: "#fb923c", phase: 2, title: "Bem-estar digital",      caption: '"Bem-estar digital" (Android) ou "Tempo de Tela" (iOS).' },
-  { n: 11, color: "#fb923c", phase: 2, title: "Toque no gráfico",       caption: "Toque no gráfico de barras para ver o detalhe por app." },
-  { n: 10, color: "#fb923c", phase: 2, title: "Tempo exato",            caption: "Veja o tempo real de cada app. Anote esse número." },
-  { n: 12, color: "#fb923c", phase: 2, title: "Preencha com precisão",  caption: "Volte ao app e registre o valor exato que consultou." },
+  { n: 1, color: "#22d3ee", phase: 0, title: "Acesse o botão", caption: 'Na aba inicial, toque em "Lançar Tempo de Tela".' },
+  { n: 2, color: "#22d3ee", phase: 0, title: "Leia o aviso", caption: "O modal explica o registro. Cada envio desbloqueia um novo dia." },
+  { n: 3, color: "#22d3ee", phase: 0, title: "Adicionar rede", caption: 'Toque em "Adicionar Nova Rede Social" para começar.' },
+  { n: 4, color: "#a78bfa", phase: 1, title: "Card de rede", caption: "Um card aparece. Clique nele para configurar o aplicativo." },
+  { n: 5, color: "#a78bfa", phase: 1, title: "Escolha o app", caption: "Selecione TikTok, Instagram Reels ou YouTube Shorts." },
+  { n: 6, color: "#a78bfa", phase: 1, title: "Digite o tempo", caption: "Informe quantos minutos você usou esse app hoje." },
+  { n: 7, color: "#a78bfa", phase: 1, title: "Total no topo", caption: "A soma total aparece no topo — confira antes de confirmar." },
+  { n: 8, color: "#fb923c", phase: 2, title: "Configurações", caption: 'Abra as "Configurações" do seu celular.' },
+  { n: 9, color: "#fb923c", phase: 2, title: "Bem-estar digital", caption: '"Bem-estar digital" (Android) ou "Tempo de Tela" (iOS).' },
+  { n: 11, color: "#fb923c", phase: 2, title: "Toque no gráfico", caption: "Toque no gráfico de barras para ver o detalhe por app." },
+  { n: 10, color: "#fb923c", phase: 2, title: "Tempo exato", caption: "Veja o tempo real de cada app. Anote esse número." },
+  { n: 12, color: "#fb923c", phase: 2, title: "Preencha com precisão", caption: "Volte ao app e registre o valor exato que consultou." },
 ];
 
 const PHASE_LABELS = [
-  { label: "Abrindo o formulário",        color: "#22d3ee" },
-  { label: "Adicionando suas redes",      color: "#a78bfa" },
-  { label: "Encontrando o dado real",     color: "#fb923c" },
+  { label: "Abrindo o formulário", color: "#22d3ee" },
+  { label: "Adicionando suas redes", color: "#a78bfa" },
+  { label: "Encontrando o dado real", color: "#fb923c" },
 ];
 
 // ── Lightbox ──────────────────────────────────────────────────────────────────
@@ -540,7 +540,7 @@ export const TutoriaisTab: React.FC = () => {
             <div>
               <p className="text-xs font-bold text-yellow-300 mb-1">Dica: crie 3 alarmes no seu celular</p>
               <p className="text-xs text-slate-400 leading-relaxed">
-                As notificações podem passar despercebidas. Para garantir o mínimo de <strong className="text-slate-300">21 pings em 7 dias</strong>, responda ao menos <strong className="text-slate-300">3 por dia</strong>. Configure alarmes fixos — por exemplo às <strong className="text-slate-300">10h, 14h e 18h</strong>.
+                As notificações podem passar despercebidas. Para garantir o mínimo de <strong className="text-slate-300">21 pings em 7 dias</strong>, responda ao menos <strong className="text-slate-300">3 por dia</strong>. Configure alarmes fixos — por exemplo às <strong className="text-slate-300">11h, 15h e 19h</strong>.
               </p>
             </div>
           </div>
@@ -556,7 +556,7 @@ export const TutoriaisTab: React.FC = () => {
           />
           <FaqItem
             q="O que acontece se perder muitos pings?"
-            a="Você perde XP e pode não atingir o mínimo de 21 pings para desbloquear o relatório final. O mínimo é 3 pings por dia durante os 7 dias. Crie alarmes fixos no celular (ex: 10h, 14h e 18h) para não perder a janela de 25 minutos."
+            a="Você perde XP e pode não atingir o mínimo de 21 pings para desbloquear o relatório final. O mínimo é 3 pings por dia durante os 7 dias. Crie alarmes fixos no celular (ex: 11h, 15h e 19h) para não perder a janela de 25 minutos."
           />
           <FaqItem
             q="Meus dados estão seguros?"
