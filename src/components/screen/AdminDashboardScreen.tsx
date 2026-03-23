@@ -11,19 +11,10 @@ import { DocumentTextIcon } from "../icons/DocumentTextIcon";
 import { ChevronDownIcon } from "../icons/ChevronDownIcon";
 import { ChevronUpIcon } from "../icons/ChevronUpIcon";
 import { PANAS_ITEMS } from "../data/PanasItems";
+import { NEGATIVE_ITEMS, POSITIVE_ITEMS } from "@/src/constants/panas";
+import { normalizePanasResponse } from "@/src/utils/ReportGeneratorUtils";
 import { collection, getDocs } from "firebase/firestore";
 import { db, auth } from "../../services/firebase";
-
-
-// PANAS GROUPS
-const POSITIVE_ITEMS = [
-  "Amável", "Animado", "Apaixonado", "Determinado", "Dinâmico",
-  "Entusiasmado", "Forte", "Inspirado", "Orgulhoso", "Vigoroso"
-];
-const NEGATIVE_ITEMS = [
-  "Aflito", "Amedrontado", "Angustiado", "Humilhado", "Incomodado",
-  "Inquieto", "Irritado", "Nervoso", "Perturbado", "Rancoroso"
-];
 
 export const AdminDashboardScreen: React.FC<{
   onLogout: () => void;
@@ -157,10 +148,11 @@ export const AdminDashboardScreen: React.FC<{
 
         // PANAS
         if (r.panas) {
+          const panas = normalizePanasResponse(r.panas);
           let paSum = 0;
           let naSum = 0;
           let hasPanas = false;
-          Object.entries(r.panas).forEach(([key, value]) => {
+          Object.entries(panas).forEach(([key, value]) => {
             if (POSITIVE_ITEMS.includes(key)) paSum += Number(value);
             if (NEGATIVE_ITEMS.includes(key)) naSum += Number(value);
             hasPanas = true;
@@ -246,11 +238,12 @@ export const AdminDashboardScreen: React.FC<{
       }
       // PANAS
       if (r.panas) {
+        const panas = normalizePanasResponse(r.panas);
         let paSum = 0;
         let naSum = 0;
         let hasPanas = false;
 
-        Object.entries(r.panas).forEach(([key, value]) => {
+        Object.entries(panas).forEach(([key, value]) => {
           if (POSITIVE_ITEMS.includes(key)) paSum += value;
           if (NEGATIVE_ITEMS.includes(key)) naSum += value;
           hasPanas = true;

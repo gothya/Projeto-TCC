@@ -17,8 +17,8 @@ const CAROUSEL_STEPS = [
   { n: 7,  color: "#a78bfa", phase: 1, title: "Total no topo",          caption: "A soma total aparece no topo — confira antes de confirmar." },
   { n: 8,  color: "#fb923c", phase: 2, title: "Configurações",          caption: 'Abra as "Configurações" do seu celular.' },
   { n: 9,  color: "#fb923c", phase: 2, title: "Bem-estar digital",      caption: '"Bem-estar digital" (Android) ou "Tempo de Tela" (iOS).' },
-  { n: 10, color: "#fb923c", phase: 2, title: "Toque no gráfico",       caption: "Toque no gráfico de barras para ver o detalhe por app." },
-  { n: 11, color: "#fb923c", phase: 2, title: "Tempo exato",            caption: "Veja o tempo real de cada app. Anote esse número." },
+  { n: 11, color: "#fb923c", phase: 2, title: "Toque no gráfico",       caption: "Toque no gráfico de barras para ver o detalhe por app." },
+  { n: 10, color: "#fb923c", phase: 2, title: "Tempo exato",            caption: "Veja o tempo real de cada app. Anote esse número." },
   { n: 12, color: "#fb923c", phase: 2, title: "Preencha com precisão",  caption: "Volte ao app e registre o valor exato que consultou." },
 ];
 

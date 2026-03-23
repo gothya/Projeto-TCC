@@ -43,6 +43,7 @@ export const DashboardScreen: React.FC<{
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isSociodemographicModalOpen, setIsSociodemographicModalOpen] = useState(false);
   const [instrumentFlow, setInstrumentFlow] = useState<InstrumentFlowState>(null);
+  const [isInstrumentVisible, setIsInstrumentVisible] = useState(false);
   const [, setGameState] = useState<GameState>(localStorage.getItem("gameState") ? JSON.parse(localStorage.getItem("gameState") as string) : gameState);
   const { user: authUser } = useAuth(); // Get the authenticated user for UID
   const { showToast } = useToast();
@@ -128,6 +129,13 @@ export const DashboardScreen: React.FC<{
 
   const startInstrumentFlow = useCallback(async () => {
     if (!highlightedPing) return;
+
+    // Se já existe um fluxo em andamento (modal minimizado), apenas reexibe
+    if (instrumentFlow) {
+      setIsInstrumentVisible(true);
+      return;
+    }
+
     const isEndOfDay = (highlightedPing.ping + 1) % 7 === 0;
 
     if (isEndOfDay) {
@@ -155,12 +163,13 @@ export const DashboardScreen: React.FC<{
         },
       });
     }
+    setIsInstrumentVisible(true);
   }, [highlightedPing]);
 
   // Listener for Notification Clicks (Deep Linking)
   useEffect(() => {
     const handleOpenIntent = () => {
-      if (highlightedPing && !instrumentFlow) {
+      if (highlightedPing && (!instrumentFlow || !isInstrumentVisible)) {
         console.log("Opening ping via notification interaction");
         startInstrumentFlow();
 
@@ -195,7 +204,7 @@ export const DashboardScreen: React.FC<{
       navigator.serviceWorker?.removeEventListener('message', messageHandler);
       window.removeEventListener('open_ping_intent', customEventHandler);
     };
-  }, [highlightedPing, instrumentFlow, startInstrumentFlow]);
+  }, [highlightedPing, instrumentFlow, isInstrumentVisible, startInstrumentFlow]);
 
   const LEVEL_THRESHOLDS = [
     0, 160, 320, 480, 640, 800, 960, 1120, 1280, 1440, 1600, 1760, 1920, 2080,
@@ -251,6 +260,7 @@ export const DashboardScreen: React.FC<{
       };
     });
     setInstrumentFlow(null);
+    setIsInstrumentVisible(false);
   };
 
   const handleMissedPing = useCallback(() => {
@@ -270,6 +280,7 @@ export const DashboardScreen: React.FC<{
       };
     });
     setInstrumentFlow(null);
+    setIsInstrumentVisible(false);
   }, [instrumentFlow]);
 
   // 5 Minute Timeout for Active Ping
@@ -364,10 +375,10 @@ export const DashboardScreen: React.FC<{
       console.error("Error fetching FCM token:", error);
     }
 
-    if (highlightedPing && !instrumentFlow) {
+    if (highlightedPing && (!instrumentFlow || !isInstrumentVisible)) {
       startInstrumentFlow();
     }
-  }, [highlightedPing, instrumentFlow, startInstrumentFlow]);
+  }, [highlightedPing, instrumentFlow, isInstrumentVisible, startInstrumentFlow]);
 
   const notificationTimes = ["9h", "11h", "13h", "15h", "17h", "19h", "21h"];
 
@@ -410,11 +421,12 @@ export const DashboardScreen: React.FC<{
 
   return (
     <div className="p-4 sm:p-6 max-w-4xl mx-auto animate-fade-in">
-      {instrumentFlow && (
+      {instrumentFlow && isInstrumentVisible && (
         <InstrumentModal
           flow={instrumentFlow}
           onStep={handleInstrumentStep}
           onCancel={handleMissedPing}
+          onMinimize={() => setIsInstrumentVisible(false)}
         />
       )}
       {isRcleModalOpen && (

@@ -1,6 +1,7 @@
 import { GameState } from "@/src/components/data/GameState";
 import { NEGATIVE_ITEMS, POSITIVE_ITEMS } from "@/src/constants/panas";
 import { parseDurationMinutes } from "./screenTimeUtils";
+import { normalizePanasResponse } from "./ReportGeneratorUtils";
 
 // ---------------------------------------------------------------------------
 // Tipos de retorno
@@ -105,10 +106,11 @@ export function calculateGlobalAverageStats(allUsers: GameState[]): GlobalAverag
         }
 
         if (r.panas) {
+          const panas = normalizePanasResponse(r.panas);
           let paSum = 0;
           let naSum = 0;
           let hasPanas = false;
-          Object.entries(r.panas).forEach(([key, value]) => {
+          Object.entries(panas).forEach(([key, value]) => {
             if (POSITIVE_ITEMS.includes(key)) paSum += Number(value);
             if (NEGATIVE_ITEMS.includes(key)) naSum += Number(value);
             hasPanas = true;
@@ -217,10 +219,11 @@ export function calculateDetailedStatsForUser(user: GameState): UserDetailStats 
       samTotals.count++;
     }
     if (r.panas) {
+      const panas = normalizePanasResponse(r.panas);
       let paSum = 0;
       let naSum = 0;
       let hasPanas = false;
-      Object.entries(r.panas).forEach(([key, value]) => {
+      Object.entries(panas).forEach(([key, value]) => {
         if (POSITIVE_ITEMS.includes(key)) paSum += Number(value);
         if (NEGATIVE_ITEMS.includes(key)) naSum += Number(value);
         hasPanas = true;

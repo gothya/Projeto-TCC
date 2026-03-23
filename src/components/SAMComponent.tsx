@@ -43,6 +43,15 @@ export const SAMComponent: React.FC<{
           ? "rgba(34,211,238,0.25)"
           : "rgba(34,211,238,0.45)";
 
+    const getLabels = (t: typeof type) => {
+      switch (t) {
+        case "pleasure": return { low: "Desprazer", high: "Prazer" };
+        case "arousal": return { low: "Calmo", high: "Agitado" };
+        case "dominance": return { low: "Submisso", high: "Dominante" };
+      }
+    };
+    const { low, high } = getLabels(type);
+
     return (
       <div className="flex flex-col items-center w-full gap-3 py-2">
 
@@ -93,8 +102,8 @@ export const SAMComponent: React.FC<{
               ))}
             </div>
             <div className="flex justify-between w-full mt-1.5 px-1 text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-widest">
-              <span>Baixo</span>
-              <span>Alto</span>
+              <span>{low}</span>
+              <span>{high}</span>
             </div>
           </div>
         </div>

@@ -7,19 +7,19 @@ export const Modal: React.FC<{
   children: React.ReactNode;
   className?: string;
 }> = ({ onClose, onMinimize, children, className }) => {
-  const handleDismiss = onMinimize ?? onClose;
+  const handleBackdrop = onMinimize ?? onClose;
 
   return (
     <div
       className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4"
-      onClick={handleDismiss}
+      onClick={handleBackdrop}
     >
       <div
         className={`bg-slate-900 border border-cyan-400/30 rounded-2xl shadow-glow-blue w-full relative ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
         <button
-          onClick={handleDismiss}
+          onClick={onClose}
           className="absolute top-2 right-2 text-gray-400 hover:text-white transition-colors"
           aria-label="Fechar modal"
         >

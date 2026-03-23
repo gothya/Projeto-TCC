@@ -1,6 +1,22 @@
 import { GameState } from "@/src/components/data/GameState";
-import { NEGATIVE_ITEMS, POSITIVE_ITEMS } from "@/src/constants/panas";
+import { NEGATIVE_ITEMS, PANAS_MIGRATION_MAP, POSITIVE_ITEMS } from "@/src/constants/panas";
 import { parseDurationMinutes, resolvePlatformName } from "./screenTimeUtils";
+
+/**
+ * Normaliza um objeto de resposta PANAS substituindo chaves legadas pelas novas.
+ * O dado original no Firestore não é alterado — a conversão ocorre apenas em memória.
+ */
+export function normalizePanasResponse(
+  panas: Record<string, number>
+): Record<string, number> {
+  const normalized: Record<string, number> = {};
+  for (const [key, value] of Object.entries(panas)) {
+    const mappedKey = PANAS_MIGRATION_MAP[key] ?? key;
+    // Se a chave migrada já existe (improvável, mas seguro), soma os valores
+    normalized[mappedKey] = (normalized[mappedKey] ?? 0) + value;
+  }
+  return normalized;
+}
 
 export const SCREEN_TIME_GLOBAL_REF = 143;  // min/dia — média global (DataReportal 2024)
 export const SCREEN_TIME_NATIONAL_REF = 229; // min/dia — média nacional BR (DataReportal 2024)
@@ -66,12 +82,13 @@ export function calculateReportStats(gameState: GameState): ReportStats {
     }
 
     if (r.panas) {
+      const panas = normalizePanasResponse(r.panas);
       let paSum = 0;
       let naSum = 0;
       let paItemCount = 0;
       let naItemCount = 0;
 
-      Object.entries(r.panas).forEach(([key, value]) => {
+      Object.entries(panas).forEach(([key, value]) => {
         if (POSITIVE_ITEMS.includes(key)) { paSum += Number(value); paItemCount++; }
         if (NEGATIVE_ITEMS.includes(key)) { naSum += Number(value); naItemCount++; }
       });

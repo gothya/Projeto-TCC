@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(npx tsc:*)",
-      "Bash(grep -r \"gsap\\\\|GSAP\" /c/dev/Psylogos-landing-page-website-template/src --include=*.tsx --include=*.ts --include=*.json)"
+      "Bash(grep -r \"gsap\\\\|GSAP\" /c/dev/Psylogos-landing-page-website-template/src --include=*.tsx --include=*.ts --include=*.json)",
+      "Bash(find c:/dev/Projeto-TCC/src -name panas* -o -name PanasItems*)",
+      "Bash(head -10 grep -n \"excelExporter\\\\|buildPanasSheet\\\\|panas\" c:/dev/Projeto-TCC/src/utils/excelExporter.ts)"
     ]
   }
 }

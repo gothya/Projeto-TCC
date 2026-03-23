@@ -3,6 +3,7 @@ import { GameState } from "@/src/components/data/GameState";
 import { InstrumentResponse } from "@/src/components/data/InstrumentResponse";
 import { NEGATIVE_ITEMS, NOTIFICATION_TIMES, POSITIVE_ITEMS } from "@/src/constants/panas";
 import { parseDurationMinutes, resolvePlatformName } from "./screenTimeUtils";
+import { normalizePanasResponse } from "./ReportGeneratorUtils";
 import {
   CovariablesRow,
   ExportResult,
@@ -92,6 +93,7 @@ function buildPanasSheet(allResponses: FlatResponse[]): PanasRow[] {
     const r = entry.response;
     if (!r.panas) return;
 
+    const panas = normalizePanasResponse(r.panas);
     const panasType = entry.type === "end_of_day" ? "Final do Dia" : "Meio do Dia";
 
     const row: PanasRow = {
@@ -104,11 +106,11 @@ function buildPanasSheet(allResponses: FlatResponse[]): PanasRow[] {
     };
 
     POSITIVE_ITEMS.forEach((item) => {
-      row[`POS_${item}`] = r.panas![item] ?? "";
+      row[`POS_${item}`] = panas[item] ?? "";
     });
 
     NEGATIVE_ITEMS.forEach((item) => {
-      row[`NEG_${item}`] = r.panas![item] ?? "";
+      row[`NEG_${item}`] = panas[item] ?? "";
     });
 
     rows.push(row);
