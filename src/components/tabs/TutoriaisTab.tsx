@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { PA_DICT, NA_DICT, EmotionEntry } from "@/src/constants/panasDict";
 
 // ── Extensão de imagem ────────────────────────────────────────────────────────
 const JPEG_STEPS = new Set([8, 9, 10, 11]);
@@ -314,6 +315,76 @@ const SamDimensionCard: React.FC<{
   </div>
 );
 
+// ── Linha de emoção no dicionário ─────────────────────────────────────────────
+const EmotionRow: React.FC<{ entry: EmotionEntry; accentColor: string; oppositeColor: string }> = ({ entry, accentColor, oppositeColor }) => (
+  <div
+    className="grid gap-x-2 py-2 border-b last:border-0"
+    style={{
+      gridTemplateColumns: "1fr 2fr auto auto",
+      borderColor: "rgba(100,116,139,0.15)",
+    }}
+  >
+    <span className="text-xs font-bold" style={{ color: accentColor }}>{entry.word}</span>
+    <span className="text-[11px] text-slate-400 leading-snug">{entry.context}</span>
+    <span className="text-[10px] text-slate-500 text-center whitespace-nowrap">{entry.arousal}</span>
+    <span className="text-[10px] font-semibold text-right whitespace-nowrap" style={{ color: oppositeColor }}>{entry.opposite}</span>
+  </div>
+);
+
+// ── Dicionário de emoções PANAS ────────────────────────────────────────────────
+const PanasDictionary: React.FC = () => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(100,116,139,0.2)" }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between px-3 py-2.5 text-left"
+        style={{ background: "rgba(15,23,42,0.5)" }}
+      >
+        <span className="text-xs font-bold text-slate-300">📖 Ver guia das emoções</span>
+        <span
+          className="text-slate-500 text-sm font-bold transition-transform duration-300"
+          style={{ transform: open ? "rotate(45deg)" : "rotate(0)" }}
+        >+</span>
+      </button>
+
+      {/* grid-template-rows para não desmontar o conteúdo */}
+      <div style={{
+        display: "grid",
+        gridTemplateRows: open ? "1fr" : "0fr",
+        transition: "grid-template-rows 320ms ease",
+      }}>
+        <div style={{ overflow: "hidden" }}>
+          <div className="px-3 pb-3 pt-2 space-y-3">
+            {/* Cabeçalho da tabela */}
+            <div
+              className="grid gap-x-2 pb-1 border-b"
+              style={{ gridTemplateColumns: "1fr 2fr auto auto", borderColor: "rgba(100,116,139,0.3)" }}
+            >
+              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Emoção</span>
+              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Contexto</span>
+              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 text-center">Ativação</span>
+              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 text-right">Oposta</span>
+            </div>
+
+            {/* PA */}
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-cyan-400 mb-1">🔵 Afetos Positivos</p>
+              {PA_DICT.map(e => <EmotionRow key={e.word} entry={e} accentColor="#22d3ee" oppositeColor="#f472b6" />)}
+            </div>
+
+            {/* NA */}
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-pink-400 mb-1">🔴 Afetos Negativos</p>
+              {NA_DICT.map(e => <EmotionRow key={e.word} entry={e} accentColor="#f472b6" oppositeColor="#22d3ee" />)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── FAQ item ──────────────────────────────────────────────────────────────────
 const FaqItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
   const [open, setOpen] = useState(false);
@@ -474,6 +545,7 @@ export const TutoriaisTab: React.FC = () => {
               </p>
             </div>
           </div>
+          <PanasDictionary />
           <div
             className="rounded-lg p-3 flex gap-2"
             style={{ background: "rgba(34,211,238,0.07)", border: "1px solid rgba(34,211,238,0.2)" }}
