@@ -662,6 +662,21 @@ export const TutoriaisTab: React.FC = () => {
             desc="Assim que o pesquisador liberar seu acesso, os pings começam a chegar. Cada ping respondido dá XP e cristais." />
         </div>
       </Accordion>
+
+      {/* ── Botão landing page ── */}
+      <a
+        href="https://psylogos.lovable.app/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold transition-opacity active:opacity-70"
+        style={{
+          background: "linear-gradient(135deg, rgba(34,211,238,0.15), rgba(129,140,248,0.15))",
+          border: "1px solid rgba(34,211,238,0.3)",
+          color: "#22d3ee",
+        }}
+      >
+        🌐 Acessar o site do Psylogos
+      </a>
     </div>
   );
 };
