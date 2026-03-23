@@ -13,6 +13,7 @@ import { SociodemographicModal } from "@/src/components/modal/SociodemographicMo
 import { isEligibleForReport } from "@/src/utils/ReportGeneratorUtils";
 import { BottomNav, Tab } from "@/src/components/navigation/BottomNav";
 import { HomeTab } from "@/src/components/tabs/HomeTab";
+import { ProfileMenu } from "@/src/components/menu/ProfileMenu";
 import { SocialTab } from "@/src/components/tabs/SocialTab";
 import { ConquistasTab } from "@/src/components/tabs/ConquistasTab";
 import { TutoriaisTab } from "@/src/components/tabs/TutoriaisTab";
@@ -61,6 +62,8 @@ export const DashboardPage: React.FC<{
   const [timerTargetDate, setTimerTargetDate] = useState<Date | null>(null);
   const [timerLabel, setTimerLabel] = useState<string>("");
   const [isActiveWindow, setIsActiveWindow] = useState(false);
+  const [isBeforeStudyStart, setIsBeforeStudyStart] = useState(false);
+  const [firstPingDate, setFirstPingDate] = useState<Date | null>(null);
   const { logout, user } = useAuth();
   const isAdmin = user?.email === 'gothya@gmail.com';
 
@@ -105,10 +108,14 @@ export const DashboardPage: React.FC<{
     const journeyStart = getJourneyStartDate(participante.studyStartDate);
 
     const evaluateSchedule = async () => {
+      const now = new Date();
+      setFirstPingDate(journeyStart);
+      setIsBeforeStudyStart(now < journeyStart);
+
       const result = evaluateFullJourneySchedule(
         journeyStart,
         participante.pings,
-        new Date()
+        now
       );
 
       // Se o modal está visível e sendo respondido, não altera o schedule
@@ -736,6 +743,34 @@ export const DashboardPage: React.FC<{
         className="hidden"
       />
 
+      {/* ── Menu global (todas as abas) ── */}
+      <div ref={profileMenuRef} className="relative flex-shrink-0 px-4 pt-3 pb-1 flex items-center">
+        <button
+          onClick={() => setIsProfileMenuOpen(prev => !prev)}
+          className="p-2 rounded-full text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition-colors"
+          aria-label="Menu"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        {isProfileMenuOpen && participante && (
+          <ProfileMenu
+            onUpload={() => fileInputRef.current?.click()}
+            onRemove={handleRemoveAvatar}
+            onViewRcle={() => { setIsRcleModalOpen(true); setIsProfileMenuOpen(false); }}
+            onViewPerformance={() => { setIsPerformanceModalOpen(true); setIsProfileMenuOpen(false); }}
+            onViewData={() => { setIsSociodemographicModalOpen(true); setIsProfileMenuOpen(false); }}
+            onLogout={handleLogout}
+            hasAvatar={!!participante.user?.avatar}
+            isReportAvailable={isReportAvailable}
+            onDownloadReport={() => { setIsReportModalOpen(true); setIsProfileMenuOpen(false); }}
+            isAdmin={isAdmin}
+            onNavigateAdmin={() => { setIsProfileMenuOpen(false); navigate('/admin'); }}
+          />
+        )}
+      </div>
+
       {/* ── Conteúdo da aba ativa (scrollável) ── */}
       <div className="flex-1 overflow-y-auto" style={{ paddingBottom: "5rem" }}>
         {activeTab === "home" && participante && (
@@ -746,24 +781,15 @@ export const DashboardPage: React.FC<{
             timerLabel={timerLabel}
             isActiveWindow={isActiveWindow}
             onTimerEnd={handleTimerEnd}
-            isProfileMenuOpen={isProfileMenuOpen}
-            onToggleProfileMenu={() => setIsProfileMenuOpen(prev => !prev)}
-            onCloseProfileMenu={() => setIsProfileMenuOpen(false)}
-            onUpload={() => fileInputRef.current?.click()}
-            onRemove={handleRemoveAvatar}
-            onViewRcle={() => { setIsRcleModalOpen(true); setIsProfileMenuOpen(false); }}
-            onViewPerformance={() => { setIsPerformanceModalOpen(true); setIsProfileMenuOpen(false); }}
-            onViewData={() => { setIsSociodemographicModalOpen(true); setIsProfileMenuOpen(false); }}
             onLogout={handleLogout}
             isReportAvailable={isReportAvailable}
-            onDownloadReport={() => { setIsReportModalOpen(true); setIsProfileMenuOpen(false); }}
             onOpenScreenTime={() => setIsScreenTimeModalOpen(true)}
             screenTimeCount={screenTimeCount}
             screenTimeToday={screenTimeToday}
-            isAdmin={isAdmin}
-            onNavigateAdmin={() => { setIsProfileMenuOpen(false); navigate('/admin'); }}
             hasSeenTutorial={hasSeenTutorial}
             onNavigateToTutorial={() => handleTabChange("tutoriais")}
+            isBeforeStudyStart={isBeforeStudyStart}
+            firstPingDate={firstPingDate}
           />
         )}
         {activeTab === "social" && (

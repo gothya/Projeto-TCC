@@ -10,17 +10,17 @@ function imgSrc(n: number) {
 // ── Dados dos 12 passos ───────────────────────────────────────────────────────
 const CAROUSEL_STEPS = [
   { n: 1, color: "#22d3ee", phase: 0, title: "Acesse o botão", caption: 'Na aba inicial, toque em "Lançar Tempo de Tela".' },
-  { n: 2, color: "#22d3ee", phase: 0, title: "Leia o aviso", caption: "O modal explica o registro. Cada envio desbloqueia um novo dia." },
-  { n: 3, color: "#22d3ee", phase: 0, title: "Adicionar rede", caption: 'Toque em "Adicionar Nova Rede Social" para começar.' },
-  { n: 4, color: "#a78bfa", phase: 1, title: "Card de rede", caption: "Um card aparece. Clique nele para configurar o aplicativo." },
-  { n: 5, color: "#a78bfa", phase: 1, title: "Escolha o app", caption: "Selecione TikTok, Instagram Reels ou YouTube Shorts." },
-  { n: 6, color: "#a78bfa", phase: 1, title: "Digite o tempo", caption: "Informe quantos minutos você usou esse app hoje." },
-  { n: 7, color: "#a78bfa", phase: 1, title: "Total no topo", caption: "A soma total aparece no topo — confira antes de confirmar." },
-  { n: 8, color: "#fb923c", phase: 2, title: "Configurações", caption: 'Abra as "Configurações" do seu celular.' },
-  { n: 9, color: "#fb923c", phase: 2, title: "Bem-estar digital", caption: '"Bem-estar digital" (Android) ou "Tempo de Tela" (iOS).' },
-  { n: 11, color: "#fb923c", phase: 2, title: "Toque no gráfico", caption: "Toque no gráfico de barras para ver o detalhe por app." },
-  { n: 10, color: "#fb923c", phase: 2, title: "Tempo exato", caption: "Veja o tempo real de cada app. Anote esse número." },
-  { n: 12, color: "#fb923c", phase: 2, title: "Preencha com precisão", caption: "Volte ao app e registre o valor exato que consultou." },
+  { n: 2, color: "#22d3ee", phase: 0, title: "Leia o aviso", caption: "O formulário explica o registro. Cada envio desbloqueia um novo dia." },
+  { n: 3, color: "#22d3ee", phase: 0, title: "Adicionar rede social", caption: 'Toque em "+ Adicionar Rede Social" para começar.' },
+  { n: 4, color: "#a78bfa", phase: 1, title: "Escolha a rede social", caption: "Escolha dentre as opções a rede social que deseja registrar." },
+  { n: 5, color: "#a78bfa", phase: 1, title: "Adicione outras redes sociais", caption: "Adicione as informações de todas as redes sociais que usou hoje." },
+  { n: 6, color: "#a78bfa", phase: 1, title: "Tempo total no topo", caption: "No topo da tela ficará a soma total dos tempos de tela das suas redes sociais." },
+  { n: 7, color: "#a78bfa", phase: 1, title: "Informe o tempo", caption: "Registre a quantidade de horas e minutos que passou em cada rede social." },
+  { n: 8, color: "#fb923c", phase: 2, title: "Como saber quanto tempo passei em cada rede social?", caption: 'Primeiro, abra as "Configurações" do seu celular.' },
+  { n: 9, color: "#fb923c", phase: 2, title: "Bem-estar digital", caption: 'Procure por "Bem-estar digital" (Android) ou "Tempo de Tela" (iOS).' },
+  { n: 10, color: "#fb923c", phase: 2, title: "Toque no gráfico", caption: "Ele possibilita ver o tempo gasto por app de forma detalhada." },
+  { n: 11, color: "#fb923c", phase: 2, title: "Tempo exato", caption: "Essa é uma função nativa do seu celular. Ela coleta seu tempo de tela em todos os apps do seu celular, inclusive nas redes sociais. Anote esse número." },
+  { n: 12, color: "#fb923c", phase: 2, title: "Finalizando e salvando", caption: "Volte ao app e registre o valor exato que consultou. Clique em 'Salvar +500 XP' para finalizar e ganhar sua experiência (xp)." },
 ];
 
 const PHASE_LABELS = [
@@ -320,13 +320,12 @@ const EmotionRow: React.FC<{ entry: EmotionEntry; accentColor: string; oppositeC
   <div
     className="grid gap-x-2 py-2 border-b last:border-0"
     style={{
-      gridTemplateColumns: "1fr 2fr auto auto",
+      gridTemplateColumns: "1fr 2fr auto",
       borderColor: "rgba(100,116,139,0.15)",
     }}
   >
     <span className="text-xs font-bold" style={{ color: accentColor }}>{entry.word}</span>
     <span className="text-[11px] text-slate-400 leading-snug">{entry.context}</span>
-    <span className="text-[10px] text-slate-500 text-center whitespace-nowrap">{entry.arousal}</span>
     <span className="text-[10px] font-semibold text-right whitespace-nowrap" style={{ color: oppositeColor }}>{entry.opposite}</span>
   </div>
 );
@@ -341,7 +340,7 @@ const PanasDictionary: React.FC = () => {
         className="w-full flex items-center justify-between px-3 py-2.5 text-left"
         style={{ background: "rgba(15,23,42,0.5)" }}
       >
-        <span className="text-xs font-bold text-slate-300">📖 Ver guia das emoções</span>
+        <span className="text-xs font-bold text-slate-300">📖 Dicionário das emoções PANAS</span>
         <span
           className="text-slate-500 text-sm font-bold transition-transform duration-300"
           style={{ transform: open ? "rotate(45deg)" : "rotate(0)" }}
@@ -359,11 +358,10 @@ const PanasDictionary: React.FC = () => {
             {/* Cabeçalho da tabela */}
             <div
               className="grid gap-x-2 pb-1 border-b"
-              style={{ gridTemplateColumns: "1fr 2fr auto auto", borderColor: "rgba(100,116,139,0.3)" }}
+              style={{ gridTemplateColumns: "1fr 2fr auto", borderColor: "rgba(100,116,139,0.3)" }}
             >
               <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Emoção</span>
               <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Contexto</span>
-              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 text-center">Ativação</span>
               <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 text-right">Oposta</span>
             </div>
 
@@ -636,10 +634,10 @@ export const TutoriaisTab: React.FC = () => {
           />
           <FaqItem
             q="Por que preciso registrar o tempo de tela?"
-            a="O consumo de vídeos curtos (TikTok, Reels, Shorts) é a variável principal do estudo — precisamos correlacioná-la com suas emoções. Você precisa registrar ao menos 3 dias para liberar seu relatório."
+            a="O consumo de vídeos curtos (TikTok, Reels, Shorts) é a variável independente (uma das principais) do estudo — precisamos correlacioná-la com suas emoções. Você precisa registrar ao menos 3 dias para liberar seu relatório."
           />
           <FaqItem
-            q="O que é o relatório final?"
+            q="O que é o relatório de jornada personalizado?"
             a="Após completar pelo menos 21 pings e 3 dias de registro de tela, um relatório com suas médias de bem-estar emocional (SAM, PANAS) e consumo de vídeos curtos é desbloqueado na aba Feitos."
           />
           <FaqItem

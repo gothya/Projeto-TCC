@@ -1,7 +1,6 @@
-import React, { useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { GameState } from "@/src/components/data/GameState";
 import { CountdownTimer } from "@/src/components/CountdownTimer";
-import { ProfileMenu } from "@/src/components/menu/ProfileMenu";
 import { StarIcon } from "@/src/components/icons/StarIcon";
 import { UserIcon } from "@/src/components/icons/UserIcon";
 
@@ -30,11 +29,45 @@ const CrystalIcon: React.FC<{ filled: boolean }> = ({ filled }) => (
   </svg>
 );
 
-const MenuIcon = () => (
-  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-  </svg>
-);
+// ── Tela de bloqueio pré-estudo ───────────────────────────────────────────────
+const PreStudyLock: React.FC<{ firstPingDate: Date }> = ({ firstPingDate }) => {
+  const [timeLeft, setTimeLeft] = useState("");
+
+  useEffect(() => {
+    const update = () => {
+      const diff = firstPingDate.getTime() - Date.now();
+      if (diff <= 0) { setTimeLeft("00:00:00"); return; }
+      const h = Math.floor(diff / 3_600_000);
+      const m = Math.floor((diff % 3_600_000) / 60_000);
+      const s = Math.floor((diff % 60_000) / 1_000);
+      setTimeLeft(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`);
+    };
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [firstPingDate]);
+
+  const isToday = firstPingDate.toDateString() === new Date().toDateString();
+  const dayLabel = isToday ? "hoje" : "amanhã";
+  const dateStr = firstPingDate.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
+
+  return (
+    <div
+      className="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 rounded-2xl backdrop-blur-sm overflow-hidden"
+      style={{ background: "rgba(5,10,25,0.88)", border: "1px solid rgba(34,211,238,0.15)" }}
+    >
+      <span className="text-5xl mb-5">🌌</span>
+      <h2 className="text-lg font-bold text-white text-center mb-1">
+        Sua aventura começa {dayLabel}
+      </h2>
+      <p className="text-cyan-400 font-semibold text-center mb-5 capitalize">{dateStr}</p>
+      <p className="text-4xl font-mono font-bold text-white tracking-widest mb-3">{timeLeft}</p>
+      <p className="text-xs text-slate-400 text-center leading-relaxed">
+        Seu primeiro ping chegará às 9h.<br />Prepare-se, explorador.
+      </p>
+    </div>
+  );
+};
 
 type Props = {
   participante: GameState;
@@ -43,24 +76,15 @@ type Props = {
   timerLabel: string;
   isActiveWindow: boolean;
   onTimerEnd: () => void;
-  isProfileMenuOpen: boolean;
-  onToggleProfileMenu: () => void;
-  onCloseProfileMenu: () => void;
-  onUpload: () => void;
-  onRemove: () => void;
-  onViewRcle: () => void;
-  onViewPerformance: () => void;
-  onViewData: () => void;
   onLogout: () => void;
   isReportAvailable: boolean;
-  onDownloadReport: () => void;
   onOpenScreenTime: () => void;
   screenTimeCount: number;
   screenTimeToday: boolean;
-  isAdmin?: boolean;
-  onNavigateAdmin?: () => void;
   onNavigateToTutorial?: () => void;
   hasSeenTutorial?: boolean;
+  isBeforeStudyStart: boolean;
+  firstPingDate: Date | null;
 };
 
 export const HomeTab: React.FC<Props> = ({
@@ -70,26 +94,16 @@ export const HomeTab: React.FC<Props> = ({
   timerLabel,
   isActiveWindow,
   onTimerEnd,
-  isProfileMenuOpen,
-  onToggleProfileMenu,
-  onCloseProfileMenu,
-  onUpload,
-  onRemove,
-  onViewRcle,
-  onViewPerformance,
-  onViewData,
   onLogout,
   isReportAvailable,
-  onDownloadReport,
   onOpenScreenTime,
   screenTimeCount,
   screenTimeToday,
-  isAdmin,
-  onNavigateAdmin,
   onNavigateToTutorial,
   hasSeenTutorial,
+  isBeforeStudyStart,
+  firstPingDate,
 }) => {
-  const menuRef = useRef<HTMLDivElement>(null);
   const { user, pings } = participante;
   const level = user?.level ?? 1;
   const totalXp = user?.points ?? 0;
@@ -106,33 +120,10 @@ export const HomeTab: React.FC<Props> = ({
   const notificationTimes = ["9h", "11h", "13h", "15h", "17h", "19h", "21h"];
 
   return (
-    <div className="min-h-full px-4 pt-6 pb-4 flex flex-col items-center">
-
-      {/* Menu button */}
-      <div className="w-full flex justify-start mb-2 relative" ref={menuRef}>
-        <button
-          onClick={onToggleProfileMenu}
-          className="p-2 rounded-full text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition-colors"
-          aria-label="Menu"
-        >
-          <MenuIcon />
-        </button>
-        {isProfileMenuOpen && (
-          <ProfileMenu
-            onUpload={onUpload}
-            onRemove={onRemove}
-            onViewRcle={onViewRcle}
-            onViewPerformance={onViewPerformance}
-            onViewData={onViewData}
-            onLogout={onLogout}
-            hasAvatar={!!user?.avatar}
-            isReportAvailable={isReportAvailable}
-            onDownloadReport={onDownloadReport}
-            isAdmin={isAdmin}
-            onNavigateAdmin={onNavigateAdmin}
-          />
-        )}
-      </div>
+    <div className={`relative min-h-full px-4 pt-6 pb-4 flex flex-col items-center${isBeforeStudyStart ? " overflow-hidden" : ""}`}>
+      {isBeforeStudyStart && firstPingDate && (
+        <PreStudyLock firstPingDate={firstPingDate} />
+      )}
 
       {/* Avatar hero */}
       <div className="relative mb-4 mt-2">
