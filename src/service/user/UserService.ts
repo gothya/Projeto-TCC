@@ -1,7 +1,7 @@
 import { GameState } from "@/src/components/data/GameState";
 import { InstrumentResponse } from "@/src/components/data/InstrumentResponse";
 import { db, auth } from "@/src/services/firebase";
-import { collection, doc, getDoc, getDocs, limit, query, setDoc, updateDoc, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, limit, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 
 class UserService {
     private readonly collectionName = "participantes";
@@ -144,6 +144,30 @@ class UserService {
         ]);
 
         return !byLower.empty || !byExact.empty;
+    }
+
+    /**
+     * Salva a avaliação de reação do participante ao final da jornada.
+     * 1. Cria/substitui doc em `reactionEvaluations/{firebaseId}` com os dados e timestamp.
+     * 2. Marca `reactionEvaluationDone: true` no doc principal do participante.
+     */
+    async saveReactionEvaluation(
+        firebaseId: string,
+        data: {
+            rating: number;
+            liked: string;
+            disliked: string;
+            suggestion: string;
+            freeComment: string;
+        }
+    ): Promise<void> {
+        const evalRef = doc(db, "reactionEvaluations", firebaseId);
+        const participanteRef = doc(db, this.collectionName, firebaseId);
+
+        await Promise.all([
+            setDoc(evalRef, { ...data, submittedAt: serverTimestamp() }),
+            updateDoc(participanteRef, { reactionEvaluationDone: true }),
+        ]);
     }
 
     async getParticipanteByUid(uid: string) {

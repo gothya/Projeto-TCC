@@ -3,6 +3,7 @@ import { GameState } from "@/src/components/data/GameState";
 import { CountdownTimer } from "@/src/components/CountdownTimer";
 import { StarIcon } from "@/src/components/icons/StarIcon";
 import { UserIcon } from "@/src/components/icons/UserIcon";
+import { PostStudyLockScreen } from "@/src/components/screen/PostStudyLockScreen";
 
 
 const LEVEL_TITLES = [
@@ -85,6 +86,8 @@ type Props = {
   hasSeenTutorial?: boolean;
   isBeforeStudyStart: boolean;
   firstPingDate: Date | null;
+  isAfterStudyEnd: boolean;
+  onReactionDone: () => void;
 };
 
 export const HomeTab: React.FC<Props> = ({
@@ -103,6 +106,8 @@ export const HomeTab: React.FC<Props> = ({
   hasSeenTutorial,
   isBeforeStudyStart,
   firstPingDate,
+  isAfterStudyEnd,
+  onReactionDone,
 }) => {
   const { user, pings } = participante;
   const level = user?.level ?? 1;
@@ -119,10 +124,19 @@ export const HomeTab: React.FC<Props> = ({
   const todayStatuses = pings?.[currentDayIndex]?.statuses ?? [];
   const notificationTimes = ["9h", "11h", "13h", "15h", "17h", "19h", "21h"];
 
+  const isLocked = isBeforeStudyStart || isAfterStudyEnd;
+
   return (
-    <div className={`relative min-h-full px-4 pt-6 pb-4 flex flex-col items-center${isBeforeStudyStart ? " overflow-hidden" : ""}`}>
+    <div className={`relative min-h-full px-4 pt-6 pb-4 flex flex-col items-center${isLocked ? " overflow-hidden" : ""}`}>
       {isBeforeStudyStart && firstPingDate && (
         <PreStudyLock firstPingDate={firstPingDate} />
+      )}
+      {isAfterStudyEnd && participante.firebaseId && (
+        <PostStudyLockScreen
+          firebaseId={participante.firebaseId}
+          alreadyDone={!!participante.reactionEvaluationDone}
+          onSubmitDone={onReactionDone}
+        />
       )}
 
       {/* Avatar hero */}

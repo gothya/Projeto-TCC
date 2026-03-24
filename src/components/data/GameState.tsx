@@ -16,4 +16,6 @@ export type GameState = {
   firebaseId?: string;
   /** Registros diários de tempo de tela (independente dos pings). */
   dailyScreenTimeLogs?: DailyScreenTimeLog[];
+  /** Flag persistida após envio da avaliação de reação (desfecho da jornada). */
+  reactionEvaluationDone?: boolean;
 };

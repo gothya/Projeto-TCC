@@ -63,6 +63,7 @@ export const DashboardPage: React.FC<{
   const [timerLabel, setTimerLabel] = useState<string>("");
   const [isActiveWindow, setIsActiveWindow] = useState(false);
   const [isBeforeStudyStart, setIsBeforeStudyStart] = useState(false);
+  const [isAfterStudyEnd, setIsAfterStudyEnd] = useState(false);
   const [firstPingDate, setFirstPingDate] = useState<Date | null>(null);
   const { logout, user } = useAuth();
   const isAdmin = user?.email === 'gothya@gmail.com';
@@ -172,6 +173,7 @@ export const DashboardPage: React.FC<{
 
       // 2. Journey Complete
       if (result.isJourneyComplete) {
+        setIsAfterStudyEnd(true);
         setTimerLabel("Jornada Concluída");
         setTimerTargetDate(null);
         setIsActiveWindow(false);
@@ -790,6 +792,8 @@ export const DashboardPage: React.FC<{
             onNavigateToTutorial={() => handleTabChange("tutoriais")}
             isBeforeStudyStart={isBeforeStudyStart}
             firstPingDate={firstPingDate}
+            isAfterStudyEnd={isAfterStudyEnd}
+            onReactionDone={() => updateParticipante({ ...participante, reactionEvaluationDone: true })}
           />
         )}
         {activeTab === "social" && (
