@@ -185,6 +185,18 @@ class UserService {
         await Promise.all(writes);
     }
 
+    /**
+     * Exclui permanentemente toda a participação do usuário.
+     * Delega para a Cloud Function `deleteParticipantAccount` que remove
+     * os documentos no Firestore e a conta no Firebase Auth.
+     */
+    async deleteAccount(): Promise<void> {
+        const { getFunctions, httpsCallable } = await import("firebase/functions");
+        const functions = getFunctions();
+        const fn = httpsCallable(functions, "deleteParticipantAccount");
+        await fn();
+    }
+
     async getParticipanteByUid(uid: string) {
         const docRef = doc(db, "participantes", uid);
         const snapshot = await getDoc(docRef);

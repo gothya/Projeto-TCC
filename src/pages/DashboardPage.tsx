@@ -14,6 +14,7 @@ import { isEligibleForReport } from "@/src/utils/ReportGeneratorUtils";
 import { BottomNav, Tab } from "@/src/components/navigation/BottomNav";
 import { HomeTab } from "@/src/components/tabs/HomeTab";
 import { ProfileMenu } from "@/src/components/menu/ProfileMenu";
+import { DeleteAccountModal } from "@/src/components/modal/DeleteAccountModal";
 import { SocialTab } from "@/src/components/tabs/SocialTab";
 import { ConquistasTab } from "@/src/components/tabs/ConquistasTab";
 import { TutoriaisTab } from "@/src/components/tabs/TutoriaisTab";
@@ -59,6 +60,7 @@ export const DashboardPage: React.FC<{
   const [isInstrumentModalVisible, setIsInstrumentModalVisible] = useState(false);
   const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
   const [isScreenTimeModalOpen, setIsScreenTimeModalOpen] = useState(false);
+  const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
   const [timerTargetDate, setTimerTargetDate] = useState<Date | null>(null);
   const [timerLabel, setTimerLabel] = useState<string>("");
   const [isActiveWindow, setIsActiveWindow] = useState(false);
@@ -618,6 +620,11 @@ export const DashboardPage: React.FC<{
     navigate("/login");
   };
 
+  const handleDeleteAccount = async () => {
+    await UserService.deleteAccount();
+    navigate("/login");
+  };
+
   const handleUpdateNickname = async (newNickname: string) => {
     if (!participante) return;
     const newState = {
@@ -770,6 +777,7 @@ export const DashboardPage: React.FC<{
             onViewPerformance={() => { setIsPerformanceModalOpen(true); setIsProfileMenuOpen(false); }}
             onViewData={() => { setIsSociodemographicModalOpen(true); setIsProfileMenuOpen(false); }}
             onLogout={handleLogout}
+            onDeleteAccount={() => { setIsDeleteAccountModalOpen(true); setIsProfileMenuOpen(false); }}
             hasAvatar={!!participante.user?.avatar}
             isReportAvailable={isReportAvailable}
             onDownloadReport={() => { setIsReportModalOpen(true); setIsProfileMenuOpen(false); }}
@@ -833,6 +841,13 @@ export const DashboardPage: React.FC<{
         onBellClick={startInstrumentFlow}
         bellDisabled={!highlightedPing || (!!instrumentFlow && isInstrumentModalVisible)}
       />
+
+      {isDeleteAccountModalOpen && (
+        <DeleteAccountModal
+          onConfirm={handleDeleteAccount}
+          onCancel={() => setIsDeleteAccountModalOpen(false)}
+        />
+      )}
 
       <style>{`
         .form-input {

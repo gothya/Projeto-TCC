@@ -4,6 +4,31 @@ const admin = require("firebase-admin");
 // Inicializa o Admin SDK
 admin.initializeApp();
 
+exports.deleteParticipantAccount = onCall(
+    { cors: false },
+    async (request) => {
+        if (!request.auth) {
+            throw new HttpsError("unauthenticated", "Autenticação obrigatória.");
+        }
+
+        const uid = request.auth.uid;
+        const db = admin.firestore();
+
+        const deletes = [
+            db.collection("participantes").doc(uid).delete(),
+            db.collection("reactionEvaluations").doc(uid).delete(),
+            db.collection("publicMessages").doc(uid).delete(),
+        ];
+
+        await Promise.allSettled(deletes);
+
+        await admin.auth().deleteUser(uid);
+
+        console.log(`✅ Conta excluída: ${uid}`);
+        return { success: true };
+    }
+);
+
 exports.sendPushNotification = onCall(
     { cors: false },
     async (request) => {
