@@ -9,20 +9,20 @@ const RATING_OPTIONS = [
   { value: 5, emoji: "🤩", label: "Excelente" },
 ];
 
-const FIELDS: { key: "liked" | "disliked" | "suggestion" | "freeComment"; label: string }[] = [
-  { key: "liked",       label: "O que você mais curtiu na jornada?" },
-  { key: "disliked",    label: "Teve algo que não gostou ou não entendeu?" },
-  { key: "suggestion",  label: "Se pudesse mudar algo para os próximos pesquisadores, o que seria?" },
-  { key: "freeComment", label: "Quer deixar mais alguma mensagem para a equipe do Instituto ARC?" },
+const STANDARD_FIELDS: { key: "liked" | "disliked" | "suggestion"; label: string }[] = [
+  { key: "liked",      label: "O que você mais curtiu na jornada?" },
+  { key: "disliked",   label: "Teve algo que não gostou ou não entendeu?" },
+  { key: "suggestion", label: "Se pudesse mudar algo para os próximos pesquisadores, o que seria?" },
 ];
 
 type Props = {
   firebaseId: string;
+  nickname: string;
   alreadyDone: boolean;
   onSubmitDone: () => void;
 };
 
-export const PostStudyLockScreen: React.FC<Props> = ({ firebaseId, alreadyDone, onSubmitDone }) => {
+export const PostStudyLockScreen: React.FC<Props> = ({ firebaseId, nickname, alreadyDone, onSubmitDone }) => {
   const [rating, setRating]           = useState<number | null>(null);
   const [liked, setLiked]             = useState("");
   const [disliked, setDisliked]       = useState("");
@@ -35,9 +35,8 @@ export const PostStudyLockScreen: React.FC<Props> = ({ firebaseId, alreadyDone, 
     liked: setLiked,
     disliked: setDisliked,
     suggestion: setSuggestion,
-    freeComment: setFreeComment,
   };
-  const values: Record<string, string> = { liked, disliked, suggestion, freeComment };
+  const values: Record<string, string> = { liked, disliked, suggestion };
 
   const handleSubmit = async () => {
     if (!rating) {
@@ -47,7 +46,9 @@ export const PostStudyLockScreen: React.FC<Props> = ({ firebaseId, alreadyDone, 
     setLoading(true);
     setError("");
     try {
-      await UserService.saveReactionEvaluation(firebaseId, { rating, liked, disliked, suggestion, freeComment });
+      await UserService.saveReactionEvaluation(firebaseId, {
+        rating, liked, disliked, suggestion, freeComment, nickname,
+      });
       onSubmitDone();
     } catch {
       setError("Erro ao enviar. Tente novamente.");
@@ -98,23 +99,58 @@ export const PostStudyLockScreen: React.FC<Props> = ({ firebaseId, alreadyDone, 
           ))}
         </div>
 
-        {/* Optional textareas */}
-        {FIELDS.map(({ key, label }) => (
+        {/* Campos padrão */}
+        {STANDARD_FIELDS.map(({ key, label }) => (
           <div key={key} className="mb-4">
             <label className="block text-slate-400 text-xs mb-1">{label}</label>
             <textarea
               value={values[key]}
               onChange={e => setters[key](e.target.value)}
               rows={3}
-              className="w-full rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none resize-none transition-colors"
-              style={{
-                background:   "rgba(15,23,42,0.8)",
-                border:       "1px solid rgba(51,65,85,0.8)",
-              }}
+              className="w-full rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none resize-none"
+              style={{ background: "rgba(15,23,42,0.8)", border: "1px solid rgba(51,65,85,0.8)" }}
               placeholder="Opcional..."
             />
           </div>
         ))}
+
+        {/* Campo destacado — mensagem para futuros participantes */}
+        <div
+          className="mb-5 p-4 rounded-xl"
+          style={{
+            background: "linear-gradient(135deg, rgba(129,140,248,0.08), rgba(34,211,238,0.06))",
+            border: "1px solid rgba(129,140,248,0.35)",
+          }}
+        >
+          <div className="flex items-start gap-2 mb-2">
+            <span className="text-lg">✉️</span>
+            <div>
+              <p className="text-white font-semibold text-sm leading-snug">
+                Deixe um recado para os participantes do futuro
+              </p>
+              <p className="text-slate-300 text-xs leading-relaxed mt-1">
+                Nós do Instituto ARC vamos levar sua mensagem aos próximos participantes do Enigma de Psylogos!
+              </p>
+              <p
+                className="text-xs mt-2 font-medium"
+                style={{ color: "rgba(34,211,238,0.75)" }}
+              >
+                🌐 Sua mensagem será publicada no site do Psylogos com sua assinatura como explorador.
+              </p>
+            </div>
+          </div>
+          <textarea
+            value={freeComment}
+            onChange={e => setFreeComment(e.target.value)}
+            rows={4}
+            className="w-full rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none resize-none mt-1"
+            style={{
+              background: "rgba(10,16,35,0.7)",
+              border: "1px solid rgba(129,140,248,0.3)",
+            }}
+            placeholder="O que você diria a quem está prestes a começar esta jornada?"
+          />
+        </div>
 
         {error && (
           <p className="text-red-400 text-xs text-center mb-3">{error}</p>

@@ -5,12 +5,22 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 
 exports.sendPushNotification = onCall(
-    { cors: true },
+    { cors: false },
     async (request) => {
+        // Verifica autenticação
+        if (!request.auth) {
+            throw new HttpsError("unauthenticated", "Autenticação obrigatória.");
+        }
+
+        // Verifica Custom Claim de admin
+        if (!request.auth.token.admin) {
+            throw new HttpsError("permission-denied", "Apenas administradores podem enviar notificações.");
+        }
+
         // Extrai os dados enviados na requisição
         const { token, title, body, data } = request.data;
 
-        // Validação básica de segurança e dados
+        // Validação básica
         if (!token) {
             throw new HttpsError("invalid-argument", "O token do dispositivo é obrigatório.");
         }
@@ -21,12 +31,11 @@ exports.sendPushNotification = onCall(
                 title: title || "Nova Notificação",
                 body: body || "Você recebeu uma atualização.",
             },
-            data: data || {}, // Campos extras (opcional)
-            token: token,     // O token de registro do cliente
+            data: data || {},
+            token: token,
         };
 
         try {
-            // Envia a notificação via FCM
             const response = await admin.messaging().send(message);
             console.log("Notificação enviada com sucesso:", response);
             return { success: true, messageId: response };

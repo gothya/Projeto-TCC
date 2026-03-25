@@ -159,15 +159,30 @@ class UserService {
             disliked: string;
             suggestion: string;
             freeComment: string;
+            nickname: string;
         }
     ): Promise<void> {
         const evalRef = doc(db, "reactionEvaluations", firebaseId);
         const participanteRef = doc(db, this.collectionName, firebaseId);
 
-        await Promise.all([
+        const writes: Promise<void>[] = [
             setDoc(evalRef, { ...data, submittedAt: serverTimestamp() }),
             updateDoc(participanteRef, { reactionEvaluationDone: true }),
-        ]);
+        ];
+
+        // Publica mensagem na landing page apenas se o participante escreveu algo
+        if (data.freeComment.trim()) {
+            const publicRef = doc(db, "publicMessages", firebaseId);
+            writes.push(
+                setDoc(publicRef, {
+                    message: data.freeComment.trim(),
+                    nickname: data.nickname || "Explorador Anônimo",
+                    submittedAt: serverTimestamp(),
+                })
+            );
+        }
+
+        await Promise.all(writes);
     }
 
     async getParticipanteByUid(uid: string) {

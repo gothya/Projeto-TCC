@@ -1,8 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-
-const ADMIN_EMAIL = 'gothya@gmail.com';
 
 interface AdminRouteProps {
   children: React.ReactNode;
@@ -10,8 +8,27 @@ interface AdminRouteProps {
 
 export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [claimChecked, setClaimChecked] = useState(false);
 
-  if (loading) {
+  useEffect(() => {
+    if (!user) {
+      setIsAdmin(false);
+      setClaimChecked(true);
+      return;
+    }
+    user.getIdTokenResult()
+      .then(result => {
+        setIsAdmin(result.claims.admin === true);
+        setClaimChecked(true);
+      })
+      .catch(() => {
+        setIsAdmin(false);
+        setClaimChecked(true);
+      });
+  }, [user]);
+
+  if (loading || !claimChecked) {
     return (
       <div style={{ color: "#fafafa", backgroundColor: "#131314", height: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
         Carregando sessão...
@@ -19,7 +36,7 @@ export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
     );
   }
 
-  if (!user || user.email !== ADMIN_EMAIL) {
+  if (!user || !isAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
 

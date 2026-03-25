@@ -66,7 +66,13 @@ export const DashboardPage: React.FC<{
   const [isAfterStudyEnd, setIsAfterStudyEnd] = useState(false);
   const [firstPingDate, setFirstPingDate] = useState<Date | null>(null);
   const { logout, user } = useAuth();
-  const isAdmin = user?.email === 'gothya@gmail.com';
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    if (!user) { setIsAdmin(false); return; }
+    user.getIdTokenResult()
+      .then(r => setIsAdmin(r.claims.admin === true))
+      .catch(() => setIsAdmin(false));
+  }, [user]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);

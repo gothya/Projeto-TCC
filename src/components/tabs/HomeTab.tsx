@@ -134,6 +134,7 @@ export const HomeTab: React.FC<Props> = ({
       {isAfterStudyEnd && participante.firebaseId && (
         <PostStudyLockScreen
           firebaseId={participante.firebaseId}
+          nickname={participante.user?.nickname ?? "Explorador Anônimo"}
           alreadyDone={!!participante.reactionEvaluationDone}
           onSubmitDone={onReactionDone}
         />
