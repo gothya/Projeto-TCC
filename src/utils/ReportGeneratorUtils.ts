@@ -162,29 +162,29 @@ export function generateTextFeedback(stats: ReportStats): string {
 
     if (valence >= 6) {
       parts.push(
-        "Ao longo da jornada, seu estado emocional predominante foi positivo, com avaliações frequentes de prazer e bem-estar."
+        "Na maior parte do tempo, você se sentiu bem e vivenciou emoções agradáveis. Que ótimo saber disso!"
       );
     } else if (valence >= 4) {
       parts.push(
-        "Seu estado emocional ao longo da jornada variou entre momentos agradáveis e menos agradáveis, situando-se em uma faixa neutra a moderada."
+        "Você teve uma jornada equilibrada — com dias melhores e dias mais difíceis. Isso é completamente normal."
       );
     } else {
       parts.push(
-        "Suas avaliações emocionais indicaram predomínio de estados de baixo bem-estar durante a jornada."
+        "Seus registros mostram que você atravessou dias desafiadores, com mais momentos difíceis do que agradáveis. Reconhecer isso já é um passo importante."
       );
     }
 
     if (arousal >= 6) {
       parts.push(
-        "Seu nível de ativação foi predominantemente alto, indicando um estado de alerta e engajamento frequente."
+        "Você esteve com bastante energia na maior parte do tempo, sentindo-se ativo(a) ou estimulado(a)."
       );
     } else if (arousal >= 4) {
       parts.push(
-        "Seu nível de ativação se manteve em uma faixa intermediária, alternando entre momentos de maior e menor estimulação."
+        "Seu ritmo foi variado — houve dias mais agitados e dias mais tranquilos. Um equilíbrio saudável."
       );
     } else {
       parts.push(
-        "Seu nível de alerta foi predominantemente baixo — um padrão associado a estados de calma ou baixa estimulação."
+        "Você relatou emoções mais serenas durante a jornada, com um ritmo voltado ao descanso e à tranquilidade."
       );
     }
   }
@@ -198,21 +198,21 @@ export function generateTextFeedback(stats: ReportStats): string {
     const isPositiveProfile = paLevel === "alto" && naLevel === "baixo";
     const isMixedProfile = paLevel === "alto" && naLevel === "elevado";
 
-    const emotional = isPositiveProfile
-      ? "um padrão de bem-estar emocional consistente"
-      : isNegativeProfile
-      ? "um padrão de afeto que merece atenção"
-      : isMixedProfile
-      ? "um equilíbrio emocional complexo, com alta presença tanto de afetos positivos quanto negativos"
-      : "um equilíbrio emocional dentro da variação esperada para o cotidiano";
-
-    parts.push(
-      `Seu Afeto Positivo médio foi ${paLevel} e o Afeto Negativo foi ${naLevel}, refletindo ${emotional}.`
-    );
-
-    if (isNegativeProfile) {
+    if (isPositiveProfile) {
       parts.push(
-        "Caso você queira conversar sobre como se sentiu durante o estudo, entre em contato com a equipe de pesquisa pelo e-mail informado no Termo de Consentimento."
+        "Ao longo do estudo, você relatou muito mais emoções positivas (como entusiasmo e alegria) do que negativas (como estresse). Isso é um excelente sinal!"
+      );
+    } else if (isNegativeProfile) {
+      parts.push(
+        "Você sentiu mais emoções desconfortáveis nestes últimos dias — como frustração ou tristeza. É normal ter semanas assim, e perceber isso já demonstra autoconhecimento."
+      );
+    } else if (isMixedProfile) {
+      parts.push(
+        "Você vivenciou uma jornada emocional intensa — com grandes momentos de alegria e energia, mas também períodos de estresse. Semanas assim costumam ser as mais marcantes."
+      );
+    } else {
+      parts.push(
+        "Seus afetos positivos e negativos ficaram equilibrados — sem extremos. Esse é o padrão emocional mais comum no dia a dia."
       );
     }
   }
@@ -221,20 +221,24 @@ export function generateTextFeedback(stats: ReportStats): string {
     const avg = stats.screenTime.avgDailyMinutes;
     if (avg <= SCREEN_TIME_GLOBAL_REF) {
       parts.push(
-        `Seu tempo médio de uso de vídeos curtos foi de ${avg} min/dia — abaixo da média global registrada (${SCREEN_TIME_GLOBAL_REF} min/dia, DataReportal 2024).`
+        `Você usou em média ${avg} min/dia de vídeos curtos — menos do que a maioria das pessoas no mundo (${SCREEN_TIME_GLOBAL_REF} min/dia, DataReportal 2024). Interessante, né?`
       );
     } else if (avg <= SCREEN_TIME_NATIONAL_REF) {
       parts.push(
-        `Seu tempo médio de uso foi de ${avg} min/dia, acima da média global (${SCREEN_TIME_GLOBAL_REF} min/dia) e dentro da média nacional brasileira (${SCREEN_TIME_NATIONAL_REF} min/dia, DataReportal 2024).`
+        `Você usou em média ${avg} min/dia de vídeos curtos — na faixa típica dos brasileiros (${SCREEN_TIME_NATIONAL_REF} min/dia, DataReportal 2024).`
       );
     } else {
       parts.push(
-        `Seu tempo médio de uso foi de ${avg} min/dia — acima tanto da média global (${SCREEN_TIME_GLOBAL_REF} min/dia) quanto da média nacional brasileira (${SCREEN_TIME_NATIONAL_REF} min/dia, DataReportal 2024).`
+        `Você usou em média ${avg} min/dia de vídeos curtos — um pouco acima das médias globais e nacionais. Curioso(a) para entender se isso se relaciona com seu humor? É exatamente isso que o estudo investiga.`
       );
     }
   }
 
-  if (parts.length === 0) {
+  parts.push(
+    "Se quiser compartilhar como foi essa jornada para você, a equipe adoraria ouvir. Fale com Thiago (thiagosfcarneiro@sempreceub.com) ou com a Prof. Dionne (dionne.correa@ceub.edu.br)."
+  );
+
+  if (parts.length <= 1) {
     return "Continue respondendo aos pings para enriquecer seu relatório pessoal com análises mais completas.";
   }
 

@@ -77,23 +77,62 @@ export const ParticipantReportModal: React.FC<Props> = ({ gameState, onClose, te
       })
     : null;
 
+  const studyEnd = activeGameState.studyStartDate
+    ? (() => {
+        const end = new Date(activeGameState.studyStartDate);
+        end.setDate(end.getDate() + 6);
+        return end.toLocaleDateString("pt-BR", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        });
+      })()
+    : null;
+
   const handleExportPdf = async () => {
     if (!reportRef.current) return;
     setIsExporting(true);
     const nickname = activeGameState.user?.nickname ?? "participante";
     const filename = `psylogos-relatorio-${nickname.toLowerCase().replace(/\s+/g, "-")}.pdf`;
-    await html2pdf()
-      .set({
-        margin: [15, 15, 15, 15],
-        filename,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        pagebreak: { mode: ["avoid-all", "css", "legacy"] },
-      })
-      .from(reportRef.current)
-      .save();
-    setIsExporting(false);
+
+    // Aguarda fontes (Google Fonts) estarem 100% carregadas antes de rasterizar
+    await document.fonts.ready;
+
+    // Injeta estilo temporário para corrigir renderização do html2canvas:
+    // - letter-spacing e word-spacing: o canvas não recalcula kerning de fontes externas
+    // - font-kerning: none + text-rendering: optimizeSpeed: desativa ligatures que o canvas não processa
+    // - font-family: força fallback para fonte do sistema durante a rasterização, evitando
+    //   que o Inter (Google Fonts) cause word-collapsing no canvas
+    const pdfStyle = document.createElement("style");
+    pdfStyle.textContent = `
+      * {
+        letter-spacing: normal !important;
+        word-spacing: normal !important;
+        line-height: 1.5 !important;
+        font-kerning: none !important;
+        text-rendering: optimizeSpeed !important;
+        font-family: Arial, Helvetica, sans-serif !important;
+      }
+    `;
+    reportRef.current.appendChild(pdfStyle);
+
+    try {
+      await html2pdf()
+        .set({
+          margin: [15, 15, 15, 15],
+          filename,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+          pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+        })
+        .from(reportRef.current)
+        .save();
+    } finally {
+      // Remove o estilo temporário — visual da tela permanece intacto
+      reportRef.current.removeChild(pdfStyle);
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -173,8 +212,11 @@ export const ParticipantReportModal: React.FC<Props> = ({ gameState, onClose, te
                   <span>{activeGameState.user?.points ?? 0} XP</span>
                 </div>
                 <p className="text-xs text-gray-400 mt-1">
-                  {studyStart ? `Jornada iniciada em ${studyStart} · ` : ""}
-                  Relatório gerado em {generatedAt}
+                  {studyStart && studyEnd
+                    ? `Jornada realizada de ${studyStart} até ${studyEnd}`
+                    : studyStart
+                    ? `Jornada iniciada em ${studyStart}`
+                    : ""}
                 </p>
               </div>
 
@@ -227,7 +269,7 @@ export const ParticipantReportModal: React.FC<Props> = ({ gameState, onClose, te
                         colorClass: stats.sam.valence >= 5 ? "bg-cyan-500" : "bg-orange-400",
                       },
                       {
-                        label: "Alerta (Arousal)",
+                        label: "Alerta (Ativação)",
                         value: stats.sam.arousal,
                         low: "Calmo",
                         high: "Agitado",
