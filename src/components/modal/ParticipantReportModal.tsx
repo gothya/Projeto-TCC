@@ -17,7 +17,7 @@ import {
 
 const MAX_SCREEN_DISPLAY = 300;
 
-const SCENARIO_PROFILES: ScenarioProfile[] = ["high", "medium", "low", "mixed", "minimal"];
+const SCENARIO_PROFILES: ScenarioProfile[] = ["high", "medium", "low", "mixed", "minimal", "highscreen"];
 
 const formatMinutes = (mins: number) =>
   `${Math.floor(mins / 60)}h ${mins % 60}min`;

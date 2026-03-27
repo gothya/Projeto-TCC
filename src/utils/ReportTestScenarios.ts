@@ -8,22 +8,24 @@
 import { GameState } from "@/src/components/data/GameState";
 import { NEGATIVE_ITEMS, POSITIVE_ITEMS } from "@/src/constants/panas";
 
-export type ScenarioProfile = "high" | "medium" | "low" | "mixed" | "minimal";
+export type ScenarioProfile = "high" | "medium" | "low" | "mixed" | "minimal" | "highscreen";
 
 export const SCENARIO_LABELS: Record<ScenarioProfile, string> = {
-  high:    "Alto Bem-Estar",
-  medium:  "Bem-Estar Médio",
-  low:     "Baixo Bem-Estar ⚠️",
-  mixed:   "Afeto Misto",
-  minimal: "Dados Mínimos",
+  high:       "Alto Bem-Estar",
+  medium:     "Bem-Estar Médio",
+  low:        "Baixo Bem-Estar ⚠️",
+  mixed:      "Afeto Misto",
+  minimal:    "Dados Mínimos",
+  highscreen: "Alto Consumo de Tela 📱",
 };
 
 export const SCENARIO_DESCRIPTIONS: Record<ScenarioProfile, string> = {
-  high:    "SAM alto · PANAS PA alto / NA baixo · Tela abaixo da média global",
-  medium:  "SAM neutro · PANAS equilibrado · Tela dentro da média BR",
-  low:     "SAM baixo · PANAS PA baixo / NA elevado · Tela acima da média BR",
-  mixed:   "SAM valência alta · PANAS PA alto + NA elevado simultaneamente",
-  minimal: "Apenas 21 pings · 1 avaliação SAM · Sem PANAS · Sem tela",
+  high:       "SAM alto · PANAS PA alto / NA baixo · Tela abaixo da média global",
+  medium:     "SAM neutro · PANAS equilibrado · Tela dentro da média BR",
+  low:        "SAM baixo · PANAS PA baixo / NA elevado · Tela acima da média BR",
+  mixed:      "SAM valência alta · PANAS PA alto + NA elevado simultaneamente",
+  minimal:    "Apenas 21 pings · 1 avaliação SAM · Sem PANAS · Sem tela",
+  highscreen: "SAM neutro · PANAS equilibrado · Tela muito acima da média global e BR",
 };
 
 /** Constrói um objeto panas com valor uniforme para todos os itens */
@@ -93,12 +95,15 @@ const SCENARIOS: Record<ScenarioProfile, GameState> = {
         pingIndex: 6,
         type: "end_of_day" as const,
         isValid: true,
-        screenTimeLog: [
-          { platform: "TikTok",    hours: "0", minutes: "45" },
-          { platform: "Reels",     hours: "0", minutes: "40" },
-        ],
       })),
     ],
+    dailyScreenTimeLogs: Array.from({ length: 3 }, (_, i) => ({
+      date: `2026-03-${14 + i}`,
+      entries: [
+        { platform: "TikTok",    hours: "0", minutes: "45" },
+        { platform: "Reels",     hours: "0", minutes: "40" },
+      ],
+    })),
   },
 
   // ─── Bem-estar médio ─────────────────────────────────────────────────────
@@ -121,12 +126,15 @@ const SCENARIOS: Record<ScenarioProfile, GameState> = {
         pingIndex: 6,
         type: "end_of_day" as const,
         isValid: true,
-        screenTimeLog: [
-          { platform: "TikTok",    hours: "1", minutes: "30" },
-          { platform: "Reels",     hours: "0", minutes: "50" },
-        ],
       })),
     ],
+    dailyScreenTimeLogs: Array.from({ length: 4 }, (_, i) => ({
+      date: `2026-03-${14 + i}`,
+      entries: [
+        { platform: "TikTok",    hours: "1", minutes: "30" },
+        { platform: "Reels",     hours: "0", minutes: "50" },
+      ],
+    })),
   },
 
   // ─── Baixo bem-estar ⚠️ ───────────────────────────────────────────────────
@@ -149,13 +157,16 @@ const SCENARIOS: Record<ScenarioProfile, GameState> = {
         pingIndex: 6,
         type: "end_of_day" as const,
         isValid: true,
-        screenTimeLog: [
-          { platform: "TikTok",    hours: "2", minutes: "30" },
-          { platform: "Reels",     hours: "1", minutes: "15" },
-          { platform: "Shorts",    hours: "0", minutes: "45" },
-        ],
       })),
     ],
+    dailyScreenTimeLogs: Array.from({ length: 3 }, (_, i) => ({
+      date: `2026-03-${14 + i}`,
+      entries: [
+        { platform: "TikTok",    hours: "2", minutes: "30" },
+        { platform: "Reels",     hours: "1", minutes: "15" },
+        { platform: "Shorts",    hours: "0", minutes: "45" },
+      ],
+    })),
   },
 
   // ─── Afeto misto (PA alto + NA elevado) ──────────────────────────────────
@@ -178,12 +189,48 @@ const SCENARIOS: Record<ScenarioProfile, GameState> = {
         pingIndex: 6,
         type: "end_of_day" as const,
         isValid: true,
-        screenTimeLog: [
-          { platform: "TikTok",    hours: "1", minutes: "40" },
-          { platform: "Reels",     hours: "0", minutes: "55" },
-        ],
       })),
     ],
+    dailyScreenTimeLogs: Array.from({ length: 4 }, (_, i) => ({
+      date: `2026-03-${14 + i}`,
+      entries: [
+        { platform: "TikTok",    hours: "1", minutes: "40" },
+        { platform: "Reels",     hours: "0", minutes: "55" },
+      ],
+    })),
+  },
+
+  // ─── Alto consumo de tela · mood neutro ──────────────────────────────────
+  highscreen: {
+    user: BASE_USER,
+    hasOnboarded: true,
+    studyStartDate: "2026-03-14",
+    sociodemographicData: null,
+    pings: buildPings(5),  // 35 pings
+    responses: [
+      ...buildResponses(
+        6,
+        { pleasure: 5, arousal: 6, dominance: 5 },
+        buildPanas(3, 2),  // PA = 30 | NA = 20 — perfil moderado/equilibrado
+        null
+      ),
+      // 7 dias de fim de dia com consumo muito acima da média (≈ 265 min/dia)
+      ...Array.from({ length: 7 }, (_, i) => ({
+        timestamp: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString(),
+        pingDay: i + 1,
+        pingIndex: 6,
+        type: "end_of_day" as const,
+        isValid: true,
+      })),
+    ],
+    dailyScreenTimeLogs: Array.from({ length: 7 }, (_, i) => ({
+      date: `2026-03-${14 + i}`,
+      entries: [
+        { platform: "TikTok",    hours: "1", minutes: "50" },
+        { platform: "Reels",     hours: "1", minutes: "20" },
+        { platform: "Shorts",    hours: "0", minutes: "55" },
+      ],
+    })),
   },
 
   // ─── Dados mínimos ────────────────────────────────────────────────────────

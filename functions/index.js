@@ -5,7 +5,7 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 
 exports.deleteParticipantAccount = onCall(
-    { cors: false },
+    { cors: true },
     async (request) => {
         if (!request.auth) {
             throw new HttpsError("unauthenticated", "Autenticação obrigatória.");

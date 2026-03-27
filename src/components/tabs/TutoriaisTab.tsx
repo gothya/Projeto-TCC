@@ -599,7 +599,7 @@ export const TutoriaisTab: React.FC = () => {
           >
             <p className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-2">Janela de resposta</p>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Cada ping fica disponível por <strong className="text-slate-300">25 minutos</strong> — 5 minutos antes do horário marcado e 20 minutos depois. Após esse tempo, ele é marcado como perdido. O sino na tela avisa enquanto o ping está ativo.
+              Cada ping fica disponível por <strong className="text-slate-300">55 minutos</strong> — 5 minutos antes do horário marcado e 50 minutos depois. Após esse tempo, ele é marcado como perdido. O sino na tela avisa enquanto o ping está ativo.
             </p>
           </div>
           <div
@@ -622,11 +622,11 @@ export const TutoriaisTab: React.FC = () => {
         <div>
           <FaqItem
             q="Posso responder um ping com atraso?"
-            a="Não. Cada ping fica disponível por 25 minutos (5 antes e 20 depois do horário marcado). Após isso, ele expira — isso é intencional para capturar o estado emocional do momento."
+             a="Não. Cada ping fica disponível por 55 minutos (5 antes e 50 depois do horário marcado). Após isso, ele expira — isso é intencional para capturar o estado emocional do momento."
           />
           <FaqItem
             q="O que acontece se perder muitos pings?"
-            a="Você perde XP e pode não atingir o mínimo de 21 pings para desbloquear o relatório final. O mínimo é 3 pings por dia durante os 7 dias. Crie alarmes fixos no celular (ex: 11h, 15h e 19h) para não perder a janela de 25 minutos."
+            a="Você perde XP e pode não atingir o mínimo de 21 pings para desbloquear o relatório final. O mínimo é 3 pings por dia durante os 7 dias. Crie alarmes fixos no celular (ex: 11h, 15h e 19h) para não perder a janela de 55 minutos."
           />
           <FaqItem
             q="Meus dados estão seguros?"

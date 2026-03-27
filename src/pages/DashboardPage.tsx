@@ -95,14 +95,14 @@ export const DashboardPage: React.FC<{
 
   // Fetch Leaderboard Real-time
   useEffect(() => {
-    const q = query(collection(db, "participantes"), orderBy("user.points", "desc"));
+    const q = query(collection(db, "leaderboard"), orderBy("points", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const players: { nickname: string, points: number }[] = [];
       snapshot.forEach((doc) => {
-        const data = doc.data() as GameState;
+        const data = doc.data();
         players.push({
-          nickname: data.user?.nickname,
-          points: data.user?.points
+          nickname: data.nickname,
+          points: data.points,
         });
       });
       setLeaderboardData(players);
@@ -604,7 +604,7 @@ export const DashboardPage: React.FC<{
           const response = await sendPush({
             token: currentToken,
             title: "É hora do Ping!",
-            body: "Você tem 25 minutos para responder ao seu ping do Psylogos."
+            body: "Você tem 50 minutos para responder ao seu ping do Psylogos."
           });
           console.log("Push notification sent successfully:", response, new Date().toISOString());
         }

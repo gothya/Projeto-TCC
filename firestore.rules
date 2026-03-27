@@ -30,5 +30,14 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == userId;
       allow update, delete: if false; // imutável
     }
+
+    // ── Leaderboard ──────────────────────────────────────────────────────
+    // Contém apenas { nickname, nicknameLower, points } — sem dados sensíveis.
+    // Leitura: qualquer participante autenticado (ranking global).
+    // Escrita: apenas o próprio participante escreve o seu documento.
+    match /leaderboard/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
   }
 }

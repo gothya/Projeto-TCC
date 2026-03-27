@@ -55,15 +55,15 @@ export const CountdownTimer: React.FC<{
       );
 
       // Simple visual progress: 
-      // If active window (25 mins max), show decaying progress.
+      // If active window (55 mins max), show decaying progress.
       // If waiting for next (hours), show fill progress.
       // Easiest is to just bind it linearly to a fixed modulo or static visual if we lack prevDate.
       // We will leave progress at 100% decaying for active, and 0->100% for future as an estimation.
       
       let progressPercentage = 0;
       if (isActiveWindow) {
-          // Max window is 25 mins (1500000 ms)
-          progressPercentage = (displayDiff / 1500000) * 100;
+          // Max window is 55 mins (3300000 ms)
+          progressPercentage = (displayDiff / 3300000) * 100;
       } else {
           // Assume average 2 hour wait (7200000 ms) between pings
           progressPercentage = 100 - ((displayDiff / 7200000) * 100);

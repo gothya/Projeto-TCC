@@ -56,8 +56,17 @@ class UserService {
             },
         };
 
-        await setDoc(docRef, stateWithLower);
-        console.log("✅ Registro do participante criado em 'participantes'!");
+        const leaderboardRef = doc(db, "leaderboard", state.firebaseId);
+
+        await Promise.all([
+            setDoc(docRef, stateWithLower),
+            setDoc(leaderboardRef, {
+                nickname: state.user.nickname?.trim() ?? "",
+                nicknameLower: state.user.nickname?.trim().toLowerCase() ?? "",
+                points: state.user.points ?? 0,
+            }),
+        ]);
+        console.log("✅ Registro do participante criado em 'participantes' e 'leaderboard'!");
     }
 
     /**
@@ -85,7 +94,15 @@ class UserService {
             if (state.user?.avatar || state.user?.avatar === null) updateData["user.avatar"] = state.user.avatar;
             if (state.sociodemographicData) updateData.sociodemographicData = state.sociodemographicData;
 
-            await updateDoc(docRef, updateData);
+            const leaderboardRef = doc(db, "leaderboard", currentUser.uid);
+            await Promise.all([
+                updateDoc(docRef, updateData),
+                setDoc(leaderboardRef, {
+                    nickname: state.user.nickname?.trim() ?? "",
+                    nicknameLower: state.user.nickname?.trim().toLowerCase() ?? "",
+                    points: state.user.points ?? 0,
+                }, { merge: true }),
+            ]);
 
             console.log("✅ Dados do participante atualizados com sucesso!");
         } catch (error) {
@@ -136,11 +153,11 @@ class UserService {
      */
     async isNicknameTaken(nickname: string): Promise<boolean> {
         const trimmed = nickname.trim();
-        const col = collection(db, this.collectionName);
+        const col = collection(db, "leaderboard");
 
         const [byLower, byExact] = await Promise.all([
-            getDocs(query(col, where("user.nicknameLower", "==", trimmed.toLowerCase()), limit(1))),
-            getDocs(query(col, where("user.nickname", "==", trimmed), limit(1))),
+            getDocs(query(col, where("nicknameLower", "==", trimmed.toLowerCase()), limit(1))),
+            getDocs(query(col, where("nickname", "==", trimmed), limit(1))),
         ]);
 
         return !byLower.empty || !byExact.empty;

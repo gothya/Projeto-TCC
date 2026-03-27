@@ -183,9 +183,17 @@ export function generateTextFeedback(stats: ReportStats): string {
         "Seu ritmo foi variado — houve dias mais agitados e dias mais tranquilos. Um equilíbrio saudável."
       );
     } else {
-      parts.push(
-        "Você relatou emoções mais serenas durante a jornada, com um ritmo voltado ao descanso e à tranquilidade."
-      );
+      // Cruzamento Circumplexo: Ativação Baixa + Valência Alta = Serenidade
+      //                          Ativação Baixa + Valência Baixa = Esgotamento
+      if (valence >= 5) {
+        parts.push(
+          "Seu ritmo esteve mais calmo e tranquilo na maior parte do tempo, o que pode indicar momentos de descanso e relaxamento."
+        );
+      } else {
+        parts.push(
+          "Seu nível de energia esteve mais baixo na maior parte do tempo, o que costuma indicar sensação de cansaço ou fadiga mental."
+        );
+      }
     }
   }
 
@@ -200,19 +208,19 @@ export function generateTextFeedback(stats: ReportStats): string {
 
     if (isPositiveProfile) {
       parts.push(
-        "Ao longo do estudo, você relatou muito mais emoções positivas (como entusiasmo e alegria) do que negativas (como estresse). Isso é um excelente sinal!"
+        "Além disso, ao longo do estudo você relatou muito mais emoções positivas (como entusiasmo e alegria) do que negativas (como estresse). Isso é um excelente sinal!"
       );
     } else if (isNegativeProfile) {
       parts.push(
-        "Você sentiu mais emoções desconfortáveis nestes últimos dias — como frustração ou tristeza. É normal ter semanas assim, e perceber isso já demonstra autoconhecimento."
+        "Somado a isso, você sentiu mais emoções desconfortáveis nestes últimos dias — como frustração ou tristeza. É normal ter semanas assim, e perceber isso já demonstra autoconhecimento."
       );
     } else if (isMixedProfile) {
       parts.push(
-        "Você vivenciou uma jornada emocional intensa — com grandes momentos de alegria e energia, mas também períodos de estresse. Semanas assim costumam ser as mais marcantes."
+        "Somado a isso, você vivenciou uma jornada emocional intensa — com grandes momentos de alegria e energia, mas também períodos de estresse. Semanas assim costumam ser as mais marcantes."
       );
     } else {
       parts.push(
-        "Seus afetos positivos e negativos ficaram equilibrados — sem extremos. Esse é o padrão emocional mais comum no dia a dia."
+        "Quanto às suas emoções registradas, seus afetos positivos e negativos ficaram equilibrados — sem extremos. Esse é o padrão emocional mais comum no dia a dia."
       );
     }
   }
@@ -221,21 +229,21 @@ export function generateTextFeedback(stats: ReportStats): string {
     const avg = stats.screenTime.avgDailyMinutes;
     if (avg <= SCREEN_TIME_GLOBAL_REF) {
       parts.push(
-        `Você usou em média ${avg} min/dia de vídeos curtos — menos do que a maioria das pessoas no mundo (${SCREEN_TIME_GLOBAL_REF} min/dia, DataReportal 2024). Interessante, né?`
+        `Quanto ao uso de vídeos curtos, seu tempo médio foi de ${avg} min/dia — abaixo da média global (${SCREEN_TIME_GLOBAL_REF} min/dia, DataReportal 2024).`
       );
     } else if (avg <= SCREEN_TIME_NATIONAL_REF) {
       parts.push(
-        `Você usou em média ${avg} min/dia de vídeos curtos — na faixa típica dos brasileiros (${SCREEN_TIME_NATIONAL_REF} min/dia, DataReportal 2024).`
+        `Quanto ao uso de vídeos curtos, seu tempo médio foi de ${avg} min/dia. Este consumo está acima da média global (${SCREEN_TIME_GLOBAL_REF} min/dia), dentro da média nacional brasileira (${SCREEN_TIME_NATIONAL_REF} min/dia, DataReportal 2024).`
       );
     } else {
       parts.push(
-        `Você usou em média ${avg} min/dia de vídeos curtos — um pouco acima das médias globais e nacionais. Curioso(a) para entender se isso se relaciona com seu humor? É exatamente isso que o estudo investiga.`
+        `Quanto ao uso de vídeos curtos, seu tempo médio foi de ${avg} min/dia. Este consumo está acima da média global (${SCREEN_TIME_GLOBAL_REF} min/dia) e também da média nacional brasileira (${SCREEN_TIME_NATIONAL_REF} min/dia, DataReportal 2024).`
       );
     }
   }
 
   parts.push(
-    "Se quiser compartilhar como foi essa jornada para você, a equipe adoraria ouvir. Fale com Thiago (thiagosfcarneiro@sempreceub.com) ou com a Prof. Dionne (dionne.correa@ceub.edu.br)."
+    "Se quiser compartilhar detalhes sobre a sua jornada, ou se sentir necessidade de conversar sobre qualquer aspecto que o estudo tenha despertado, a equipe está à disposição. Fale com Thiago (thiagosfcarneiro@sempreceub.com) ou com a Prof. Dionne (dionne.correa@ceub.edu.br)."
   );
 
   if (parts.length <= 1) {
