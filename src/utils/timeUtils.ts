@@ -38,7 +38,7 @@ export type PingTimeState = "future" | "active" | "missed";
 
 /**
  * Evaluates the state of a specific ping based on the current time.
- * The active window is: [Scheduled Time - 5 minutes] to [Scheduled Time + 20 minutes].
+ * The active window is: [Scheduled Time - 5 minutes] to [Scheduled Time + 50 minutes].
  */
 export function evaluatePingState(
   scheduledDate: Date,
@@ -48,7 +48,7 @@ export function evaluatePingState(
   windowStart.setMinutes(windowStart.getMinutes() - 5);
 
   const windowEnd = new Date(scheduledDate);
-  windowEnd.setMinutes(windowEnd.getMinutes() + 20);
+  windowEnd.setMinutes(windowEnd.getMinutes() + 50);
 
   if (now < windowStart) {
     return "future";
@@ -105,12 +105,12 @@ export function evaluateFullJourneySchedule(
       if (state === "active") {
         if (!result.currentTimeWindowPing) {
           const expiresAt = new Date(scheduledDate);
-          expiresAt.setMinutes(expiresAt.getMinutes() + 20);
+          expiresAt.setMinutes(expiresAt.getMinutes() + 50);
           result.currentTimeWindowPing = { day, ping, expiresAt };
         }
         if (statusInDb === "pending" && !result.currentActivePing) {
           const expiresAt = new Date(scheduledDate);
-          expiresAt.setMinutes(expiresAt.getMinutes() + 20);
+          expiresAt.setMinutes(expiresAt.getMinutes() + 50);
           result.currentActivePing = { day, ping, expiresAt };
         }
       }
