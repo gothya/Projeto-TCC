@@ -106,6 +106,9 @@ export const DashboardPage: React.FC<{
         });
       });
       setLeaderboardData(players);
+    }, (error) => {
+      console.error("Erro ao assinar a coleção leaderboard:", error);
+      setLeaderboardData([]);
     });
 
     return () => unsubscribe();
@@ -397,6 +400,22 @@ export const DashboardPage: React.FC<{
 
   const calculateLevel = (xp: number): number => Math.floor(xp / 160) + 1;
 
+  const calculateTotalXp = (
+    pings: GameState["pings"],
+    screenTimeLogs: GameState["dailyScreenTimeLogs"]
+  ): number => {
+    const pingXp = pings.reduce((acc, dayObj) =>
+      acc + dayObj.statuses.reduce((dayAcc, status, pingIndex) => {
+        if (status === "completed") {
+          const isStar = pingIndex === 6;
+          return dayAcc + (isStar ? 100 : 50);
+        }
+        return dayAcc;
+      }, 0), 0);
+    const uniqueDays = new Set((screenTimeLogs ?? []).map(l => l.date)).size;
+    return pingXp + uniqueDays * 500;
+  };
+
   const handleInstrumentFlowFinish = async (
     finalResponseData: InstrumentResponse
   ) => {
@@ -431,19 +450,7 @@ export const DashboardPage: React.FC<{
         ]
         : [...responsesWithoutPartial, { ...finalResponseData, isValid: true, isPartial: false }];
 
-    const newXp = newPings.reduce((acc, dayObj) => {
-      return (
-        acc +
-        dayObj.statuses.reduce((dayAcc, status, pingIndex) => {
-          if (status === "completed") {
-            const isStar = pingIndex === 6;
-            return dayAcc + (isStar ? 100 : 50);
-          }
-          return dayAcc;
-        }, 0)
-      );
-    }, 0);
-
+    const newXp = calculateTotalXp(newPings, participante.dailyScreenTimeLogs);
     const newLevel = calculateLevel(newXp);
 
     const newState = {
@@ -646,11 +653,7 @@ export const DashboardPage: React.FC<{
       ? existing.map(l => l.date === date ? { ...l, entries } : l)
       : [...existing, { date, entries }];
 
-    // XP apenas no primeiro registro desse dia específico
-    const alreadyLoggedThatDay = existing.some(l => l.date === date);
-    const newXp = alreadyLoggedThatDay
-      ? (participante.user.points ?? 0)
-      : (participante.user.points ?? 0) + 500;
+    const newXp = calculateTotalXp(participante.pings, newLogs);
     const newLevel = calculateLevel(newXp);
     const newState = {
       ...participante,

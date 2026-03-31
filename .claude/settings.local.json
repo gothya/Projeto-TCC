@@ -11,7 +11,10 @@
       "Bash(mv \"c:/dev/Projeto-TCC/scripts/set-admin-claim.js\" \"c:/dev/Projeto-TCC/scripts/set-admin-claim.cjs\")",
       "Bash(node scripts/set-admin-claim.cjs TTGgjPIshFT36PseLYPPFYPcdka2)",
       "Bash(firebase deploy:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "WebSearch",
+      "Bash(npx skills:*)",
+      "Bash(winget install:*)"
     ]
   }
 }

@@ -1,0 +1,262 @@
+extend type Query {
+  """
+  ✨ Look up a single `Achievement` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  achievement(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Achievement_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Achievement_FirstRow
+  ): Achievement @fdc_generated(from: "Achievement", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `Mission` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  mission(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Mission_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Mission_FirstRow
+  ): Mission @fdc_generated(from: "Mission", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `Submission` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  submission(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Submission_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Submission_FirstRow
+  ): Submission @fdc_generated(from: "Submission", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `User` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  user(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: User_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: User_FirstRow
+  ): User @fdc_generated(from: "User", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `UserAchievement` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  userAchievement(
+    """
+    The key used to identify the object.
+    """
+    key: UserAchievement_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: UserAchievement_FirstRow
+  ): UserAchievement @fdc_generated(from: "UserAchievement", purpose: QUERY_SINGLE)
+  """
+  ✨ List `Achievement` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  achievements(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: Achievement_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [Achievement_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: Achievement_Having
+  ): [Achievement!]! @fdc_generated(from: "Achievement", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `Mission` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  missions(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: Mission_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [Mission_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: Mission_Having
+  ): [Mission!]! @fdc_generated(from: "Mission", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `Submission` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  submissions(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: Submission_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [Submission_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: Submission_Having
+  ): [Submission!]! @fdc_generated(from: "Submission", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `User` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  users(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: User_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [User_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: User_Having
+  ): [User!]! @fdc_generated(from: "User", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `UserAchievement` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  userAchievements(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: UserAchievement_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [UserAchievement_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: UserAchievement_Having
+  ): [UserAchievement!]! @fdc_generated(from: "UserAchievement", purpose: QUERY_MULTIPLE)
+}

@@ -7,7 +7,8 @@ service cloud.firestore {
     // Admin (Custom Claim `admin: true`) pode ler qualquer documento.
     match /participantes/{userId} {
       allow create: if request.auth != null && request.auth.uid == userId;
-      allow update, delete: if request.auth != null && request.auth.uid == userId;
+      allow update, delete: if request.auth != null &&
+                               (request.auth.uid == userId || request.auth.token.admin == true);
       allow read: if request.auth != null &&
                     (request.auth.uid == userId || request.auth.token.admin == true);
     }
@@ -37,7 +38,8 @@ service cloud.firestore {
     // Escrita: apenas o próprio participante escreve o seu documento.
     match /leaderboard/{userId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null &&
+                      (request.auth.uid == userId || request.auth.token.admin == true);
     }
   }
 }

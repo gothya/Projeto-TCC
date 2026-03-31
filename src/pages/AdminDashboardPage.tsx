@@ -16,7 +16,7 @@ import { DocumentTextIcon } from "@/src/components/icons/DocumentTextIcon";
 import { MagnifyingGlassIcon } from "@/src/components/icons/MagnifyingGlassIcon";
 import { UserIcon } from "@/src/components/icons/UserIcon";
 import { auth, db } from "@/src/services/firebase";
-import { collection, doc, getDocs, updateDoc } from "firebase/firestore";
+import { collection, doc, getDocs, setDoc, updateDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -114,10 +114,15 @@ export const AdminDashboardPage: React.FC<{
                 const newLevel = Math.floor(totalXp / 160) + 1;
 
                 if (participant.user.points !== totalXp || participant.user.level !== newLevel) {
-                    await updateDoc(doc(db, "participantes", participant.firebaseId), {
-                        "user.points": totalXp,
-                        "user.level": newLevel,
-                    });
+                    const participanteRef = doc(db, "participantes", participant.firebaseId);
+                    const leaderboardRef = doc(db, "leaderboard", participant.firebaseId);
+                    await Promise.all([
+                        updateDoc(participanteRef, {
+                            "user.points": totalXp,
+                            "user.level": newLevel,
+                        }),
+                        setDoc(leaderboardRef, { points: totalXp }, { merge: true }),
+                    ]);
                     updated++;
                 }
             }

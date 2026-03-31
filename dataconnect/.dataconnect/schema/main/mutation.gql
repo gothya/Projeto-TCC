@@ -1,0 +1,552 @@
+extend type Mutation {
+  """
+  ✨ Insert a single `Achievement` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  achievement_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: Achievement_Data!
+  ): Achievement_KeyOutput! @fdc_generated(from: "Achievement", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `Mission` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  mission_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: Mission_Data!
+  ): Mission_KeyOutput! @fdc_generated(from: "Mission", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `Submission` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  submission_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: Submission_Data!
+  ): Submission_KeyOutput! @fdc_generated(from: "Submission", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `User` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  user_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: User_Data!
+  ): User_KeyOutput! @fdc_generated(from: "User", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `UserAchievement` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  userAchievement_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: UserAchievement_Data!
+  ): UserAchievement_KeyOutput! @fdc_generated(from: "UserAchievement", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert `Achievement` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  achievement_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [Achievement_Data!]!
+  ): [Achievement_KeyOutput!]! @fdc_generated(from: "Achievement", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `Mission` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  mission_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [Mission_Data!]!
+  ): [Mission_KeyOutput!]! @fdc_generated(from: "Mission", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `Submission` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  submission_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [Submission_Data!]!
+  ): [Submission_KeyOutput!]! @fdc_generated(from: "Submission", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `User` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  user_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [User_Data!]!
+  ): [User_KeyOutput!]! @fdc_generated(from: "User", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `UserAchievement` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  userAchievement_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [UserAchievement_Data!]!
+  ): [UserAchievement_KeyOutput!]! @fdc_generated(from: "UserAchievement", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert or update a single `Achievement` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Achievement`.
+  """
+  achievement_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: Achievement_Data!
+  ): Achievement_KeyOutput! @fdc_generated(from: "Achievement", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `Mission` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Mission`.
+  """
+  mission_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: Mission_Data!
+  ): Mission_KeyOutput! @fdc_generated(from: "Mission", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `Submission` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Submission`.
+  """
+  submission_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: Submission_Data!
+  ): Submission_KeyOutput! @fdc_generated(from: "Submission", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `User` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `User`.
+  """
+  user_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: User_Data!
+  ): User_KeyOutput! @fdc_generated(from: "User", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `UserAchievement` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `UserAchievement`.
+  """
+  userAchievement_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: UserAchievement_Data!
+  ): UserAchievement_KeyOutput! @fdc_generated(from: "UserAchievement", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update `Achievement` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Achievement`.
+  """
+  achievement_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [Achievement_Data!]!
+  ): [Achievement_KeyOutput!]! @fdc_generated(from: "Achievement", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `Mission` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Mission`.
+  """
+  mission_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [Mission_Data!]!
+  ): [Mission_KeyOutput!]! @fdc_generated(from: "Mission", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `Submission` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Submission`.
+  """
+  submission_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [Submission_Data!]!
+  ): [Submission_KeyOutput!]! @fdc_generated(from: "Submission", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `User` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `User`.
+  """
+  user_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [User_Data!]!
+  ): [User_KeyOutput!]! @fdc_generated(from: "User", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `UserAchievement` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `UserAchievement`.
+  """
+  userAchievement_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [UserAchievement_Data!]!
+  ): [UserAchievement_KeyOutput!]! @fdc_generated(from: "UserAchievement", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Update a single `Achievement` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `Achievement` or `null` if not found.
+  """
+  achievement_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Achievement_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Achievement_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: Achievement_Data!
+  ): Achievement_KeyOutput @fdc_generated(from: "Achievement", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `Mission` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `Mission` or `null` if not found.
+  """
+  mission_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Mission_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Mission_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: Mission_Data!
+  ): Mission_KeyOutput @fdc_generated(from: "Mission", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `Submission` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `Submission` or `null` if not found.
+  """
+  submission_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Submission_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Submission_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: Submission_Data!
+  ): Submission_KeyOutput @fdc_generated(from: "Submission", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `User` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `User` or `null` if not found.
+  """
+  user_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: User_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: User_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: User_Data!
+  ): User_KeyOutput @fdc_generated(from: "User", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `UserAchievement` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `UserAchievement` or `null` if not found.
+  """
+  userAchievement_update(
+    """
+    The key used to identify the object.
+    """
+    key: UserAchievement_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: UserAchievement_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: UserAchievement_Data!
+  ): UserAchievement_KeyOutput @fdc_generated(from: "UserAchievement", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update `Achievement` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  achievement_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: Achievement_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: Achievement_Data!
+  ): Int! @fdc_generated(from: "Achievement", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `Mission` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  mission_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: Mission_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: Mission_Data!
+  ): Int! @fdc_generated(from: "Mission", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `Submission` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  submission_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: Submission_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: Submission_Data!
+  ): Int! @fdc_generated(from: "Submission", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `User` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  user_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: User_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: User_Data!
+  ): Int! @fdc_generated(from: "User", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `UserAchievement` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  userAchievement_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: UserAchievement_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: UserAchievement_Data!
+  ): Int! @fdc_generated(from: "UserAchievement", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Delete a single `Achievement` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  achievement_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Achievement_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Achievement_FirstRow
+  ): Achievement_KeyOutput @fdc_generated(from: "Achievement", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `Mission` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  mission_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Mission_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Mission_FirstRow
+  ): Mission_KeyOutput @fdc_generated(from: "Mission", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `Submission` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  submission_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Submission_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Submission_FirstRow
+  ): Submission_KeyOutput @fdc_generated(from: "Submission", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `User` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  user_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: User_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: User_FirstRow
+  ): User_KeyOutput @fdc_generated(from: "User", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `UserAchievement` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  userAchievement_delete(
+    """
+    The key used to identify the object.
+    """
+    key: UserAchievement_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: UserAchievement_FirstRow
+  ): UserAchievement_KeyOutput @fdc_generated(from: "UserAchievement", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete `Achievement` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  achievement_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: Achievement_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "Achievement", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `Mission` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  mission_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: Mission_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "Mission", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `Submission` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  submission_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: Submission_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "Submission", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `User` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  user_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: User_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "User", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `UserAchievement` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  userAchievement_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: UserAchievement_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "UserAchievement", purpose: DELETE_MULTIPLE)
+}

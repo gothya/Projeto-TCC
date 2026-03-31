@@ -1,0 +1,1593 @@
+"""
+✨ `Achievement_KeyOutput` returns the primary key fields of table type `Achievement`.
+
+It has the same format as `Achievement_Key`, but is only used as mutation return value.
+"""
+scalar Achievement_KeyOutput
+"""
+✨ `Mission_KeyOutput` returns the primary key fields of table type `Mission`.
+
+It has the same format as `Mission_Key`, but is only used as mutation return value.
+"""
+scalar Mission_KeyOutput
+"""
+✨ `Submission_KeyOutput` returns the primary key fields of table type `Submission`.
+
+It has the same format as `Submission_Key`, but is only used as mutation return value.
+"""
+scalar Submission_KeyOutput
+"""
+✨ `User_KeyOutput` returns the primary key fields of table type `User`.
+
+It has the same format as `User_Key`, but is only used as mutation return value.
+"""
+scalar User_KeyOutput
+"""
+✨ `UserAchievement_KeyOutput` returns the primary key fields of table type `UserAchievement`.
+
+It has the same format as `UserAchievement_Key`, but is only used as mutation return value.
+"""
+scalar UserAchievement_KeyOutput
+"""
+✨ Generated data input type for table 'Achievement'. It includes all necessary fields for creating or upserting rows into table.
+"""
+input Achievement_Data {
+  """
+  ✨ Generated from Field `Achievement`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Achievement`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Achievement`.`description` of type `String!`
+  """
+  description: String
+  """
+  ✨ `_expr` server value variant of `description` (✨ Generated from Field `Achievement`.`description` of type `String!`)
+  """
+  description_expr: String_Expr
+  """
+  ✨ Generated from Field `Achievement`.`iconUrl` of type `String!`
+  """
+  iconUrl: String
+  """
+  ✨ `_expr` server value variant of `iconUrl` (✨ Generated from Field `Achievement`.`iconUrl` of type `String!`)
+  """
+  iconUrl_expr: String_Expr
+  """
+  ✨ Generated from Field `Achievement`.`name` of type `String!`
+  """
+  name: String
+  """
+  ✨ `_expr` server value variant of `name` (✨ Generated from Field `Achievement`.`name` of type `String!`)
+  """
+  name_expr: String_Expr
+}
+"""
+✨ Generated filter input type for table 'Achievement'. This input allows filtering objects using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Achievement_Filter {
+  """
+  Apply multiple filter conditions using `AND` logic.
+  """
+  _and: [Achievement_Filter!]
+  """
+  Negate the result of the provided filter condition.
+  """
+  _not: Achievement_Filter
+  """
+  Apply multiple filter conditions using `OR` logic.
+  """
+  _or: [Achievement_Filter!]
+  """
+  ✨ Generated from Field `Achievement`.`id` of type `UUID!`
+  """
+  id: UUID_Filter
+  """
+  ✨ Generated from Field `Achievement`.`description` of type `String!`
+  """
+  description: String_Filter
+  """
+  ✨ Generated from Field `Achievement`.`iconUrl` of type `String!`
+  """
+  iconUrl: String_Filter
+  """
+  ✨ Generated from Field `Achievement`.`name` of type `String!`
+  """
+  name: String_Filter
+  """
+  ✨ Generated from Field `Achievement`.`userAchievements_on_achievement` of type `[UserAchievement!]!`
+  """
+  userAchievements_on_achievement: UserAchievement_ListFilter
+  """
+  ✨ Generated from Field `Achievement`.`users_via_UserAchievement` of type `[User!]!`
+  """
+  users_via_UserAchievement: User_ListFilter
+}
+"""
+✨ Generated first-row input type for table 'Achievement'. This input selects the first row matching the filter criteria, ordered according to the specified conditions.
+"""
+input Achievement_FirstRow {
+  """
+  Order the result by the specified fields.
+  """
+  orderBy: [Achievement_Order!]
+  """
+  Filters rows based on the specified conditions.
+  """
+  where: Achievement_Filter
+}
+"""
+✨ Generated having input type for table 'Achievement'. This input allows you to filter groups during aggregate queries using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Achievement_Having {
+  """
+  Apply multiple Having conditions using `AND` logic.
+  """
+  _and: [Achievement_Having!]
+  """
+  Whether to apply DISTINCT to the aggregate function.
+  """
+  _distinct: Boolean
+  """
+  Negate the result of the provided Having condition.
+  """
+  _not: Achievement_Having
+  """
+  Apply multiple Having conditions using `OR` logic.
+  """
+  _or: [Achievement_Having!]
+  """
+  ✨ Generated from Field `Achievement`.`_count` of type `Int!`
+  """
+  _count: Int_Filter
+  """
+  ✨ Generated from Field `Achievement`.`description_count` of type `Int!`
+  """
+  description_count: Int_Filter
+  """
+  ✨ Generated from Field `Achievement`.`iconUrl_count` of type `Int!`
+  """
+  iconUrl_count: Int_Filter
+  """
+  ✨ Generated from Field `Achievement`.`id_count` of type `Int!`
+  """
+  id_count: Int_Filter
+  """
+  ✨ Generated from Field `Achievement`.`name_count` of type `Int!`
+  """
+  name_count: Int_Filter
+}
+"""
+✨ Generated key input type for table 'Achievement'. It represents the primary key fields used to uniquely identify a row in the table.
+"""
+input Achievement_Key {
+  """
+  ✨ Generated from Field `Achievement`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Achievement`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+}
+"""
+✨ Generated list filter input type for table 'Achievement'. This input applies filtering logic based on the count or existence of related objects that matches certain criteria.
+"""
+input Achievement_ListFilter {
+  """
+  The desired number of objects that match the condition (defaults to at least one).
+  """
+  count: Int_Filter = {gt:0}
+  """
+  Condition of the related objects to filter for.
+  """
+  exist: Achievement_Filter
+}
+"""
+✨ Generated order input type for table 'Achievement'. This input defines the sorting order of rows in query results based on one or more fields.
+"""
+input Achievement_Order {
+  """
+  ✨ Generated from Field `Achievement`.`id` of type `UUID!`
+  """
+  id: OrderDirection
+  """
+  ✨ Generated from Field `Achievement`.`description` of type `String!`
+  """
+  description: OrderDirection
+  """
+  ✨ Generated from Field `Achievement`.`iconUrl` of type `String!`
+  """
+  iconUrl: OrderDirection
+  """
+  ✨ Generated from Field `Achievement`.`name` of type `String!`
+  """
+  name: OrderDirection
+  """
+  ✨ Generated from Field `Achievement`.`_count` of type `Int!`
+  """
+  _count: OrderDirection
+  """
+  ✨ Generated from Field `Achievement`.`description_count` of type `Int!`
+  """
+  description_count: OrderDirection
+  """
+  ✨ Generated from Field `Achievement`.`iconUrl_count` of type `Int!`
+  """
+  iconUrl_count: OrderDirection
+  """
+  ✨ Generated from Field `Achievement`.`id_count` of type `Int!`
+  """
+  id_count: OrderDirection
+  """
+  ✨ Generated from Field `Achievement`.`name_count` of type `Int!`
+  """
+  name_count: OrderDirection
+}
+"""
+✨ Generated data input type for table 'Mission'. It includes all necessary fields for creating or upserting rows into table.
+"""
+input Mission_Data {
+  """
+  ✨ Generated from Field `Mission`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Mission`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Mission`.`createdAt` of type `Timestamp!`
+  """
+  createdAt: Timestamp
+  """
+  ✨ `_expr` server value variant of `createdAt` (✨ Generated from Field `Mission`.`createdAt` of type `Timestamp!`)
+  """
+  createdAt_expr: Timestamp_Expr
+  """
+  ✨ `_time` server value variant of `createdAt` (✨ Generated from Field `Mission`.`createdAt` of type `Timestamp!`)
+  """
+  createdAt_time: Timestamp_Relative
+  """
+  ✨ `_update` server value variant of `createdAt` (✨ Generated from Field `Mission`.`createdAt` of type `Timestamp!`)
+  """
+  createdAt_update: [Timestamp_Update!]
+  """
+  ✨ Generated from Field `Mission`.`dataSchema` of type `String`
+  """
+  dataSchema: String
+  """
+  ✨ `_expr` server value variant of `dataSchema` (✨ Generated from Field `Mission`.`dataSchema` of type `String`)
+  """
+  dataSchema_expr: String_Expr
+  """
+  ✨ Generated from Field `Mission`.`description` of type `String!`
+  """
+  description: String
+  """
+  ✨ `_expr` server value variant of `description` (✨ Generated from Field `Mission`.`description` of type `String!`)
+  """
+  description_expr: String_Expr
+  """
+  ✨ Generated from Field `Mission`.`dueDate` of type `Timestamp`
+  """
+  dueDate: Timestamp
+  """
+  ✨ `_expr` server value variant of `dueDate` (✨ Generated from Field `Mission`.`dueDate` of type `Timestamp`)
+  """
+  dueDate_expr: Timestamp_Expr
+  """
+  ✨ `_time` server value variant of `dueDate` (✨ Generated from Field `Mission`.`dueDate` of type `Timestamp`)
+  """
+  dueDate_time: Timestamp_Relative
+  """
+  ✨ `_update` server value variant of `dueDate` (✨ Generated from Field `Mission`.`dueDate` of type `Timestamp`)
+  """
+  dueDate_update: [Timestamp_Update!]
+  """
+  ✨ Generated from Field `Mission`.`experienceReward` of type `Int!`
+  """
+  experienceReward: Int
+  """
+  ✨ `_expr` server value variant of `experienceReward` (✨ Generated from Field `Mission`.`experienceReward` of type `Int!`)
+  """
+  experienceReward_expr: Int_Expr
+  """
+  ✨ `_update` server value variant of `experienceReward` (✨ Generated from Field `Mission`.`experienceReward` of type `Int!`)
+  """
+  experienceReward_update: [Int_Update!]
+  """
+  ✨ Generated from Field `Mission`.`locationHint` of type `String`
+  """
+  locationHint: String
+  """
+  ✨ `_expr` server value variant of `locationHint` (✨ Generated from Field `Mission`.`locationHint` of type `String`)
+  """
+  locationHint_expr: String_Expr
+  """
+  ✨ Generated from Field `Mission`.`pointsReward` of type `Int!`
+  """
+  pointsReward: Int
+  """
+  ✨ `_expr` server value variant of `pointsReward` (✨ Generated from Field `Mission`.`pointsReward` of type `Int!`)
+  """
+  pointsReward_expr: Int_Expr
+  """
+  ✨ `_update` server value variant of `pointsReward` (✨ Generated from Field `Mission`.`pointsReward` of type `Int!`)
+  """
+  pointsReward_update: [Int_Update!]
+  """
+  ✨ Generated from Field `Mission`.`title` of type `String!`
+  """
+  title: String
+  """
+  ✨ `_expr` server value variant of `title` (✨ Generated from Field `Mission`.`title` of type `String!`)
+  """
+  title_expr: String_Expr
+}
+"""
+✨ Generated filter input type for table 'Mission'. This input allows filtering objects using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Mission_Filter {
+  """
+  Apply multiple filter conditions using `AND` logic.
+  """
+  _and: [Mission_Filter!]
+  """
+  Negate the result of the provided filter condition.
+  """
+  _not: Mission_Filter
+  """
+  Apply multiple filter conditions using `OR` logic.
+  """
+  _or: [Mission_Filter!]
+  """
+  ✨ Generated from Field `Mission`.`id` of type `UUID!`
+  """
+  id: UUID_Filter
+  """
+  ✨ Generated from Field `Mission`.`createdAt` of type `Timestamp!`
+  """
+  createdAt: Timestamp_Filter
+  """
+  ✨ Generated from Field `Mission`.`dataSchema` of type `String`
+  """
+  dataSchema: String_Filter
+  """
+  ✨ Generated from Field `Mission`.`description` of type `String!`
+  """
+  description: String_Filter
+  """
+  ✨ Generated from Field `Mission`.`dueDate` of type `Timestamp`
+  """
+  dueDate: Timestamp_Filter
+  """
+  ✨ Generated from Field `Mission`.`experienceReward` of type `Int!`
+  """
+  experienceReward: Int_Filter
+  """
+  ✨ Generated from Field `Mission`.`locationHint` of type `String`
+  """
+  locationHint: String_Filter
+  """
+  ✨ Generated from Field `Mission`.`pointsReward` of type `Int!`
+  """
+  pointsReward: Int_Filter
+  """
+  ✨ Generated from Field `Mission`.`title` of type `String!`
+  """
+  title: String_Filter
+  """
+  ✨ Generated from Field `Mission`.`submissions_on_mission` of type `[Submission!]!`
+  """
+  submissions_on_mission: Submission_ListFilter
+}
+"""
+✨ Generated first-row input type for table 'Mission'. This input selects the first row matching the filter criteria, ordered according to the specified conditions.
+"""
+input Mission_FirstRow {
+  """
+  Order the result by the specified fields.
+  """
+  orderBy: [Mission_Order!]
+  """
+  Filters rows based on the specified conditions.
+  """
+  where: Mission_Filter
+}
+"""
+✨ Generated having input type for table 'Mission'. This input allows you to filter groups during aggregate queries using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Mission_Having {
+  """
+  Apply multiple Having conditions using `AND` logic.
+  """
+  _and: [Mission_Having!]
+  """
+  Whether to apply DISTINCT to the aggregate function.
+  """
+  _distinct: Boolean
+  """
+  Negate the result of the provided Having condition.
+  """
+  _not: Mission_Having
+  """
+  Apply multiple Having conditions using `OR` logic.
+  """
+  _or: [Mission_Having!]
+  """
+  ✨ Generated from Field `Mission`.`_count` of type `Int!`
+  """
+  _count: Int_Filter
+  """
+  ✨ Generated from Field `Mission`.`createdAt_count` of type `Int!`
+  """
+  createdAt_count: Int_Filter
+  """
+  ✨ Generated from Field `Mission`.`dataSchema_count` of type `Int!`
+  """
+  dataSchema_count: Int_Filter
+  """
+  ✨ Generated from Field `Mission`.`description_count` of type `Int!`
+  """
+  description_count: Int_Filter
+  """
+  ✨ Generated from Field `Mission`.`dueDate_count` of type `Int!`
+  """
+  dueDate_count: Int_Filter
+  """
+  ✨ Generated from Field `Mission`.`experienceReward_count` of type `Int!`
+  """
+  experienceReward_count: Int_Filter
+  """
+  ✨ Generated from Field `Mission`.`id_count` of type `Int!`
+  """
+  id_count: Int_Filter
+  """
+  ✨ Generated from Field `Mission`.`locationHint_count` of type `Int!`
+  """
+  locationHint_count: Int_Filter
+  """
+  ✨ Generated from Field `Mission`.`pointsReward_count` of type `Int!`
+  """
+  pointsReward_count: Int_Filter
+  """
+  ✨ Generated from Field `Mission`.`title_count` of type `Int!`
+  """
+  title_count: Int_Filter
+  """
+  ✨ Generated from Field `Mission`.`experienceReward_sum` of type `Int`
+  """
+  experienceReward_sum: Int_Filter
+  """
+  ✨ Generated from Field `Mission`.`pointsReward_sum` of type `Int`
+  """
+  pointsReward_sum: Int_Filter
+  """
+  ✨ Generated from Field `Mission`.`experienceReward_avg` of type `Float`
+  """
+  experienceReward_avg: Float_Filter
+  """
+  ✨ Generated from Field `Mission`.`pointsReward_avg` of type `Float`
+  """
+  pointsReward_avg: Float_Filter
+  """
+  ✨ Generated from Field `Mission`.`createdAt_min` of type `Timestamp`
+  """
+  createdAt_min: Timestamp_Filter
+  """
+  ✨ Generated from Field `Mission`.`dueDate_min` of type `Timestamp`
+  """
+  dueDate_min: Timestamp_Filter
+  """
+  ✨ Generated from Field `Mission`.`experienceReward_min` of type `Int`
+  """
+  experienceReward_min: Int_Filter
+  """
+  ✨ Generated from Field `Mission`.`pointsReward_min` of type `Int`
+  """
+  pointsReward_min: Int_Filter
+  """
+  ✨ Generated from Field `Mission`.`createdAt_max` of type `Timestamp`
+  """
+  createdAt_max: Timestamp_Filter
+  """
+  ✨ Generated from Field `Mission`.`dueDate_max` of type `Timestamp`
+  """
+  dueDate_max: Timestamp_Filter
+  """
+  ✨ Generated from Field `Mission`.`experienceReward_max` of type `Int`
+  """
+  experienceReward_max: Int_Filter
+  """
+  ✨ Generated from Field `Mission`.`pointsReward_max` of type `Int`
+  """
+  pointsReward_max: Int_Filter
+}
+"""
+✨ Generated key input type for table 'Mission'. It represents the primary key fields used to uniquely identify a row in the table.
+"""
+input Mission_Key {
+  """
+  ✨ Generated from Field `Mission`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Mission`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+}
+"""
+✨ Generated list filter input type for table 'Mission'. This input applies filtering logic based on the count or existence of related objects that matches certain criteria.
+"""
+input Mission_ListFilter {
+  """
+  The desired number of objects that match the condition (defaults to at least one).
+  """
+  count: Int_Filter = {gt:0}
+  """
+  Condition of the related objects to filter for.
+  """
+  exist: Mission_Filter
+}
+"""
+✨ Generated order input type for table 'Mission'. This input defines the sorting order of rows in query results based on one or more fields.
+"""
+input Mission_Order {
+  """
+  ✨ Generated from Field `Mission`.`id` of type `UUID!`
+  """
+  id: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`createdAt` of type `Timestamp!`
+  """
+  createdAt: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`dataSchema` of type `String`
+  """
+  dataSchema: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`description` of type `String!`
+  """
+  description: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`dueDate` of type `Timestamp`
+  """
+  dueDate: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`experienceReward` of type `Int!`
+  """
+  experienceReward: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`locationHint` of type `String`
+  """
+  locationHint: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`pointsReward` of type `Int!`
+  """
+  pointsReward: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`title` of type `String!`
+  """
+  title: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`_count` of type `Int!`
+  """
+  _count: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`createdAt_count` of type `Int!`
+  """
+  createdAt_count: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`dataSchema_count` of type `Int!`
+  """
+  dataSchema_count: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`description_count` of type `Int!`
+  """
+  description_count: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`dueDate_count` of type `Int!`
+  """
+  dueDate_count: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`experienceReward_count` of type `Int!`
+  """
+  experienceReward_count: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`id_count` of type `Int!`
+  """
+  id_count: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`locationHint_count` of type `Int!`
+  """
+  locationHint_count: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`pointsReward_count` of type `Int!`
+  """
+  pointsReward_count: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`title_count` of type `Int!`
+  """
+  title_count: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`experienceReward_sum` of type `Int`
+  """
+  experienceReward_sum: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`pointsReward_sum` of type `Int`
+  """
+  pointsReward_sum: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`experienceReward_avg` of type `Float`
+  """
+  experienceReward_avg: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`pointsReward_avg` of type `Float`
+  """
+  pointsReward_avg: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`createdAt_min` of type `Timestamp`
+  """
+  createdAt_min: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`dueDate_min` of type `Timestamp`
+  """
+  dueDate_min: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`experienceReward_min` of type `Int`
+  """
+  experienceReward_min: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`pointsReward_min` of type `Int`
+  """
+  pointsReward_min: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`createdAt_max` of type `Timestamp`
+  """
+  createdAt_max: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`dueDate_max` of type `Timestamp`
+  """
+  dueDate_max: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`experienceReward_max` of type `Int`
+  """
+  experienceReward_max: OrderDirection
+  """
+  ✨ Generated from Field `Mission`.`pointsReward_max` of type `Int`
+  """
+  pointsReward_max: OrderDirection
+}
+"""
+✨ Generated data input type for table 'Submission'. It includes all necessary fields for creating or upserting rows into table.
+"""
+input Submission_Data {
+  """
+  ✨ Generated from Field `Submission`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Submission`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Submission`.`missionId` of type `UUID!`
+  """
+  missionId: UUID
+  """
+  ✨ `_expr` server value variant of `missionId` (✨ Generated from Field `Submission`.`missionId` of type `UUID!`)
+  """
+  missionId_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Submission`.`userId` of type `UUID!`
+  """
+  userId: UUID
+  """
+  ✨ `_expr` server value variant of `userId` (✨ Generated from Field `Submission`.`userId` of type `UUID!`)
+  """
+  userId_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Submission`.`mission` of type `Mission!`
+  """
+  mission: Mission_Key
+  """
+  ✨ Generated from Field `Submission`.`user` of type `User!`
+  """
+  user: User_Key
+  """
+  ✨ Generated from Field `Submission`.`createdAt` of type `Timestamp!`
+  """
+  createdAt: Timestamp
+  """
+  ✨ `_expr` server value variant of `createdAt` (✨ Generated from Field `Submission`.`createdAt` of type `Timestamp!`)
+  """
+  createdAt_expr: Timestamp_Expr
+  """
+  ✨ `_time` server value variant of `createdAt` (✨ Generated from Field `Submission`.`createdAt` of type `Timestamp!`)
+  """
+  createdAt_time: Timestamp_Relative
+  """
+  ✨ `_update` server value variant of `createdAt` (✨ Generated from Field `Submission`.`createdAt` of type `Timestamp!`)
+  """
+  createdAt_update: [Timestamp_Update!]
+  """
+  ✨ Generated from Field `Submission`.`notes` of type `String`
+  """
+  notes: String
+  """
+  ✨ `_expr` server value variant of `notes` (✨ Generated from Field `Submission`.`notes` of type `String`)
+  """
+  notes_expr: String_Expr
+  """
+  ✨ Generated from Field `Submission`.`status` of type `String!`
+  """
+  status: String
+  """
+  ✨ `_expr` server value variant of `status` (✨ Generated from Field `Submission`.`status` of type `String!`)
+  """
+  status_expr: String_Expr
+  """
+  ✨ Generated from Field `Submission`.`submittedData` of type `String!`
+  """
+  submittedData: String
+  """
+  ✨ `_expr` server value variant of `submittedData` (✨ Generated from Field `Submission`.`submittedData` of type `String!`)
+  """
+  submittedData_expr: String_Expr
+}
+"""
+✨ Generated filter input type for table 'Submission'. This input allows filtering objects using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Submission_Filter {
+  """
+  Apply multiple filter conditions using `AND` logic.
+  """
+  _and: [Submission_Filter!]
+  """
+  Negate the result of the provided filter condition.
+  """
+  _not: Submission_Filter
+  """
+  Apply multiple filter conditions using `OR` logic.
+  """
+  _or: [Submission_Filter!]
+  """
+  ✨ Generated from Field `Submission`.`id` of type `UUID!`
+  """
+  id: UUID_Filter
+  """
+  ✨ Generated from Field `Submission`.`missionId` of type `UUID!`
+  """
+  missionId: UUID_Filter
+  """
+  ✨ Generated from Field `Submission`.`userId` of type `UUID!`
+  """
+  userId: UUID_Filter
+  """
+  ✨ Generated from Field `Submission`.`mission` of type `Mission!`
+  """
+  mission: Mission_Filter
+  """
+  ✨ Generated from Field `Submission`.`user` of type `User!`
+  """
+  user: User_Filter
+  """
+  ✨ Generated from Field `Submission`.`createdAt` of type `Timestamp!`
+  """
+  createdAt: Timestamp_Filter
+  """
+  ✨ Generated from Field `Submission`.`notes` of type `String`
+  """
+  notes: String_Filter
+  """
+  ✨ Generated from Field `Submission`.`status` of type `String!`
+  """
+  status: String_Filter
+  """
+  ✨ Generated from Field `Submission`.`submittedData` of type `String!`
+  """
+  submittedData: String_Filter
+}
+"""
+✨ Generated first-row input type for table 'Submission'. This input selects the first row matching the filter criteria, ordered according to the specified conditions.
+"""
+input Submission_FirstRow {
+  """
+  Order the result by the specified fields.
+  """
+  orderBy: [Submission_Order!]
+  """
+  Filters rows based on the specified conditions.
+  """
+  where: Submission_Filter
+}
+"""
+✨ Generated having input type for table 'Submission'. This input allows you to filter groups during aggregate queries using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Submission_Having {
+  """
+  Apply multiple Having conditions using `AND` logic.
+  """
+  _and: [Submission_Having!]
+  """
+  Whether to apply DISTINCT to the aggregate function.
+  """
+  _distinct: Boolean
+  """
+  Negate the result of the provided Having condition.
+  """
+  _not: Submission_Having
+  """
+  Apply multiple Having conditions using `OR` logic.
+  """
+  _or: [Submission_Having!]
+  """
+  ✨ Generated from Field `Submission`.`_count` of type `Int!`
+  """
+  _count: Int_Filter
+  """
+  ✨ Generated from Field `Submission`.`createdAt_count` of type `Int!`
+  """
+  createdAt_count: Int_Filter
+  """
+  ✨ Generated from Field `Submission`.`id_count` of type `Int!`
+  """
+  id_count: Int_Filter
+  """
+  ✨ Generated from Field `Submission`.`missionId_count` of type `Int!`
+  """
+  missionId_count: Int_Filter
+  """
+  ✨ Generated from Field `Submission`.`notes_count` of type `Int!`
+  """
+  notes_count: Int_Filter
+  """
+  ✨ Generated from Field `Submission`.`status_count` of type `Int!`
+  """
+  status_count: Int_Filter
+  """
+  ✨ Generated from Field `Submission`.`submittedData_count` of type `Int!`
+  """
+  submittedData_count: Int_Filter
+  """
+  ✨ Generated from Field `Submission`.`userId_count` of type `Int!`
+  """
+  userId_count: Int_Filter
+  """
+  ✨ Generated from Field `Submission`.`createdAt_min` of type `Timestamp`
+  """
+  createdAt_min: Timestamp_Filter
+  """
+  ✨ Generated from Field `Submission`.`createdAt_max` of type `Timestamp`
+  """
+  createdAt_max: Timestamp_Filter
+}
+"""
+✨ Generated key input type for table 'Submission'. It represents the primary key fields used to uniquely identify a row in the table.
+"""
+input Submission_Key {
+  """
+  ✨ Generated from Field `Submission`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Submission`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+}
+"""
+✨ Generated list filter input type for table 'Submission'. This input applies filtering logic based on the count or existence of related objects that matches certain criteria.
+"""
+input Submission_ListFilter {
+  """
+  The desired number of objects that match the condition (defaults to at least one).
+  """
+  count: Int_Filter = {gt:0}
+  """
+  Condition of the related objects to filter for.
+  """
+  exist: Submission_Filter
+}
+"""
+✨ Generated order input type for table 'Submission'. This input defines the sorting order of rows in query results based on one or more fields.
+"""
+input Submission_Order {
+  """
+  ✨ Generated from Field `Submission`.`id` of type `UUID!`
+  """
+  id: OrderDirection
+  """
+  ✨ Generated from Field `Submission`.`missionId` of type `UUID!`
+  """
+  missionId: OrderDirection
+  """
+  ✨ Generated from Field `Submission`.`userId` of type `UUID!`
+  """
+  userId: OrderDirection
+  """
+  ✨ Generated from Field `Submission`.`mission` of type `Mission!`
+  """
+  mission: Mission_Order
+  """
+  ✨ Generated from Field `Submission`.`user` of type `User!`
+  """
+  user: User_Order
+  """
+  ✨ Generated from Field `Submission`.`createdAt` of type `Timestamp!`
+  """
+  createdAt: OrderDirection
+  """
+  ✨ Generated from Field `Submission`.`notes` of type `String`
+  """
+  notes: OrderDirection
+  """
+  ✨ Generated from Field `Submission`.`status` of type `String!`
+  """
+  status: OrderDirection
+  """
+  ✨ Generated from Field `Submission`.`submittedData` of type `String!`
+  """
+  submittedData: OrderDirection
+  """
+  ✨ Generated from Field `Submission`.`_count` of type `Int!`
+  """
+  _count: OrderDirection
+  """
+  ✨ Generated from Field `Submission`.`createdAt_count` of type `Int!`
+  """
+  createdAt_count: OrderDirection
+  """
+  ✨ Generated from Field `Submission`.`id_count` of type `Int!`
+  """
+  id_count: OrderDirection
+  """
+  ✨ Generated from Field `Submission`.`missionId_count` of type `Int!`
+  """
+  missionId_count: OrderDirection
+  """
+  ✨ Generated from Field `Submission`.`notes_count` of type `Int!`
+  """
+  notes_count: OrderDirection
+  """
+  ✨ Generated from Field `Submission`.`status_count` of type `Int!`
+  """
+  status_count: OrderDirection
+  """
+  ✨ Generated from Field `Submission`.`submittedData_count` of type `Int!`
+  """
+  submittedData_count: OrderDirection
+  """
+  ✨ Generated from Field `Submission`.`userId_count` of type `Int!`
+  """
+  userId_count: OrderDirection
+  """
+  ✨ Generated from Field `Submission`.`createdAt_min` of type `Timestamp`
+  """
+  createdAt_min: OrderDirection
+  """
+  ✨ Generated from Field `Submission`.`createdAt_max` of type `Timestamp`
+  """
+  createdAt_max: OrderDirection
+}
+"""
+✨ Generated data input type for table 'User'. It includes all necessary fields for creating or upserting rows into table.
+"""
+input User_Data {
+  """
+  ✨ Generated from Field `User`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `User`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+  """
+  ✨ Generated from Field `User`.`avatarUrl` of type `String`
+  """
+  avatarUrl: String
+  """
+  ✨ `_expr` server value variant of `avatarUrl` (✨ Generated from Field `User`.`avatarUrl` of type `String`)
+  """
+  avatarUrl_expr: String_Expr
+  """
+  ✨ Generated from Field `User`.`bio` of type `String`
+  """
+  bio: String
+  """
+  ✨ `_expr` server value variant of `bio` (✨ Generated from Field `User`.`bio` of type `String`)
+  """
+  bio_expr: String_Expr
+  """
+  ✨ Generated from Field `User`.`createdAt` of type `Timestamp!`
+  """
+  createdAt: Timestamp
+  """
+  ✨ `_expr` server value variant of `createdAt` (✨ Generated from Field `User`.`createdAt` of type `Timestamp!`)
+  """
+  createdAt_expr: Timestamp_Expr
+  """
+  ✨ `_time` server value variant of `createdAt` (✨ Generated from Field `User`.`createdAt` of type `Timestamp!`)
+  """
+  createdAt_time: Timestamp_Relative
+  """
+  ✨ `_update` server value variant of `createdAt` (✨ Generated from Field `User`.`createdAt` of type `Timestamp!`)
+  """
+  createdAt_update: [Timestamp_Update!]
+  """
+  ✨ Generated from Field `User`.`email` of type `String!`
+  """
+  email: String
+  """
+  ✨ `_expr` server value variant of `email` (✨ Generated from Field `User`.`email` of type `String!`)
+  """
+  email_expr: String_Expr
+  """
+  ✨ Generated from Field `User`.`level` of type `Int!`
+  """
+  level: Int
+  """
+  ✨ `_expr` server value variant of `level` (✨ Generated from Field `User`.`level` of type `Int!`)
+  """
+  level_expr: Int_Expr
+  """
+  ✨ `_update` server value variant of `level` (✨ Generated from Field `User`.`level` of type `Int!`)
+  """
+  level_update: [Int_Update!]
+  """
+  ✨ Generated from Field `User`.`points` of type `Int!`
+  """
+  points: Int
+  """
+  ✨ `_expr` server value variant of `points` (✨ Generated from Field `User`.`points` of type `Int!`)
+  """
+  points_expr: Int_Expr
+  """
+  ✨ `_update` server value variant of `points` (✨ Generated from Field `User`.`points` of type `Int!`)
+  """
+  points_update: [Int_Update!]
+  """
+  ✨ Generated from Field `User`.`username` of type `String!`
+  """
+  username: String
+  """
+  ✨ `_expr` server value variant of `username` (✨ Generated from Field `User`.`username` of type `String!`)
+  """
+  username_expr: String_Expr
+}
+"""
+✨ Generated filter input type for table 'User'. This input allows filtering objects using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input User_Filter {
+  """
+  Apply multiple filter conditions using `AND` logic.
+  """
+  _and: [User_Filter!]
+  """
+  Negate the result of the provided filter condition.
+  """
+  _not: User_Filter
+  """
+  Apply multiple filter conditions using `OR` logic.
+  """
+  _or: [User_Filter!]
+  """
+  ✨ Generated from Field `User`.`id` of type `UUID!`
+  """
+  id: UUID_Filter
+  """
+  ✨ Generated from Field `User`.`avatarUrl` of type `String`
+  """
+  avatarUrl: String_Filter
+  """
+  ✨ Generated from Field `User`.`bio` of type `String`
+  """
+  bio: String_Filter
+  """
+  ✨ Generated from Field `User`.`createdAt` of type `Timestamp!`
+  """
+  createdAt: Timestamp_Filter
+  """
+  ✨ Generated from Field `User`.`email` of type `String!`
+  """
+  email: String_Filter
+  """
+  ✨ Generated from Field `User`.`level` of type `Int!`
+  """
+  level: Int_Filter
+  """
+  ✨ Generated from Field `User`.`points` of type `Int!`
+  """
+  points: Int_Filter
+  """
+  ✨ Generated from Field `User`.`username` of type `String!`
+  """
+  username: String_Filter
+  """
+  ✨ Generated from Field `User`.`submissions_on_user` of type `[Submission!]!`
+  """
+  submissions_on_user: Submission_ListFilter
+  """
+  ✨ Generated from Field `User`.`userAchievements_on_user` of type `[UserAchievement!]!`
+  """
+  userAchievements_on_user: UserAchievement_ListFilter
+  """
+  ✨ Generated from Field `User`.`achievements_via_UserAchievement` of type `[Achievement!]!`
+  """
+  achievements_via_UserAchievement: Achievement_ListFilter
+}
+"""
+✨ Generated first-row input type for table 'User'. This input selects the first row matching the filter criteria, ordered according to the specified conditions.
+"""
+input User_FirstRow {
+  """
+  Order the result by the specified fields.
+  """
+  orderBy: [User_Order!]
+  """
+  Filters rows based on the specified conditions.
+  """
+  where: User_Filter
+}
+"""
+✨ Generated having input type for table 'User'. This input allows you to filter groups during aggregate queries using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input User_Having {
+  """
+  Apply multiple Having conditions using `AND` logic.
+  """
+  _and: [User_Having!]
+  """
+  Whether to apply DISTINCT to the aggregate function.
+  """
+  _distinct: Boolean
+  """
+  Negate the result of the provided Having condition.
+  """
+  _not: User_Having
+  """
+  Apply multiple Having conditions using `OR` logic.
+  """
+  _or: [User_Having!]
+  """
+  ✨ Generated from Field `User`.`_count` of type `Int!`
+  """
+  _count: Int_Filter
+  """
+  ✨ Generated from Field `User`.`avatarUrl_count` of type `Int!`
+  """
+  avatarUrl_count: Int_Filter
+  """
+  ✨ Generated from Field `User`.`bio_count` of type `Int!`
+  """
+  bio_count: Int_Filter
+  """
+  ✨ Generated from Field `User`.`createdAt_count` of type `Int!`
+  """
+  createdAt_count: Int_Filter
+  """
+  ✨ Generated from Field `User`.`email_count` of type `Int!`
+  """
+  email_count: Int_Filter
+  """
+  ✨ Generated from Field `User`.`id_count` of type `Int!`
+  """
+  id_count: Int_Filter
+  """
+  ✨ Generated from Field `User`.`level_count` of type `Int!`
+  """
+  level_count: Int_Filter
+  """
+  ✨ Generated from Field `User`.`points_count` of type `Int!`
+  """
+  points_count: Int_Filter
+  """
+  ✨ Generated from Field `User`.`username_count` of type `Int!`
+  """
+  username_count: Int_Filter
+  """
+  ✨ Generated from Field `User`.`level_sum` of type `Int`
+  """
+  level_sum: Int_Filter
+  """
+  ✨ Generated from Field `User`.`points_sum` of type `Int`
+  """
+  points_sum: Int_Filter
+  """
+  ✨ Generated from Field `User`.`level_avg` of type `Float`
+  """
+  level_avg: Float_Filter
+  """
+  ✨ Generated from Field `User`.`points_avg` of type `Float`
+  """
+  points_avg: Float_Filter
+  """
+  ✨ Generated from Field `User`.`createdAt_min` of type `Timestamp`
+  """
+  createdAt_min: Timestamp_Filter
+  """
+  ✨ Generated from Field `User`.`level_min` of type `Int`
+  """
+  level_min: Int_Filter
+  """
+  ✨ Generated from Field `User`.`points_min` of type `Int`
+  """
+  points_min: Int_Filter
+  """
+  ✨ Generated from Field `User`.`createdAt_max` of type `Timestamp`
+  """
+  createdAt_max: Timestamp_Filter
+  """
+  ✨ Generated from Field `User`.`level_max` of type `Int`
+  """
+  level_max: Int_Filter
+  """
+  ✨ Generated from Field `User`.`points_max` of type `Int`
+  """
+  points_max: Int_Filter
+}
+"""
+✨ Generated key input type for table 'User'. It represents the primary key fields used to uniquely identify a row in the table.
+"""
+input User_Key {
+  """
+  ✨ Generated from Field `User`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `User`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+}
+"""
+✨ Generated list filter input type for table 'User'. This input applies filtering logic based on the count or existence of related objects that matches certain criteria.
+"""
+input User_ListFilter {
+  """
+  The desired number of objects that match the condition (defaults to at least one).
+  """
+  count: Int_Filter = {gt:0}
+  """
+  Condition of the related objects to filter for.
+  """
+  exist: User_Filter
+}
+"""
+✨ Generated order input type for table 'User'. This input defines the sorting order of rows in query results based on one or more fields.
+"""
+input User_Order {
+  """
+  ✨ Generated from Field `User`.`id` of type `UUID!`
+  """
+  id: OrderDirection
+  """
+  ✨ Generated from Field `User`.`avatarUrl` of type `String`
+  """
+  avatarUrl: OrderDirection
+  """
+  ✨ Generated from Field `User`.`bio` of type `String`
+  """
+  bio: OrderDirection
+  """
+  ✨ Generated from Field `User`.`createdAt` of type `Timestamp!`
+  """
+  createdAt: OrderDirection
+  """
+  ✨ Generated from Field `User`.`email` of type `String!`
+  """
+  email: OrderDirection
+  """
+  ✨ Generated from Field `User`.`level` of type `Int!`
+  """
+  level: OrderDirection
+  """
+  ✨ Generated from Field `User`.`points` of type `Int!`
+  """
+  points: OrderDirection
+  """
+  ✨ Generated from Field `User`.`username` of type `String!`
+  """
+  username: OrderDirection
+  """
+  ✨ Generated from Field `User`.`_count` of type `Int!`
+  """
+  _count: OrderDirection
+  """
+  ✨ Generated from Field `User`.`avatarUrl_count` of type `Int!`
+  """
+  avatarUrl_count: OrderDirection
+  """
+  ✨ Generated from Field `User`.`bio_count` of type `Int!`
+  """
+  bio_count: OrderDirection
+  """
+  ✨ Generated from Field `User`.`createdAt_count` of type `Int!`
+  """
+  createdAt_count: OrderDirection
+  """
+  ✨ Generated from Field `User`.`email_count` of type `Int!`
+  """
+  email_count: OrderDirection
+  """
+  ✨ Generated from Field `User`.`id_count` of type `Int!`
+  """
+  id_count: OrderDirection
+  """
+  ✨ Generated from Field `User`.`level_count` of type `Int!`
+  """
+  level_count: OrderDirection
+  """
+  ✨ Generated from Field `User`.`points_count` of type `Int!`
+  """
+  points_count: OrderDirection
+  """
+  ✨ Generated from Field `User`.`username_count` of type `Int!`
+  """
+  username_count: OrderDirection
+  """
+  ✨ Generated from Field `User`.`level_sum` of type `Int`
+  """
+  level_sum: OrderDirection
+  """
+  ✨ Generated from Field `User`.`points_sum` of type `Int`
+  """
+  points_sum: OrderDirection
+  """
+  ✨ Generated from Field `User`.`level_avg` of type `Float`
+  """
+  level_avg: OrderDirection
+  """
+  ✨ Generated from Field `User`.`points_avg` of type `Float`
+  """
+  points_avg: OrderDirection
+  """
+  ✨ Generated from Field `User`.`createdAt_min` of type `Timestamp`
+  """
+  createdAt_min: OrderDirection
+  """
+  ✨ Generated from Field `User`.`level_min` of type `Int`
+  """
+  level_min: OrderDirection
+  """
+  ✨ Generated from Field `User`.`points_min` of type `Int`
+  """
+  points_min: OrderDirection
+  """
+  ✨ Generated from Field `User`.`createdAt_max` of type `Timestamp`
+  """
+  createdAt_max: OrderDirection
+  """
+  ✨ Generated from Field `User`.`level_max` of type `Int`
+  """
+  level_max: OrderDirection
+  """
+  ✨ Generated from Field `User`.`points_max` of type `Int`
+  """
+  points_max: OrderDirection
+}
+"""
+✨ Generated data input type for table 'UserAchievement'. It includes all necessary fields for creating or upserting rows into table.
+"""
+input UserAchievement_Data {
+  """
+  ✨ Generated from Field `UserAchievement`.`userId` of type `UUID!`
+  """
+  userId: UUID
+  """
+  ✨ `_expr` server value variant of `userId` (✨ Generated from Field `UserAchievement`.`userId` of type `UUID!`)
+  """
+  userId_expr: UUID_Expr
+  """
+  ✨ Generated from Field `UserAchievement`.`achievementId` of type `UUID!`
+  """
+  achievementId: UUID
+  """
+  ✨ `_expr` server value variant of `achievementId` (✨ Generated from Field `UserAchievement`.`achievementId` of type `UUID!`)
+  """
+  achievementId_expr: UUID_Expr
+  """
+  ✨ Generated from Field `UserAchievement`.`achievement` of type `Achievement!`
+  """
+  achievement: Achievement_Key
+  """
+  ✨ Generated from Field `UserAchievement`.`user` of type `User!`
+  """
+  user: User_Key
+  """
+  ✨ Generated from Field `UserAchievement`.`unlockedAt` of type `Timestamp!`
+  """
+  unlockedAt: Timestamp
+  """
+  ✨ `_expr` server value variant of `unlockedAt` (✨ Generated from Field `UserAchievement`.`unlockedAt` of type `Timestamp!`)
+  """
+  unlockedAt_expr: Timestamp_Expr
+  """
+  ✨ `_time` server value variant of `unlockedAt` (✨ Generated from Field `UserAchievement`.`unlockedAt` of type `Timestamp!`)
+  """
+  unlockedAt_time: Timestamp_Relative
+  """
+  ✨ `_update` server value variant of `unlockedAt` (✨ Generated from Field `UserAchievement`.`unlockedAt` of type `Timestamp!`)
+  """
+  unlockedAt_update: [Timestamp_Update!]
+}
+"""
+✨ Generated filter input type for table 'UserAchievement'. This input allows filtering objects using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input UserAchievement_Filter {
+  """
+  Apply multiple filter conditions using `AND` logic.
+  """
+  _and: [UserAchievement_Filter!]
+  """
+  Negate the result of the provided filter condition.
+  """
+  _not: UserAchievement_Filter
+  """
+  Apply multiple filter conditions using `OR` logic.
+  """
+  _or: [UserAchievement_Filter!]
+  """
+  ✨ Generated from Field `UserAchievement`.`userId` of type `UUID!`
+  """
+  userId: UUID_Filter
+  """
+  ✨ Generated from Field `UserAchievement`.`achievementId` of type `UUID!`
+  """
+  achievementId: UUID_Filter
+  """
+  ✨ Generated from Field `UserAchievement`.`achievement` of type `Achievement!`
+  """
+  achievement: Achievement_Filter
+  """
+  ✨ Generated from Field `UserAchievement`.`user` of type `User!`
+  """
+  user: User_Filter
+  """
+  ✨ Generated from Field `UserAchievement`.`unlockedAt` of type `Timestamp!`
+  """
+  unlockedAt: Timestamp_Filter
+}
+"""
+✨ Generated first-row input type for table 'UserAchievement'. This input selects the first row matching the filter criteria, ordered according to the specified conditions.
+"""
+input UserAchievement_FirstRow {
+  """
+  Order the result by the specified fields.
+  """
+  orderBy: [UserAchievement_Order!]
+  """
+  Filters rows based on the specified conditions.
+  """
+  where: UserAchievement_Filter
+}
+"""
+✨ Generated having input type for table 'UserAchievement'. This input allows you to filter groups during aggregate queries using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input UserAchievement_Having {
+  """
+  Apply multiple Having conditions using `AND` logic.
+  """
+  _and: [UserAchievement_Having!]
+  """
+  Whether to apply DISTINCT to the aggregate function.
+  """
+  _distinct: Boolean
+  """
+  Negate the result of the provided Having condition.
+  """
+  _not: UserAchievement_Having
+  """
+  Apply multiple Having conditions using `OR` logic.
+  """
+  _or: [UserAchievement_Having!]
+  """
+  ✨ Generated from Field `UserAchievement`.`_count` of type `Int!`
+  """
+  _count: Int_Filter
+  """
+  ✨ Generated from Field `UserAchievement`.`achievementId_count` of type `Int!`
+  """
+  achievementId_count: Int_Filter
+  """
+  ✨ Generated from Field `UserAchievement`.`unlockedAt_count` of type `Int!`
+  """
+  unlockedAt_count: Int_Filter
+  """
+  ✨ Generated from Field `UserAchievement`.`userId_count` of type `Int!`
+  """
+  userId_count: Int_Filter
+  """
+  ✨ Generated from Field `UserAchievement`.`unlockedAt_min` of type `Timestamp`
+  """
+  unlockedAt_min: Timestamp_Filter
+  """
+  ✨ Generated from Field `UserAchievement`.`unlockedAt_max` of type `Timestamp`
+  """
+  unlockedAt_max: Timestamp_Filter
+}
+"""
+✨ Generated key input type for table 'UserAchievement'. It represents the primary key fields used to uniquely identify a row in the table.
+"""
+input UserAchievement_Key {
+  """
+  ✨ Generated from Field `UserAchievement`.`userId` of type `UUID!`
+  """
+  userId: UUID
+  """
+  ✨ `_expr` server value variant of `userId` (✨ Generated from Field `UserAchievement`.`userId` of type `UUID!`)
+  """
+  userId_expr: UUID_Expr
+  """
+  ✨ Generated from Field `UserAchievement`.`achievementId` of type `UUID!`
+  """
+  achievementId: UUID
+  """
+  ✨ `_expr` server value variant of `achievementId` (✨ Generated from Field `UserAchievement`.`achievementId` of type `UUID!`)
+  """
+  achievementId_expr: UUID_Expr
+}
+"""
+✨ Generated list filter input type for table 'UserAchievement'. This input applies filtering logic based on the count or existence of related objects that matches certain criteria.
+"""
+input UserAchievement_ListFilter {
+  """
+  The desired number of objects that match the condition (defaults to at least one).
+  """
+  count: Int_Filter = {gt:0}
+  """
+  Condition of the related objects to filter for.
+  """
+  exist: UserAchievement_Filter
+}
+"""
+✨ Generated order input type for table 'UserAchievement'. This input defines the sorting order of rows in query results based on one or more fields.
+"""
+input UserAchievement_Order {
+  """
+  ✨ Generated from Field `UserAchievement`.`userId` of type `UUID!`
+  """
+  userId: OrderDirection
+  """
+  ✨ Generated from Field `UserAchievement`.`achievementId` of type `UUID!`
+  """
+  achievementId: OrderDirection
+  """
+  ✨ Generated from Field `UserAchievement`.`achievement` of type `Achievement!`
+  """
+  achievement: Achievement_Order
+  """
+  ✨ Generated from Field `UserAchievement`.`user` of type `User!`
+  """
+  user: User_Order
+  """
+  ✨ Generated from Field `UserAchievement`.`unlockedAt` of type `Timestamp!`
+  """
+  unlockedAt: OrderDirection
+  """
+  ✨ Generated from Field `UserAchievement`.`_count` of type `Int!`
+  """
+  _count: OrderDirection
+  """
+  ✨ Generated from Field `UserAchievement`.`achievementId_count` of type `Int!`
+  """
+  achievementId_count: OrderDirection
+  """
+  ✨ Generated from Field `UserAchievement`.`unlockedAt_count` of type `Int!`
+  """
+  unlockedAt_count: OrderDirection
+  """
+  ✨ Generated from Field `UserAchievement`.`userId_count` of type `Int!`
+  """
+  userId_count: OrderDirection
+  """
+  ✨ Generated from Field `UserAchievement`.`unlockedAt_min` of type `Timestamp`
+  """
+  unlockedAt_min: OrderDirection
+  """
+  ✨ Generated from Field `UserAchievement`.`unlockedAt_max` of type `Timestamp`
+  """
+  unlockedAt_max: OrderDirection
+}

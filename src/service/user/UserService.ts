@@ -128,11 +128,15 @@ class UserService {
         const currentUser = auth.currentUser;
         if (!currentUser) throw new Error("Usuário não autenticado.");
         const docRef = doc(db, this.collectionName, currentUser.uid);
-        await updateDoc(docRef, {
-            dailyScreenTimeLogs: state.dailyScreenTimeLogs ?? [],
-            "user.points": state.user.points,
-            "user.level": state.user.level,
-        });
+        const leaderboardRef = doc(db, "leaderboard", currentUser.uid);
+        await Promise.all([
+            updateDoc(docRef, {
+                dailyScreenTimeLogs: state.dailyScreenTimeLogs ?? [],
+                "user.points": state.user.points,
+                "user.level": state.user.level,
+            }),
+            setDoc(leaderboardRef, { points: state.user.points ?? 0 }, { merge: true }),
+        ]);
     }
 
     /**
