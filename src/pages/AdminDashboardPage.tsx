@@ -15,6 +15,7 @@ import { ChevronDownIcon } from "@/src/components/icons/ChevronDownIcon";
 import { DocumentTextIcon } from "@/src/components/icons/DocumentTextIcon";
 import { MagnifyingGlassIcon } from "@/src/components/icons/MagnifyingGlassIcon";
 import { UserIcon } from "@/src/components/icons/UserIcon";
+import { parseDurationMinutes, resolvePlatformName, formatMinutes } from "@/src/utils/screenTimeUtils";
 import { auth, db } from "@/src/services/firebase";
 import { collection, doc, getDocs, setDoc, updateDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
@@ -33,6 +34,7 @@ export const AdminDashboardPage: React.FC<{
     // Selected User State (for granular view)
     const [selectedUser, setSelectedUser] = useState<GameState | null>(null);
     const [selectedResponseIndex, setSelectedResponseIndex] = useState<number | null>(null); // Unused now
+    const [showAllScreenTimeLogs, setShowAllScreenTimeLogs] = useState(false);
 
 
     // Fetch all users on mount
@@ -63,7 +65,7 @@ export const AdminDashboardPage: React.FC<{
     }, []);
 
     useEffect(() => {
-        // Reset selection logic handled elsewhere or default to 0
+        setShowAllScreenTimeLogs(false);
     }, [selectedUser]);
 
     // Handle Search
@@ -653,7 +655,107 @@ export const AdminDashboardPage: React.FC<{
                             </div>
                         )}
 
+                        {/* --- HISTÓRICO DIÁRIO DE TEMPO DE TELA --- */}
+                        {selectedUser && (() => {
+                            const rawLogs = selectedUser.dailyScreenTimeLogs ?? [];
 
+                            // Agrupar por date, acumulando entradas de dias duplicados
+                            const grouped = new Map<string, { date: string; entries: typeof rawLogs[0]["entries"] }>();
+                            for (const log of rawLogs) {
+                                if (!log.date) continue;
+                                const existing = grouped.get(log.date);
+                                if (existing) {
+                                    existing.entries = [...existing.entries, ...(log.entries ?? [])];
+                                } else {
+                                    grouped.set(log.date, { date: log.date, entries: [...(log.entries ?? [])] });
+                                }
+                            }
+
+                            const sortedDays = Array.from(grouped.values())
+                                .sort((a, b) => b.date.localeCompare(a.date));
+
+                            const LIMIT = 14;
+                            const visibleDays = showAllScreenTimeLogs ? sortedDays : sortedDays.slice(0, LIMIT);
+
+                            return (
+                                <div className="mb-8">
+                                    <h3 className="text-lg font-bold text-gray-200 mb-3">
+                                        Histórico Diário de Tempo de Tela
+                                        <span className="ml-2 text-xs font-normal text-gray-500">({sortedDays.length} dia{sortedDays.length !== 1 ? "s" : ""})</span>
+                                    </h3>
+
+                                    {sortedDays.length === 0 ? (
+                                        <p className="text-sm text-gray-500 italic bg-slate-800/30 rounded-xl p-4 border border-slate-700">
+                                            Nenhum registro de tela detalhado concluído por este participante.
+                                        </p>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {visibleDays.map(({ date, entries }) => {
+                                                // Filtrar entradas malformadas
+                                                const validEntries = entries.filter(e => e && (e.hours || e.minutes || e.duration));
+
+                                                // Breakdown por plataforma
+                                                const breakdown = new Map<string, number>();
+                                                for (const entry of validEntries) {
+                                                    const name = resolvePlatformName(entry);
+                                                    const mins = parseDurationMinutes(entry);
+                                                    breakdown.set(name, (breakdown.get(name) ?? 0) + mins);
+                                                }
+
+                                                const totalMins = Array.from(breakdown.values()).reduce((a, b) => a + b, 0);
+                                                const isAlert = totalMins > 229; // média nacional (~4h)
+
+                                                // Formatar data "YYYY-MM-DD" → "DD/MM/YYYY"
+                                                const [y, mo, d] = date.split("-");
+                                                const displayDate = `${d}/${mo}/${y}`;
+
+                                                return (
+                                                    <details key={date} className={`rounded-xl border ${isAlert ? "border-red-500/50 bg-red-950/20" : "border-slate-700 bg-slate-800/40"} group`}>
+                                                        <summary className="flex items-center justify-between px-4 py-3 cursor-pointer list-none select-none">
+                                                            <div className="flex items-center gap-3">
+                                                                {isAlert && <span className="text-red-400 text-xs font-bold">⚠</span>}
+                                                                <span className={`text-sm font-semibold ${isAlert ? "text-red-300" : "text-gray-200"}`}>{displayDate}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-3">
+                                                                <span className={`text-sm font-bold ${isAlert ? "text-red-300" : "text-cyan-400"}`}>
+                                                                    {formatMinutes(totalMins)}
+                                                                </span>
+                                                                <span className="text-gray-500 text-xs group-open:rotate-180 transition-transform inline-block">▼</span>
+                                                            </div>
+                                                        </summary>
+                                                        <div className="px-4 pb-3 border-t border-slate-700/50 mt-1 pt-2 space-y-1">
+                                                            {Array.from(breakdown.entries())
+                                                                .sort(([, a], [, b]) => b - a)
+                                                                .map(([plat, mins]) => (
+                                                                    <div key={plat} className="flex justify-between text-xs text-gray-400">
+                                                                        <span>{plat}</span>
+                                                                        <span className="font-medium text-gray-300">{formatMinutes(mins)}</span>
+                                                                    </div>
+                                                                ))
+                                                            }
+                                                            {validEntries.length === 0 && (
+                                                                <p className="text-xs text-gray-600 italic">Entradas sem dados válidos.</p>
+                                                            )}
+                                                        </div>
+                                                    </details>
+                                                );
+                                            })}
+
+                                            {sortedDays.length > LIMIT && (
+                                                <button
+                                                    onClick={() => setShowAllScreenTimeLogs(v => !v)}
+                                                    className="w-full text-xs text-gray-500 hover:text-gray-300 py-2 border border-slate-700 rounded-xl transition-colors"
+                                                >
+                                                    {showAllScreenTimeLogs
+                                                        ? "Mostrar menos"
+                                                        : `Ver mais ${sortedDays.length - LIMIT} dia${sortedDays.length - LIMIT !== 1 ? "s" : ""}`}
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })()}
 
                         {/* STATS CARDS (User vs Global) */}
                         {selectedUserStats && selectedUserStats.samAverages && (

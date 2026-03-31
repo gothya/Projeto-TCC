@@ -2,7 +2,7 @@
 
 **Data Útima Atualização:** 31/03/2026
 **Severidade:** 🔴 Crítica — afeta diretamente a percepção de progresso do participante, integridade da gamificação e funcionalidades do painel Admin.
-**Status:** Solução Planejada — Aguardando aprovação para aplicar correções.
+**Status:** ✅ Corrigido no código — pendente deploy das `firestore.rules` em produção.
 
 ---
 
@@ -53,29 +53,45 @@ O loop eterno na aba *Ranking Global* decorre novamente do arquivo de regras (`f
 
 ---
 
-## ✅ Direção e Próximos Passos do Bugfix
+## ✅ Correções Aplicadas
 
-Para erradicar de vez a instabilidade na pontuação e progressão global:
+### 1. Unificação do cálculo de XP — `DashboardPage.tsx`
+Criada função `calculateTotalXp(pings, screenTimeLogs)` como única fonte de verdade:
+```ts
+XP Total = reduce(pings.statuses == "completed") + uniqueDays × 500
+```
+`uniqueDays` usa `Set` para deduplicar datas — alinhado com a lógica do Admin. Ambos os handlers (`handleInstrumentFlowFinish` e `handleSaveScreenTime`) agora chamam esta função.
 
-1. **Atualizar `firestore.rules`:**
-   Expandir os escopos de `update` de ambas as coleções (`participantes` e `leaderboard`) para acomodarem a cláusula `request.auth.token.admin == true`, assim os administradores poderão comandar reparos massivos em dados da pesquisa no backend.
-   
-2. **Atualizar a script `recalculateAllXp`:**
-   Alterar este controlador no escopo do Admin para rodar os updates encadeados visando os documentos paralelos da coleção `leaderboard`.
+### 2. Sincronização do leaderboard — `UserService.ts`
+`saveDailyScreenTimeLogs` passou a atualizar `leaderboard/{uid}.points` via `Promise.all`, igualando o comportamento de `updateUser`.
 
-3. **Deploy Obrigatório de Sec-Rules:**
-   Toda essa estrutura não servirá sem despachar as novas regras de segurança local para o emulador/banco em nuvem com o comando:
-   `firebase deploy --only firestore:rules`
+### 3. Permissão de escrita do Admin — `firestore.rules`
+Adicionada cláusula `request.auth.token.admin == true` nos escopos de `update` de `participantes` e `write` de `leaderboard`.
+
+### 4. `recalculateAllXp` corrigido — `AdminDashboardPage.tsx`
+Duas correções:
+- **Leaderboard sempre sincronizado:** o `setDoc` no leaderboard agora roda incondicionalmente, independente de `participantes` precisar ou não de atualização. Resolve o caso em que `participantes` já estava correto mas o leaderboard ainda estava defasado.
+- **Breakdown de XP no card Progresso:** o painel Admin agora exibe pings regulares, pings estrela e dias de tempo de tela separadamente, com comparação entre o XP salvo no banco e o XP calculado ao vivo — borda vermelha sinaliza dados corrompidos automaticamente.
 
 ---
 
-## 📌 Atualização (31/03): Detalhamento Visível do XP
+## ⏳ Pendências
 
-Como medida secundária para facilitar a auditoria e transparência do progresso real dos participantes, foi planejado adicionar no **Painel do Pesquisador (AdminDashboard)** um detalhamento exato das fontes que compõem o XP total de um participante.
+1. **Deploy das rules em produção:**
+   ```bash
+   firebase deploy --only firestore:rules
+   ```
 
-Dentro da caixa de métricas "Quadro de Progresso (🏆)", passará a ser exibido:
-- **Pings Regulares Respondidos:** Quantidade x 50 XP
-- **Pings de Avaliação (Fim de Dia):** Quantidade x 100 XP
-- **Registro de Tempo de Tela Diário:** Dias x 500 XP
+2. **Rodar "Recalcular XP" no painel Admin uma vez** após o deploy para corrigir todos os documentos com dados corrompidos do período anterior ao fix.
 
-Esta visibilidade em *client-side* assegurará aos pesquisadores que a lógica de "points" persistida no banco corrobora diretamente com as ações completadas pelo participante.
+---
+
+## 📌 Atualização (31/03): Detalhamento Visível do XP — ✅ Implementado
+
+O card **🏆 Progresso** no painel do pesquisador foi expandido para exibir o breakdown completo das fontes de XP de cada participante, calculado ao vivo a partir dos dados brutos (`pings.statuses` e `dailyScreenTimeLogs`):
+
+- **Pings regulares** (índices 0–5 com status `completed`): quantidade × 50 XP
+- **Pings estrela** (índice 6 com status `completed`): quantidade × 100 XP
+- **Tempo de tela** (dias únicos registrados): dias × 500 XP
+
+O card exibe dois totais lado a lado: **XP salvo no banco** (`user.points`) e **XP calculado agora**. Se divergirem, a borda fica vermelha e aparece o aviso *"⚠ Dados corrompidos — use 'Recalcular XP' para corrigir"*, permitindo ao pesquisador identificar participantes com dados inconsistentes sem precisar inspecionar o Firestore manualmente.

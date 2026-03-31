@@ -15,6 +15,17 @@ export function parseDurationMinutes(entry: ScreenTimeEntry): number {
 }
 
 /**
+ * Formata um total em minutos para o padrão legível "Xh Ym".
+ */
+export function formatMinutes(totalMinutes: number): string {
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
+
+/**
  * Resolve o nome exibível de uma plataforma, tratando o caso "Outro".
  */
 export function resolvePlatformName(entry: ScreenTimeEntry): string {
