@@ -1,6 +1,15 @@
 export const PING_HOURS = [9, 11, 13, 15, 17, 19, 21];
 
 /**
+ * Converte uma data ISO "YYYY-MM-DD" para o formato curto amigável "DD/MM".
+ */
+export function formatDateShort(isoDate: string): string {
+  const parts = isoDate.split("-");
+  if (parts.length !== 3) return isoDate;
+  return `${parts[2]}/${parts[1]}`;
+}
+
+/**
  * Calculates the exact start time of the Journey (Day 0, Ping 0).
  * It will be the first 9:00 AM after or equal to the registration date.
  */

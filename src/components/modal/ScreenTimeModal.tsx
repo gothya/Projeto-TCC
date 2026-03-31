@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Modal } from "./Modal";
 import { ScreenTimeEntry, DailyScreenTimeLog } from "../screen/ScreenTimeEntry";
 import { PlusIcon } from "../icons/PlusIcon";
-import { getJourneyStartDate } from "@/src/utils/timeUtils";
+import { getJourneyStartDate, formatDateShort } from "@/src/utils/timeUtils";
 
 const EMPTY_ENTRY = (): ScreenTimeEntry => ({
   id: `${Date.now()}-${Math.random()}`,
@@ -86,9 +86,13 @@ export const ScreenTimeModal: React.FC<{
 
   const isEditing = existingLogs.some(l => l.date === selectedDate);
   const isToday = selectedDate === today;
-  const selectedDayLabel = isToday
+  const selectedDayShort = formatDateShort(selectedDate);
+  // Quando há só 1 dia (abas ocultas), mostramos a data no label do total para contexto
+  const selectedDayLabel = isToday && journeyDays.length > 1
     ? "hoje"
-    : (journeyDays.find(d => d.date === selectedDate)?.label ?? selectedDate);
+    : journeyDays.find(d => d.date === selectedDate)?.label
+      ? `${journeyDays.find(d => d.date === selectedDate)!.label} (${selectedDayShort})`
+      : selectedDayShort;
 
   return (
     <Modal onClose={onClose} className="max-w-lg">
@@ -122,7 +126,7 @@ export const ScreenTimeModal: React.FC<{
                     color: hasLog ? "#94a3b8" : "#475569",
                   }}
                 >
-                  {label}
+                  {label} · {formatDateShort(date)}
                   {hasLog && !isSelected && (
                     <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-green-400" />
                   )}

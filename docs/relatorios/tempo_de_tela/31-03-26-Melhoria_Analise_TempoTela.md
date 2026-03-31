@@ -46,3 +46,17 @@ Após a implementação, a validação consistirá em:
 2. **Selecionar** um usuário com dados preenchidos de múltiplos fluxos (usuário simulado via testes ou contas ativas).
 3. Entrar na seção de visualização detalhada e olhar o novo **Histórico de Tempo de Tela**.
 4. Validar se a quantidade de relatórios diários de tela "bate" visualmente com a quantidade diária preenchida no Firestore e se a conversão de horas/minutos está isenta de bugs matemáticos.
+
+---
+
+## 🧑‍💻 Atualização: Melhoria na Interface do Participante (Screen Time Modal)
+
+Para garantir que o participante saiba exatamente de qual dia está registrando ou editando as informações de tela, atualizaremos a modal *Tempo de Tela* (`ScreenTimeModal.tsx`).
+
+### Proposta de Alteração:
+1. **Abas Superiores (Seletores de Dia):**
+   Ao invés de exibir puramente `Dia 1`, `Dia 2`, exibiremos a data real associada àquele dia da jornada do participante. Por exemplo: `Dia 1 (31/03)` ou apenas `31/03`.
+2. **Label de Total Diário:**
+   O texto que indica o somatório inferior (exemplo atual: `Total Dia 2 (editando): 3h 23min`) passará a evidenciar explicitamente a data, mitigando confusões de preenchimento quando o usuário for realizar preenchimentos retroativos.
+3. **Formatação Isolada:**
+   Converter as datas de ISO (`YYYY-MM-DD`) que populam as abas da modal para o formato local amigável (ex: `DD/MM`).
