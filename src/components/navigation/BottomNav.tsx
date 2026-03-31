@@ -1,4 +1,5 @@
 import React from "react";
+import { CheckCircleIcon } from "@/src/components/icons/CheckCircleIcon";
 
 export type Tab = "social" | "home" | "conquistas" | "tutoriais";
 
@@ -39,7 +40,10 @@ export const BottomNav: React.FC<{
   onBellClick: () => void;
   bellDisabled: boolean;
   hasUnseenTutorial?: boolean;
-}> = ({ activeTab, onTabChange, isBellVisible, onBellClick, bellDisabled, hasUnseenTutorial = false }) => {
+  /** true quando o ping da janela atual já foi respondido (status "completed").
+   *  O botão permanece clicável para permitir re-resposta. */
+  isPingCompleted?: boolean;
+}> = ({ activeTab, onTabChange, isBellVisible, onBellClick, bellDisabled, hasUnseenTutorial = false, isPingCompleted = false }) => {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "social",     label: "Social",      icon: <SocialIcon /> },
     { id: "home",       label: "Início",      icon: <HomeIcon /> },
@@ -54,12 +58,29 @@ export const BottomNav: React.FC<{
           <button
             onClick={onBellClick}
             disabled={bellDisabled}
-            className="pointer-events-auto relative flex items-center gap-2 px-5 py-3 rounded-full bg-cyan-400 text-slate-900 font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ boxShadow: "0 0 20px rgba(34,211,238,0.7), 0 0 40px rgba(34,211,238,0.3)" }}
+            className={`pointer-events-auto relative flex items-center gap-2 px-5 py-3 rounded-full font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${
+              isPingCompleted
+                ? "bg-green-400 text-slate-900"
+                : "bg-cyan-400 text-slate-900"
+            }`}
+            style={{
+              boxShadow: isPingCompleted
+                ? "0 0 20px rgba(74,222,128,0.7), 0 0 40px rgba(74,222,128,0.3)"
+                : "0 0 20px rgba(34,211,238,0.7), 0 0 40px rgba(34,211,238,0.3)",
+            }}
           >
-            <span className="absolute inset-0 rounded-full bg-cyan-400 animate-ping opacity-30" />
-            <BellIcon />
-            <span className="text-sm relative z-10">Responder Ping</span>
+            {/* Pulsação de urgência: só aparece quando ainda não respondido */}
+            {!isPingCompleted && (
+              <span className="absolute inset-0 rounded-full bg-cyan-400 animate-ping opacity-30" />
+            )}
+            {isPingCompleted ? (
+              <CheckCircleIcon className="w-7 h-7 relative z-10" />
+            ) : (
+              <BellIcon />
+            )}
+            <span className="text-sm relative z-10">
+              {isPingCompleted ? "Dados coletados!" : "Responder Ping"}
+            </span>
           </button>
         </div>
       )}

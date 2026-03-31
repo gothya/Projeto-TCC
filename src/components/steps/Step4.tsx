@@ -1,28 +1,7 @@
 import { FormField } from "../form/FormField";
 import { CustomCheckbox } from "../form/CustomCheckbox";
 import { CustomRadio } from "../form/CustomRadio";
-
-type SociodemographicData = {
-  age: number | string;
-  state: string;
-  gender: string;
-  maritalStatus: string;
-  education: string;
-  occupation: string;
-  continuousMedication: string;
-  medicationDetails: string;
-  healthDiagnosis: string;
-  diagnosisDetails: string;
-  monthlyIncome: string;
-  platforms: string[];
-  otherPlatform: string;
-  usagePeriod: string;
-  dailyUsage: string;
-  purpose_talk: string;
-  purpose_share: string;
-  purpose_watch: string;
-  purpose_search: string;
-};
+import type { SociodemographicData } from "@/src/components/data/SocialDemographicData";
 
 export const Step4 = ({
   formData,

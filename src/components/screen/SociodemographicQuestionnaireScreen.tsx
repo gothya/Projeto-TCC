@@ -4,28 +4,8 @@ import { Step2 } from "../steps/Step2";
 import { Step3 } from "../steps/Step3";
 import { Step4 } from "../steps/Step4";
 import { Step5 } from "../steps/Step5";
-
-export type SociodemographicData = {
-  age: number | string;
-  state: string;
-  gender: string;
-  maritalStatus: string;
-  education: string;
-  occupation: string;
-  continuousMedication: string;
-  medicationDetails: string;
-  healthDiagnosis: string;
-  diagnosisDetails: string;
-  monthlyIncome: string;
-  platforms: string[];
-  otherPlatform: string;
-  usagePeriod: string;
-  dailyUsage: string;
-  purpose_talk: string;
-  purpose_share: string;
-  purpose_watch: string;
-  purpose_search: string;
-};
+export type { SociodemographicData } from "@/src/components/data/SocialDemographicData";
+import type { SociodemographicData } from "@/src/components/data/SocialDemographicData";
 
 export const SociodemographicQuestionnaireScreen: React.FC<{
   onComplete: (data: SociodemographicData) => void;

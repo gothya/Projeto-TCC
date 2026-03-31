@@ -231,6 +231,18 @@ function buildParticipantsSheet(allUsers: GameState[]): ParticipantRow[] {
       Escolaridade: sd?.education ?? "N/A",
       Ocupação: sd?.occupation ?? "N/A",
       "Renda Mensal": sd?.monthlyIncome ?? "N/A",
+      "Medicação Contínua": sd?.continuousMedication ?? "N/A",
+      "Detalhes Medicação": sd?.medicationDetails ?? "N/A",
+      "Diagnóstico Saúde Física/Mental": sd?.healthDiagnosis ?? "N/A",
+      "Detalhes Diagnóstico": sd?.diagnosisDetails ?? "N/A",
+      "Plataformas Mais Usadas": sd?.platforms ? sd.platforms.join(", ") : "N/A",
+      "Outras Plataformas": sd?.otherPlatform ?? "N/A",
+      "Período de Uso": sd?.usagePeriod ?? "N/A",
+      "Tempo de Uso Diário": sd?.dailyUsage ?? "N/A",
+      "Propósito (Conversar)": sd?.purpose_talk ?? "N/A",
+      "Propósito (Compartilhar)": sd?.purpose_share ?? "N/A",
+      "Propósito (Assistir)": sd?.purpose_watch ?? "N/A",
+      "Propósito (Pesquisar)": sd?.purpose_search ?? "N/A",
     };
   });
 }
@@ -331,11 +343,9 @@ export function exportToExcel(allUsers: GameState[]): ExportResult {
     return { success: false, recordCount: 0, message: "Nenhum dado disponível para exportar." };
   }
 
-  const allResponses = flattenResponses(allUsers);
-  if (allResponses.length === 0) {
-    return { success: false, recordCount: 0, message: "Nenhuma resposta encontrada para exportar." };
-  }
-
+  // Não bloqueamos aqui caso não haja respostas de pings ainda:
+  // buildWorkbook gera a aba Participantes independentemente,
+  // e addSheetToWorkbook já lida com arrays vazios graciosamente.
   const { wb, sheets } = buildWorkbook(allUsers);
 
   const dateStr = new Date().toISOString().slice(0, 10);
@@ -350,6 +360,6 @@ export function exportToExcel(allUsers: GameState[]): ExportResult {
   return {
     success: true,
     recordCount: totalRecords,
-    message: `Exportado com sucesso: ${sheets.participants.length} participantes e ${totalRecords} registros em 5 abas.`,
+    message: `Exportado com sucesso: ${sheets.participants.length} participantes e ${totalRecords} registros em 6 abas.`,
   };
 }

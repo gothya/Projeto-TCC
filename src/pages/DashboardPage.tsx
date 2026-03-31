@@ -843,6 +843,11 @@ export const DashboardPage: React.FC<{
         isBellVisible={isBellVisible}
         onBellClick={startInstrumentFlow}
         bellDisabled={!highlightedPing || (!!instrumentFlow && isInstrumentModalVisible)}
+        isPingCompleted={
+          highlightedPing
+            ? participante?.pings[highlightedPing.day]?.statuses[highlightedPing.ping] === "completed"
+            : false
+        }
       />
 
       {isDeleteAccountModalOpen && (

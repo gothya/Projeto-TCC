@@ -51,6 +51,18 @@ export type ParticipantRow = {
   Escolaridade: string;
   Ocupação: string;
   "Renda Mensal": string;
+  "Medicação Contínua": string;
+  "Detalhes Medicação": string;
+  "Diagnóstico Saúde Física/Mental": string;
+  "Detalhes Diagnóstico": string;
+  "Plataformas Mais Usadas": string;
+  "Outras Plataformas": string;
+  "Período de Uso": string;
+  "Tempo de Uso Diário": string;
+  "Propósito (Conversar)": string;
+  "Propósito (Compartilhar)": string;
+  "Propósito (Assistir)": string;
+  "Propósito (Pesquisar)": string;
 };
 
 export type ExportSheets = {
