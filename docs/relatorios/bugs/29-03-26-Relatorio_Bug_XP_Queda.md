@@ -66,3 +66,16 @@ Para erradicar de vez a instabilidade na pontuação e progressão global:
 3. **Deploy Obrigatório de Sec-Rules:**
    Toda essa estrutura não servirá sem despachar as novas regras de segurança local para o emulador/banco em nuvem com o comando:
    `firebase deploy --only firestore:rules`
+
+---
+
+## 📌 Atualização (31/03): Detalhamento Visível do XP
+
+Como medida secundária para facilitar a auditoria e transparência do progresso real dos participantes, foi planejado adicionar no **Painel do Pesquisador (AdminDashboard)** um detalhamento exato das fontes que compõem o XP total de um participante.
+
+Dentro da caixa de métricas "Quadro de Progresso (🏆)", passará a ser exibido:
+- **Pings Regulares Respondidos:** Quantidade x 50 XP
+- **Pings de Avaliação (Fim de Dia):** Quantidade x 100 XP
+- **Registro de Tempo de Tela Diário:** Dias x 500 XP
+
+Esta visibilidade em *client-side* assegurará aos pesquisadores que a lógica de "points" persistida no banco corrobora diretamente com as ações completadas pelo participante.

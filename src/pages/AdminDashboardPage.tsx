@@ -675,21 +675,54 @@ export const AdminDashboardPage: React.FC<{
                                 </div>
 
                                 {/* Global Context */}
-                                {/* Removed redundant Screen Time Card */}
-                                <div className="bg-slate-800/50 p-4 rounded-xl border border-yellow-500/30">
-                                    <h4 className="text-gray-400 text-xs uppercase font-bold mb-2 flex items-center gap-2">🏆 Progresso</h4>
-                                    <div className="flex justify-between items-center mb-2">
-                                        <div className="text-center">
-                                            <p className="text-3xl font-bold text-yellow-400">{selectedUser.user.level}</p>
-                                            <p className="text-[10px] text-gray-500 uppercase">Nível</p>
+                                {(() => {
+                                    const regularPings = (selectedUser.pings ?? []).reduce((acc, dayObj) =>
+                                        acc + (dayObj.statuses ?? []).filter((s, i) => s === "completed" && i !== 6).length, 0);
+                                    const starPings = (selectedUser.pings ?? []).reduce((acc, dayObj) =>
+                                        acc + (dayObj.statuses ?? []).filter((s, i) => s === "completed" && i === 6).length, 0);
+                                    const screenTimeDays = new Set((selectedUser.dailyScreenTimeLogs ?? []).map(l => l.date)).size;
+                                    const calculatedXp = regularPings * 50 + starPings * 100 + screenTimeDays * 500;
+                                    const storedXp = selectedUser.user.points ?? 0;
+                                    const isCorrupted = calculatedXp !== storedXp;
+                                    return (
+                                        <div className={`bg-slate-800/50 p-4 rounded-xl border ${isCorrupted ? "border-red-500/60" : "border-yellow-500/30"}`}>
+                                            <h4 className="text-gray-400 text-xs uppercase font-bold mb-3 flex items-center gap-2">🏆 Progresso</h4>
+                                            <div className="flex justify-between items-center mb-4">
+                                                <div className="text-center">
+                                                    <p className="text-3xl font-bold text-yellow-400">{selectedUser.user.level}</p>
+                                                    <p className="text-[10px] text-gray-500 uppercase">Nível</p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className={`text-xl font-bold ${isCorrupted ? "text-red-400" : "text-white"}`}>{storedXp} XP</p>
+                                                    <p className="text-[10px] text-gray-500 uppercase">Salvo no banco</p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className={`text-xl font-bold ${isCorrupted ? "text-green-400" : "text-white"}`}>{calculatedXp} XP</p>
+                                                    <p className="text-[10px] text-gray-500 uppercase">Calculado agora</p>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1.5 border-t border-slate-700 pt-3">
+                                                <div className="flex justify-between text-xs text-gray-400">
+                                                    <span>Pings regulares ({regularPings} × 50)</span>
+                                                    <span className="font-semibold text-white">{regularPings * 50} XP</span>
+                                                </div>
+                                                <div className="flex justify-between text-xs text-gray-400">
+                                                    <span>Pings estrela ({starPings} × 100)</span>
+                                                    <span className="font-semibold text-white">{starPings * 100} XP</span>
+                                                </div>
+                                                <div className="flex justify-between text-xs text-gray-400">
+                                                    <span>Tempo de tela ({screenTimeDays} dia{screenTimeDays !== 1 ? "s" : ""} × 500)</span>
+                                                    <span className="font-semibold text-white">{screenTimeDays * 500} XP</span>
+                                                </div>
+                                            </div>
+                                            {isCorrupted && (
+                                                <p className="text-[10px] text-red-400 mt-2 font-semibold">
+                                                    ⚠ Dados corrompidos — use "Recalcular XP" para corrigir
+                                                </p>
+                                            )}
                                         </div>
-                                        <div className="text-center">
-                                            <p className="text-xl font-bold text-white">{selectedUser.user.points}</p>
-                                            <p className="text-[10px] text-gray-500 uppercase">XP Total</p>
-                                        </div>
-                                    </div>
-
-                                </div>
+                                    );
+                                })()}
                             </div>
                         )}
 
