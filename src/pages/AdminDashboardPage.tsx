@@ -113,18 +113,21 @@ export const AdminDashboardPage: React.FC<{
                 const totalXp = xpFromPings + uniqueDays * 500;
                 const newLevel = Math.floor(totalXp / 160) + 1;
 
+                const leaderboardRef = doc(db, "leaderboard", participant.firebaseId);
+                const writes: Promise<void>[] = [
+                    setDoc(leaderboardRef, { points: totalXp }, { merge: true }),
+                ];
+
                 if (participant.user.points !== totalXp || participant.user.level !== newLevel) {
                     const participanteRef = doc(db, "participantes", participant.firebaseId);
-                    const leaderboardRef = doc(db, "leaderboard", participant.firebaseId);
-                    await Promise.all([
-                        updateDoc(participanteRef, {
-                            "user.points": totalXp,
-                            "user.level": newLevel,
-                        }),
-                        setDoc(leaderboardRef, { points: totalXp }, { merge: true }),
-                    ]);
+                    writes.push(updateDoc(participanteRef, {
+                        "user.points": totalXp,
+                        "user.level": newLevel,
+                    }));
                     updated++;
                 }
+
+                await Promise.all(writes);
             }
             setToast(`✓ ${updated} participante(s) atualizados.`);
         } catch (e) {
