@@ -1,13 +1,16 @@
 import { GameState } from '@/src/components/data/GameState';
 import { SociodemographicData } from '@/src/components/screen/SociodemographicQuestionnaireScreen';
 import { OnboardingScreen } from '@/src/components/screen/OnboardingScreen';
+import { PWAInstallScreen } from '@/src/components/screen/PWAInstallScreen';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { OnboardingDraft, useOnboardingDraft } from '@/src/hooks/useOnboardingDraft';
 import userService from '@/src/service/user/UserService';
-import React, { useEffect, useState } from 'react';
+import { NotificationService } from '@/src/services/NotificationService';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
 import { auth } from '../services/firebase';
+import { isStandalone } from '@/src/utils/pwaUtils';
 
 const INITIAL_GAME_STATE: GameState = {
     user: {
@@ -36,6 +39,8 @@ export const OnboardingPage: React.FC = () => {
     const { loadDraft, saveDraft, clearDraft } = useOnboardingDraft();
 
     const [draft, setDraft] = useState<OnboardingDraft | null>(null);
+    const [showPwaInstall, setShowPwaInstall] = useState(false);
+    const createdUserRef = useRef<{ uid: string } | null>(null);
 
     // Carrega rascunho salvo ao montar (se houver usuário autenticado)
     useEffect(() => {
@@ -70,6 +75,24 @@ export const OnboardingPage: React.FC = () => {
             savedAt: new Date().toISOString(),
         }));
         saveDraft(user.uid, patch);
+    };
+
+    const requestNotificationPermission = async (uid: string) => {
+        try {
+            const ns = await NotificationService.init();
+            const token = await ns.initializeNotificationsForNewUser();
+            if (token) await ns.saveTokenToFirestore(uid, token);
+        } catch (error) {
+            console.error("Erro ao configurar notificações:", error);
+            // Não bloqueia o fluxo — participante segue sem token
+        }
+    };
+
+    const handlePwaInstallContinue = async () => {
+        const uid = createdUserRef.current?.uid;
+        if (uid) await requestNotificationPermission(uid);
+        navigate("/dashboard");
+        showToast("Perfil criado com sucesso! Bem-vindo ao Enigma de Psylogos.");
     };
 
     const handleDraftClear = () => {
@@ -111,14 +134,32 @@ export const OnboardingPage: React.FC = () => {
             // Limpa o rascunho após conclusão bem-sucedida
             handleDraftClear();
 
-            navigate("/dashboard");
-            showToast("Perfil criado com sucesso! Bem-vindo ao Enigma de Psylogos.");
+            // Guarda uid para usar após a tela de instalação
+            createdUserRef.current = { uid: currentUser.uid };
+
+            // Mostra tela de instalação para todos — iOS obrigatório, Android suave
+            // Exceto se já está em standalone (já instalado)
+            if (isStandalone()) {
+                await requestNotificationPermission(currentUser.uid);
+                navigate("/dashboard");
+                showToast("Perfil criado com sucesso! Bem-vindo ao Enigma de Psylogos.");
+            } else {
+                setShowPwaInstall(true);
+            }
 
         } catch (error) {
             console.error("Erro no processo de onboarding:", error);
             showToast("Ocorreu um erro ao salvar seus dados. Por favor, tente novamente.", "error");
         }
     };
+
+    if (showPwaInstall) {
+        return (
+            <div className="min-h-screen bg-brand-dark flex items-center justify-center p-4">
+                <PWAInstallScreen onContinue={handlePwaInstallContinue} />
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-brand-dark flex items-center justify-center p-4">

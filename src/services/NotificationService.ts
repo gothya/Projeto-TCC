@@ -98,7 +98,7 @@ export class NotificationService {
         if (!uid || !token) return;
 
         try {
-            const userRef = doc(db, "users", uid);
+            const userRef = doc(db, "participantes", uid);
             // We use setDoc with merge: true to arguably be safer if doc doesn't exist, 
             // though in our app logic user doc should exist.
             await setDoc(userRef, { fcmToken: token }, { merge: true });
