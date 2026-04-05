@@ -14,7 +14,10 @@
       "Bash(npm install:*)",
       "WebSearch",
       "Bash(npx skills:*)",
-      "Bash(winget install:*)"
+      "Bash(winget install:*)",
+      "Bash(git rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
