@@ -10,8 +10,9 @@ import { useAuth } from "../../contexts/AuthContext";
 import { InstrumentModal } from "../modal/InstrumentModal";
 import { RcleModal } from "../modal/RcleModal";
 import { SociodemographicModal } from "../modal/SociodemographicModal";
-import { PerformanceModal } from "../modal/PerformanceModal";
 import { ProfileMenu } from "../menu/ProfileMenu";
+import { PWAInstallScreen } from "./PWAInstallScreen";
+import { isIOS, isStandalone } from "@/src/utils/pwaUtils";
 import { UserIcon } from "../icons/UserIcon";
 import { CountdownTimer } from "../CountdownTimer";
 import { BellIcon } from "../icons/BellIcon";
@@ -39,9 +40,9 @@ export const DashboardScreen: React.FC<{
     ping: number;
   } | null>(null);
   const [isRcleModalOpen, setIsRcleModalOpen] = useState(false);
-  const [isPerformanceModalOpen, setIsPerformanceModalOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isSociodemographicModalOpen, setIsSociodemographicModalOpen] = useState(false);
+  const [isInstallScreenOpen, setIsInstallScreenOpen] = useState(false);
   const [instrumentFlow, setInstrumentFlow] = useState<InstrumentFlowState>(null);
   const [isInstrumentVisible, setIsInstrumentVisible] = useState(false);
   const [, setGameState] = useState<GameState>(localStorage.getItem("gameState") ? JSON.parse(localStorage.getItem("gameState") as string) : gameState);
@@ -420,6 +421,12 @@ export const DashboardScreen: React.FC<{
   const restOfPlayers = allPlayers.slice(3);
 
   return (
+    <>
+      {isInstallScreenOpen && (
+        <div className="fixed inset-0 z-50 bg-brand-dark">
+          <PWAInstallScreen onContinue={() => setIsInstallScreenOpen(false)} />
+        </div>
+      )}
     <div className="p-4 sm:p-6 max-w-4xl mx-auto animate-fade-in">
       {instrumentFlow && isInstrumentVisible && (
         <InstrumentModal
@@ -436,12 +443,6 @@ export const DashboardScreen: React.FC<{
         <SociodemographicModal
           onClose={() => setIsSociodemographicModalOpen(false)}
           data={gameState.sociodemographicData}
-        />
-      )}
-      {isPerformanceModalOpen && (
-        <PerformanceModal
-          onClose={() => setIsPerformanceModalOpen(false)}
-          gameState={gameState}
         />
       )}
       <header className="flex items-center justify-between mb-8">
@@ -470,16 +471,20 @@ export const DashboardScreen: React.FC<{
                   setIsRcleModalOpen(true);
                   setIsProfileMenuOpen(false);
                 }}
-                onViewPerformance={() => {
-                  setIsPerformanceModalOpen(true);
-                  setIsProfileMenuOpen(false);
-                }}
                 onViewData={() => {
                   setIsSociodemographicModalOpen(true);
                   setIsProfileMenuOpen(false);
                 }}
                 onLogout={onLogout}
                 hasAvatar={!!user.avatar}
+                onInstallApp={() => {
+                  setIsProfileMenuOpen(false);
+                  if (isStandalone()) {
+                    showToast("Seu app já está instalado e pronto! 🎉");
+                  } else {
+                    setIsInstallScreenOpen(true);
+                  }
+                }}
               />
             )}
           </div>
@@ -515,6 +520,24 @@ export const DashboardScreen: React.FC<{
           </button> */}
         </div>
       </header>
+
+      {/* Banner de fallback — notificações não configuradas */}
+      {isIOS() && !isStandalone() && (
+        <div className="mb-4 flex items-center justify-between gap-3 bg-amber-500/10 border border-amber-400/30 rounded-lg px-4 py-3 text-sm text-amber-300">
+          <span>📲 Instale o app na tela inicial para receber os pings.</span>
+          <button
+            onClick={() => setIsInstallScreenOpen(true)}
+            className="shrink-0 text-xs font-semibold text-amber-200 underline hover:text-white transition-colors"
+          >
+            Como instalar
+          </button>
+        </div>
+      )}
+      {!isIOS() && notificationPermission === "denied" && (
+        <div className="mb-4 flex items-center gap-3 bg-red-500/10 border border-red-400/30 rounded-lg px-4 py-3 text-sm text-red-300">
+          <span>🔕 Notificações bloqueadas. Ative nas configurações do seu navegador para receber os pings.</span>
+        </div>
+      )}
 
       <main className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-3">
@@ -747,5 +770,6 @@ export const DashboardScreen: React.FC<{
         .animate-slow-spin-slow { animation: slow-spin-slow 20s linear infinite; }
       `}</style>
     </div>
+    </>
   );
 };

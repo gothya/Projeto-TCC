@@ -3,6 +3,10 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from '@/src/App';
 import { AuthProvider } from '@/src/contexts/AuthContext';
+import { initInstallPromptCapture } from '@/src/utils/installPrompt';
+
+// Capturar beforeinstallprompt antes de qualquer renderização
+initInstallPromptCapture();
 
 const rootElement = document.getElementById('root');
 

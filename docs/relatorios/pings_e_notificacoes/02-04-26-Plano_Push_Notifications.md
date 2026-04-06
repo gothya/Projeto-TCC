@@ -1,6 +1,6 @@
 # Plano Técnico: Push Notifications de Ping — Psylogos
-**Data:** 02/04/2026 — Revisado: 05/04/2026  
-**Status:** 📋 Planejamento
+**Data:** 02/04/2026 — Revisado: 05/04/2026 (v5)  
+**Status:** 📋 Em implementação
 
 ---
 
@@ -442,21 +442,29 @@ Condição de exibição: `!gameState.fcmToken || Notification.permission === 'd
 ## 8. Checklist de Implementação (em ordem de deploy)
 
 ### Fase 1 — Segura para produção imediata
-- [ ] **Etapa 1** — Corrigir `saveTokenToFirestore`: `"users"` → `"participantes"` em `NotificationService.ts:101`
-- [ ] **Etapa 2** — Criar `src/utils/pwaUtils.ts`
-- [ ] **Etapa 5** — Criar tela de instalação no `OnboardingScreen`
-  - [ ] Layout iOS (passo a passo Safari)
-  - [ ] Layout Android (`beforeinstallprompt` + fallback)
-  - [ ] Detecção de standalone para liberar "Continuar"
-- [ ] **Etapa 5** — Integrar nova tela no `OnboardingPage.tsx`
+- [x] **Etapa 1** — Corrigir `saveTokenToFirestore`: `"users"` → `"participantes"` em `NotificationService.ts:101`
+- [x] **Etapa 2** — Criar `src/utils/pwaUtils.ts`
+- [x] **Etapa 5** — Criar `PWAInstallScreen` com 3 views: prompt, instruções iOS, hint de alarme
+  - [x] Layout iOS (passo a passo Safari)
+  - [x] Layout Android (`beforeinstallprompt` + fallback)
+  - [x] Detecção de standalone para liberar "Continuar"
+  - [x] View de recusa com dica de alarmes e "Relatório de Jornada"
+- [x] **Etapa 5** — Integrar `PWAInstallScreen` no `OnboardingPage.tsx` (todos os dispositivos, exceto já standalone)
+- [x] **Menu** — Botão "Instalar o app" visível no menu hamburguer (ProfileMenu), com toast se já instalado
+- [x] **Refinamento §9** — Adicionar `isAndroid()` em `pwaUtils.ts`
+- [x] **Refinamento §9** — Corrigir roteamento inicial em `PWAInstallScreen`: iOS → ir direto para `ios-instructions`
+- [ ] **Bug §10** — Capturar `beforeinstallprompt` no nível de módulo em `pwaUtils.ts` (`getDeferredInstallPrompt` / `clearDeferredInstallPrompt`)
+- [ ] **Bug §10** — Remover `useEffect` de captura dentro de `PWAInstallScreen` e usar `getDeferredInstallPrompt()` no clique
+- [ ] **Bug §10** — Tratar rejeição do prompt (permanecer na tela) e ausência de prompt (exibir `skip-hint`)
 - [ ] **Etapa 7** — Banner de fallback no Dashboard
+- [ ] **Teste** — Criar novo usuário e validar fluxo em iOS e Android; verificar `fcmToken` em `participantes` no Firestore
 
 ### Fase 2 — Testar antes de aplicar
-- [ ] **Etapa 6** — Integrar `NotificationService` no Onboarding (após tela de instalação)
-- [ ] **Etapa 6** — Refresh silencioso no Dashboard com guard de `isStandalone`
-- [ ] **Etapa 4** — Implementar `sendPingNotification` com feature flag `sendPushEnabled: false`
+- [x] **Etapa 6** — Integrar `NotificationService` no Onboarding (já implementado em `handlePwaInstallContinue`)
+- [ ] **Etapa 6 (revisada §13)** — Refresh silencioso no Dashboard: só se `!participante.fcmToken`; pede permissão também se `permission === "default"`
+- [ ] **Etapa 4 (revisada §13)** — Implementar `sendPingNotification` sem check de `PING_HOURS` interno (cron é a fonte de verdade); com feature flag `sendPushEnabled: false`
   - [ ] Criar doc `config/featureFlags` no Firestore com `{ sendPushEnabled: false }`
-  - [ ] Adicionar `cleanupInvalidTokens()` helper
+  - [ ] Adicionar `cleanupInvalidTokens()` helper (documentar limite de 30 tokens do `in`)
   - [ ] `firebase deploy --only functions`
   - [ ] Testar invocação manual: `firebase functions:shell > sendPingNotification()`
 
@@ -470,7 +478,217 @@ Condição de exibição: `!gameState.fcmToken || Notification.permission === 'd
 
 ---
 
-## 9. Riscos e Considerações
+## 13. Revisão Crítica da Fase 2 (05/04/2026 — v5)
+
+### 13.1 Item 1 — Refresh silencioso: roda desnecessariamente em toda abertura
+
+**Problema do plano original:** o `useEffect` disparava a cada montagem do Dashboard (toda abertura do app), gerando chamada ao FCM + write no Firestore mesmo quando o token já existe e é válido. FCM tokens duram semanas.
+
+**Correção:** checar primeiro se o participante já tem `fcmToken`. Só executar se ausente:
+
+```ts
+useEffect(() => {
+  async function refreshFcmToken() {
+    if (!user || !participante) return;
+    if (participante.fcmToken) return; // já tem token — não refaz
+    if (isIOS() && !isStandalone()) return; // iOS fora de standalone: impossível
+    const permission = Notification.permission;
+    if (permission === "denied") return; // usuário bloqueou — não incomoda
+    const ns = await NotificationService.init();
+    const token = await ns.initializeNotificationsForNewUser();
+    if (token) await ns.saveTokenToFirestore(user.uid, token);
+  }
+  refreshFcmToken();
+}, [user, participante]);
+```
+
+### 13.2 Item 1 — Gap do iOS: permissão nunca pedida após instalação
+
+**Problema:** quando um usuário iOS instala o app e reabre pelo ícone da tela inicial, o `useEffect` de `OnboardingPage` detecta `hasOnboarded = true` e redireciona diretamente ao Dashboard — pulando o `requestNotificationPermission`. O usuário chega ao Dashboard sem token e com `Notification.permission === "default"` (nunca pedido).
+
+O plano original só executava o refresh se `permission === "granted"`. Isso significa que o safety net também falhava para esses usuários.
+
+**Correção:** o refresh no Dashboard deve também atuar quando `permission === "default"`, pedindo a permissão nesse momento:
+
+```ts
+// Cobrir tanto quem nunca pediu quanto quem já tinha concedido
+if (permission === "denied") return; // só esse caso descarta
+// "granted" e "default" continuam o fluxo normalmente
+```
+
+### 13.3 Item 3 — Bug crítico de timezone na Cloud Function
+
+**Problema:** o plano incluía um guard interno de horário:
+
+```js
+const brtHour = now.getHours(); // retorna UTC, não BRT
+const PING_HOURS = [9, 11, 13, 15, 17, 19, 21]; // são horas BRT
+if (!PING_HOURS.includes(brtHour)) return; // nunca bate → função nunca envia
+```
+
+`Date.getHours()` em Cloud Functions retorna hora UTC. O `timeZone` do `onSchedule` controla apenas *quando o cron dispara*, não o que `Date` retorna. Quando o cron dispara às 12:00 UTC (= 9h BRT), `brtHour` seria `12` — fora de `PING_HOURS` — e a função retornaria sem enviar nada.
+
+**Correção:** remover o check interno. O cron já é a fonte de verdade para o horário:
+
+```js
+// REMOVER — redundante e bugado:
+// const brtHour = now.getHours();
+// if (!PING_HOURS.includes(brtHour)) return;
+
+// O título da notificação usa horário BRT — converter corretamente:
+const brtHour = parseInt(
+  new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo', hour: 'numeric', hour12: false })
+);
+```
+
+### 13.4 Item 3 — Limitação do `cleanupInvalidTokens`
+
+O `where("fcmToken", "in", invalidTokens)` do Firestore suporta no máximo **30 valores** por query. Com mais de 30 tokens inválidos numa execução, a query lança exceção e nenhum token é limpo. Para o TCC com poucos participantes é inócuo, mas está documentado para consciência.
+
+### 13.5 Resumo das mudanças em relação ao plano original
+
+| Item | Plano original | Revisado |
+|---|---|---|
+| Refresh no Dashboard | Roda sempre que `user` muda | Só se `!participante.fcmToken` |
+| Permissão no Dashboard | Só se `permission === "granted"` | Também se `permission === "default"` — cobre gap do iOS |
+| Check de horário na Cloud Function | `now.getHours()` vs `PING_HOURS` BRT — bug | Removido; cron é a única fonte de verdade |
+| Título da notificação com hora BRT | `${brtHour}h` de `getHours()` — errado | Converter via `toLocaleString` com `timeZone` |
+| `cleanupInvalidTokens` | Sem limite documentado | Limitação de 30 tokens do `in` documentada |
+
+---
+
+## 9. Refinamento UX: Fluxo de Instalação por Dispositivo (05/04/2026 — v3)
+
+### Problema identificado
+
+- PC exibia instruções de iPhone (comportamento incorreto)
+- `PWAInstallScreen` não tinha roteamento inicial por tipo de dispositivo — todos os dispositivos passavam pela tela de "prompt" genérica primeiro, e só depois chegavam às instruções iOS ao clicar em "Instalar"
+- Resultado: experiência confusa e não otimizada para mobile
+
+### Novo fluxo por dispositivo
+
+| Dispositivo | Estado | Comportamento esperado |
+|---|---|---|
+| **iPhone/iPad** | Não standalone | Mostra **instruções iOS diretamente** (sem tela de prompt intermediária) |
+| **iPhone/iPad** | Standalone | Toast "App instalado e pronto!" — tratado no ProfileMenu/Onboarding antes de abrir a tela |
+| **Android** | Não instalado + `deferredPrompt` disponível | Tela de prompt → botão "Instalar" → dispara prompt nativo do Chrome |
+| **Android** | Instalado (standalone) | Toast "App instalado e pronto!" — tratado antes de abrir a tela |
+| **Desktop/PC** | Não instalado + `deferredPrompt` disponível | Tela de prompt → botão "Instalar" → dispara prompt nativo |
+| **Desktop/PC** | Sem prompt disponível (já instalado ou não elegível) | Fecha silenciosamente via `onContinue()` |
+
+### Mudanças de implementação planejadas
+
+1. **`src/utils/pwaUtils.ts`** — adicionar `isAndroid()`:
+   ```ts
+   export function isAndroid(): boolean {
+     return /Android/.test(navigator.userAgent);
+   }
+   ```
+
+2. **`src/components/screen/PWAInstallScreen.tsx`** — roteamento inicial por dispositivo:
+   - Substituir `useState<View>("prompt")` por estado calculado:
+     ```ts
+     const initialView: View = isIOS() ? "ios-instructions" : "prompt";
+     const [view, setView] = useState<View>(initialView);
+     ```
+   - Isso elimina a tela de prompt desnecessária para iOS e leva diretamente às instruções
+   - Para Android/Desktop: mantém o fluxo atual de prompt → install via `deferredPrompt`
+
+3. **`src/components/menu/ProfileMenu.tsx`** — label do botão já está correto:
+   - standalone → `"App instalado ✓"`
+   - iOS não standalone → `"Como instalar o app"`
+   - Android/Desktop não standalone → `"Instalar o app"`
+
+### Por que o PC mostrava instruções de iPhone
+
+A `PWAInstallScreen` sempre iniciava na view `"prompt"`. Nessa view, ao clicar em "Instalar", a função `handleInstall` verificava `isIOS()`. Se o usuário estava com DevTools abertos simulando um dispositivo iOS (ou se `isIOS()` retornou true por algum user-agent customizado), ele caia nas instruções de iPhone. O fix de inicializar com `isIOS() ? "ios-instructions" : "prompt"` corrige isso porque: no carregamento, o dispositivo é identificado corretamente; não há mais botão de "Instalar" na tela de iOS que redirecione para instruções depois.
+
+---
+
+## 10. Bug: Botão "Instalar" não aciona o banner nativo do navegador (PC/Android)
+
+### Diagnóstico
+
+O `beforeinstallprompt` é um evento **one-shot** — o navegador dispara ele **uma única vez**, logo no carregamento da página, quando decide que o PWA é instalável.
+
+O código atual captura esse evento **dentro do `PWAInstallScreen`** via `useEffect`:
+
+```tsx
+// PWAInstallScreen.tsx — problema atual
+useEffect(() => {
+  const handler = (e: Event) => {
+    e.preventDefault();
+    setDeferredPrompt(e); // nunca chega aqui
+  };
+  window.addEventListener("beforeinstallprompt", handler);
+  return () => window.removeEventListener("beforeinstallprompt", handler);
+}, []);
+```
+
+Esse `useEffect` só roda quando o componente **monta** — ou seja, quando o usuário clica em "Instalar app" no menu. Mas o evento já disparou minutos antes, quando a página carregou. O componente perdeu o evento. Resultado: `deferredPrompt` fica `null` para sempre, e o `handleInstall` cai no `else { onContinue(); }` — fechando a tela silenciosamente sem nada acontecer.
+
+| Momento | `useEffect` atual | Solução (módulo-level) |
+|---|---|---|
+| Página carrega | `PWAInstallScreen` não existe | Listener já ativo ✅ |
+| `beforeinstallprompt` dispara | Ninguém ouve ❌ | Evento capturado ✅ |
+| Usuário clica "Instalar app" | `deferredPrompt` é `null` ❌ | `getDeferredInstallPrompt()` retorna o evento ✅ |
+
+### Solução
+
+Capturar o `beforeinstallprompt` **no nível do módulo**, em `pwaUtils.ts`. Quando esse arquivo é importado (o que acontece cedo no ciclo de vida do app), o listener já fica registrado:
+
+```ts
+// pwaUtils.ts — adicionar
+let _deferredInstallPrompt: any = null;
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    _deferredInstallPrompt = e;
+  });
+}
+
+export function getDeferredInstallPrompt() {
+  return _deferredInstallPrompt;
+}
+
+export function clearDeferredInstallPrompt() {
+  _deferredInstallPrompt = null;
+}
+```
+
+`PWAInstallScreen` não precisa mais escutar o evento — apenas lê `getDeferredInstallPrompt()` no clique:
+
+```tsx
+const handleInstall = async () => {
+  const prompt = getDeferredInstallPrompt();
+  if (prompt) {
+    prompt.prompt(); // abre o banner nativo do navegador
+    const { outcome } = await prompt.userChoice;
+    clearDeferredInstallPrompt();
+    if (outcome === 'accepted') {
+      onContinue();
+    }
+    // se recusou: permanece na tela (usuário pode pular)
+  } else {
+    // sem prompt disponível (PWA não elegível ou já instalado): fallback
+    setView("skip-hint");
+  }
+};
+```
+
+### Casos adicionais a tratar
+
+| Situação | Comportamento atual | Comportamento esperado |
+|---|---|---|
+| Usuário aceita o install | `onContinue()` → dashboard | Igual ✅ |
+| Usuário rejeita o install | `onContinue()` silencioso ❌ | Permanece na tela com opção de pular |
+| App já instalado (`isStandalone`) | Toast (tratado no Dashboard) | Correto ✅ |
+| Prompt não disponível (PWA não elegível) | `onContinue()` silencioso ❌ | Exibir view `"skip-hint"` como fallback |
+
+---
+
+## 11. Riscos e Considerações
 
 ### 🔴 Coleção errada — já documentado no §2
 Correção obrigatória antes de qualquer outra etapa de notificação.
@@ -505,3 +723,174 @@ O campo é salvo corretamente em `"participantes"` via `createUser` (spread do e
 | Participante com jornada encerrada | Não recebe notificação (`isParticipantActive = false`) |
 | Token expirado/inválido | Limpo automaticamente do Firestore por `cleanupInvalidTokens` |
 | `sendPushEnabled: false` | Cloud Function loga e retorna sem disparar |
+
+---
+
+## 12. Adendo Técnico: Revisão Crítica do Bug §10 e Solução Revisada (05/04/2026 — v4)
+
+### 12.1 O diagnóstico do §10 está correto
+
+O root cause identificado é válido: `beforeinstallprompt` é um evento **one-shot** disparado pelo navegador logo no carregamento da página. O `useEffect` dentro do `PWAInstallScreen` só registra o listener quando o componente monta (i.e., quando o usuário já está na tela de instalação), momento em que o evento já disparou e foi perdido. O estado `deferredPrompt` fica `null` permanentemente.
+
+### 12.2 Problemas na solução proposta pelo §10
+
+#### ❌ Anti-pattern: estado mutable em módulo utilitário
+
+A solução do §10 propõe adicionar um listener e uma variável `_deferredInstallPrompt` diretamente no `pwaUtils.ts`:
+
+```ts
+// pwaUtils.ts — proposta do §10 (problemática)
+let _deferredInstallPrompt: any = null;
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    _deferredInstallPrompt = e;
+  });
+}
+```
+
+Issues:
+
+1. **Viola separação de responsabilidades.** `pwaUtils.ts` é um módulo de funções puras de detecção de ambiente. Introduzir estado mutable e side effects transforma o módulo num objeto implicitamente stateful — qualquer arquivo que importe `isIOS()` ativa o listener como efeito colateral não declarado.
+
+2. **O timing ainda não é garantido.** A garantia de que `pwaUtils.ts` seja avaliado *antes* do evento disparar depende de quais outros arquivos o importam e de como o bundler organiza o carregamento. Se o único consumidor for o próprio `PWAInstallScreen` (que é lazy-mounted), o módulo pode ser avaliado tarde demais — exatamente o mesmo problema que existe hoje.
+
+3. **Não usa `{ once: true }`.** O evento `beforeinstallprompt` dispara uma única vez. O listener deveria se auto-remover com `{ once: true }` para não ficar pendurado indefinidamente.
+
+#### ❌ Bug adicional identificado no código atual (não mencionado no §10)
+
+No `PWAInstallScreen.tsx` atual (linhas 37–39), o resultado do `userChoice` é ignorado:
+
+```tsx
+// ATUAL — bug
+await deferredPrompt.userChoice; // outcome ignorado
+setDeferredPrompt(null);
+onContinue(); // chamado sempre, mesmo se o usuário RECUSOU a instalação
+```
+
+O correto é desestruturar o `outcome` e só chamar `onContinue()` se o usuário aceitou. Se recusou, deve permanecer na tela.
+
+### 12.3 Solução revisada: singleton isolado + inicialização em `main.tsx`
+
+A abordagem correta é criar um **módulo singleton com responsabilidade única** (`installPrompt.ts`) e inicializá-lo **explicitamente no ponto de entrada da aplicação** (`main.tsx`), antes de qualquer renderização.
+
+#### Estrutura proposta
+
+```
+src/
+  utils/
+    pwaUtils.ts        ← mantido: apenas funções puras de detecção (sem alterações)
+    installPrompt.ts   ← novo: singleton responsável exclusivamente pelo prompt
+```
+
+#### `src/utils/installPrompt.ts` (novo arquivo)
+
+```ts
+type DeferredPromptEvent = {
+  prompt(): void;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+};
+
+let _prompt: DeferredPromptEvent | null = null;
+
+export function initInstallPromptCapture(): void {
+  window.addEventListener(
+    'beforeinstallprompt',
+    (e) => {
+      e.preventDefault();
+      _prompt = e as unknown as DeferredPromptEvent;
+    },
+    { once: true } // alinha com comportamento real do evento
+  );
+}
+
+export function getInstallPrompt(): DeferredPromptEvent | null {
+  return _prompt;
+}
+
+export function clearInstallPrompt(): void {
+  _prompt = null;
+}
+```
+
+#### `src/main.tsx` — inicialização explícita
+
+```tsx
+import { initInstallPromptCapture } from '@/src/utils/installPrompt';
+
+// Registrar antes de qualquer renderização — garante captura do evento
+initInstallPromptCapture();
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+```
+
+#### `src/components/screen/PWAInstallScreen.tsx` — simplificado
+
+```tsx
+import { getInstallPrompt, clearInstallPrompt } from '@/src/utils/installPrompt';
+
+// Remover: useEffect de captura (linhas 17-24)
+// Remover: estado deferredPrompt
+
+const handleInstall = async () => {
+  const prompt = getInstallPrompt();
+  if (!prompt) {
+    // Sem prompt disponível: feedback visual, não silêncio
+    setView('skip-hint');
+    return;
+  }
+  prompt.prompt();
+  const { outcome } = await prompt.userChoice;
+  clearInstallPrompt();
+  if (outcome === 'accepted') {
+    onContinue();
+  }
+  // Se recusou: permanece na tela — usuário pode pular via botão
+};
+```
+
+### 12.4 Comparativo das abordagens
+
+| Critério | §10 (módulo-level em `pwaUtils`) | **Revisado (`installPrompt.ts` + `main.tsx`)** |
+|---|---|---|
+| Timing garantido | ⚠️ Depende de quando `pwaUtils` é importado | ✅ `main.tsx` roda antes de qualquer renderização |
+| Separação de responsabilidades | ❌ `pwaUtils` vira stateful com side effects | ✅ Módulo com propósito único e declarado |
+| `{ once: true }` no listener | ❌ Não usa | ✅ Alinha com o comportamento real do evento |
+| Bug do `outcome` ignorado | ❌ Não cobre | ✅ Corrigido junto |
+| Caso sem prompt (`null`) | `onContinue()` silencioso ❌ | `setView('skip-hint')` com feedback ✅ |
+
+### 12.5 Observações adicionais sobre `installPrompt.ts`
+
+#### `initInstallPromptCapture` não é idempotente
+
+Se chamada duas vezes, registra dois listeners. O segundo seria inútil (o `{ once: true }` remove o primeiro após disparo), mas para ser defensivo:
+
+```ts
+export function initInstallPromptCapture(): void {
+  if (_prompt !== null) return; // guard de idempotência
+  window.addEventListener('beforeinstallprompt', ...);
+}
+```
+
+Não é um problema na prática (só é chamada em `main.tsx`), mas protege contra usos futuros inadvertidos.
+
+#### Guard de SSR ausente
+
+O §10 incluía `if (typeof window !== 'undefined')`. O §12 não tem esse guard. Para este projeto (PWA puro, sem SSR), não é problema — `main.tsx` só roda no navegador. Documentado aqui apenas para consciência: se o codebase algum dia adotar SSR, a chamada em `main.tsx` precisaria do guard ou ser movida para um ponto exclusivamente client-side.
+
+---
+
+### 12.6 Atualização do checklist (Fase 1)
+
+Substituir os 3 itens do Bug §10 no checklist por:
+
+- [ ] Criar `src/utils/installPrompt.ts` com `initInstallPromptCapture`, `getInstallPrompt`, `clearInstallPrompt`
+- [ ] Chamar `initInstallPromptCapture()` no `main.tsx`, antes do `ReactDOM.createRoot`
+- [ ] Refatorar `PWAInstallScreen`: remover `useEffect` + estado `deferredPrompt`, usar `getInstallPrompt()` no `handleInstall`
+- [ ] Corrigir bug do `outcome` ignorado: desestruturar `userChoice` e condicionar `onContinue()` ao `'accepted'`
+- [ ] Tratar ausência de prompt com `setView('skip-hint')` em vez de `onContinue()` silencioso

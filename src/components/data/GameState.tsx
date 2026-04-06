@@ -18,4 +18,6 @@ export type GameState = {
   dailyScreenTimeLogs?: DailyScreenTimeLog[];
   /** Flag persistida após envio da avaliação de reação (desfecho da jornada). */
   reactionEvaluationDone?: boolean;
+  /** Token FCM para push notifications. Salvo via setDoc merge — pode estar ausente em participantes antigos. */
+  fcmToken?: string;
 };

@@ -4,12 +4,12 @@ import { TrashIcon } from "../icons/TrashIcon";
 import { ChartBarIcon } from "../icons/ChartBarIcon";
 import { IdentificationIcon } from "../icons/IdentificationIcon";
 import { DocumentTextIcon } from "../icons/DocumentTextIcon";
+import { isIOS, isStandalone } from "@/src/utils/pwaUtils";
 
 export const ProfileMenu: React.FC<{
   onUpload: () => void;
   onRemove: () => void;
   onViewRcle: () => void;
-  onViewPerformance: () => void;
   onViewData: () => void;
   onLogout: () => void;
   onDeleteAccount: () => void;
@@ -18,11 +18,11 @@ export const ProfileMenu: React.FC<{
   onDownloadReport?: () => void;
   isAdmin?: boolean;
   onNavigateAdmin?: () => void;
+  onInstallApp?: () => void;
 }> = ({
   onUpload,
   onRemove,
   onViewRcle,
-  onViewPerformance,
   onViewData,
   onLogout,
   onDeleteAccount,
@@ -31,7 +31,11 @@ export const ProfileMenu: React.FC<{
   onDownloadReport,
   isAdmin,
   onNavigateAdmin,
+  onInstallApp,
 }) => {
+  const installLabel = isStandalone()
+    ? "App instalado ✓"
+    : isIOS() ? "Como instalar o app" : "Instalar o app";
   const baseClass =
     "flex items-center space-x-3 w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-cyan-400/20 hover:text-cyan-300 transition-colors rounded-md";
   return (
@@ -45,9 +49,6 @@ export const ProfileMenu: React.FC<{
         </button>
       )}
       <div className="h-px bg-cyan-400/20 my-1"></div>
-      <button onClick={onViewPerformance} className={baseClass}>
-        <ChartBarIcon className="w-4 h-4" /> <span>Desempenho</span>
-      </button>
       <button onClick={onViewData} className={baseClass}>
         <IdentificationIcon className="w-4 h-4" /> <span>Meus Dados</span>
       </button>
@@ -70,6 +71,11 @@ export const ProfileMenu: React.FC<{
           </button>
         </>
       )}
+      <div className="h-px bg-cyan-400/20 my-1"></div>
+      <button onClick={onInstallApp} className={baseClass}>
+        <span className="text-lg leading-none">📲</span>
+        <span>{installLabel}</span>
+      </button>
       <div className="h-px bg-cyan-400/20 my-1"></div>
       <button
         onClick={onDeleteAccount}

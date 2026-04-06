@@ -19,6 +19,9 @@ import { SocialTab } from "@/src/components/tabs/SocialTab";
 import { ConquistasTab } from "@/src/components/tabs/ConquistasTab";
 import { TutoriaisTab } from "@/src/components/tabs/TutoriaisTab";
 import { useAuth } from "@/src/contexts/AuthContext";
+import { useToast } from "@/src/contexts/ToastContext";
+import { PWAInstallScreen } from "@/src/components/screen/PWAInstallScreen";
+import { isIOS, isStandalone } from "@/src/utils/pwaUtils";
 import { db } from "@/src/services/firebase";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
@@ -61,6 +64,7 @@ export const DashboardPage: React.FC<{
   const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
   const [isScreenTimeModalOpen, setIsScreenTimeModalOpen] = useState(false);
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
+  const [isInstallScreenOpen, setIsInstallScreenOpen] = useState(false);
   const [timerTargetDate, setTimerTargetDate] = useState<Date | null>(null);
   const [timerLabel, setTimerLabel] = useState<string>("");
   const [isActiveWindow, setIsActiveWindow] = useState(false);
@@ -68,6 +72,7 @@ export const DashboardPage: React.FC<{
   const [isAfterStudyEnd, setIsAfterStudyEnd] = useState(false);
   const [firstPingDate, setFirstPingDate] = useState<Date | null>(null);
   const { logout, user } = useAuth();
+  const { showToast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => {
     if (!user) { setIsAdmin(false); return; }
@@ -75,6 +80,24 @@ export const DashboardPage: React.FC<{
       .then(r => setIsAdmin(r.claims.admin === true))
       .catch(() => setIsAdmin(false));
   }, [user]);
+
+  // Refresh silencioso de token FCM para participantes sem token (ex: usuários existentes antes da Fase 1)
+  useEffect(() => {
+    async function refreshFcmToken() {
+      if (!user || !participante) return;
+      if (participante.fcmToken) return; // já tem token — não refaz
+      if (isIOS() && !isStandalone()) return; // iOS fora de standalone: push impossível
+      if (Notification.permission === "denied") return; // usuário bloqueou — não incomoda
+      try {
+        const ns = await NotificationService.init();
+        const token = await ns.initializeNotificationsForNewUser();
+        if (token) await ns.saveTokenToFirestore(user.uid, token);
+      } catch (error) {
+        console.error("Erro no refresh silencioso de FCM token:", error);
+      }
+    }
+    refreshFcmToken();
+  }, [user, participante]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -777,7 +800,6 @@ export const DashboardPage: React.FC<{
             onUpload={() => fileInputRef.current?.click()}
             onRemove={handleRemoveAvatar}
             onViewRcle={() => { setIsRcleModalOpen(true); setIsProfileMenuOpen(false); }}
-            onViewPerformance={() => { setIsPerformanceModalOpen(true); setIsProfileMenuOpen(false); }}
             onViewData={() => { setIsSociodemographicModalOpen(true); setIsProfileMenuOpen(false); }}
             onLogout={handleLogout}
             onDeleteAccount={() => { setIsDeleteAccountModalOpen(true); setIsProfileMenuOpen(false); }}
@@ -786,6 +808,14 @@ export const DashboardPage: React.FC<{
             onDownloadReport={() => { setIsReportModalOpen(true); setIsProfileMenuOpen(false); }}
             isAdmin={isAdmin}
             onNavigateAdmin={() => { setIsProfileMenuOpen(false); navigate('/admin'); }}
+            onInstallApp={() => {
+              setIsProfileMenuOpen(false);
+              if (isStandalone()) {
+                showToast("Seu app já está instalado e pronto! 🎉");
+              } else {
+                setIsInstallScreenOpen(true);
+              }
+            }}
           />
         )}
       </div>
@@ -855,6 +885,11 @@ export const DashboardPage: React.FC<{
           onConfirm={handleDeleteAccount}
           onCancel={() => setIsDeleteAccountModalOpen(false)}
         />
+      )}
+      {isInstallScreenOpen && (
+        <div className="fixed inset-0 z-50 bg-brand-dark">
+          <PWAInstallScreen onContinue={() => setIsInstallScreenOpen(false)} />
+        </div>
       )}
 
       <style>{`

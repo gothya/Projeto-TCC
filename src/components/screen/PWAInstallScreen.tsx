@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { isIOS, isStandalone } from "@/src/utils/pwaUtils";
+import { getInstallPrompt, clearInstallPrompt } from "@/src/utils/installPrompt";
 
 interface PWAInstallScreenProps {
   onContinue: () => void;
@@ -8,20 +9,10 @@ interface PWAInstallScreenProps {
 type View = "prompt" | "ios-instructions" | "skip-hint";
 
 export const PWAInstallScreen: React.FC<PWAInstallScreenProps> = ({ onContinue }) => {
-  const [view, setView] = useState<View>("prompt");
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [notStandaloneWarning, setNotStandaloneWarning] = useState(false);
-
   const ios = isIOS();
 
-  useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener("beforeinstallprompt", handler as EventListener);
-    return () => window.removeEventListener("beforeinstallprompt", handler as EventListener);
-  }, []);
+  const [view, setView] = useState<View>(ios ? "ios-instructions" : "prompt");
+  const [notStandaloneWarning, setNotStandaloneWarning] = useState(false);
 
   // Já está instalado — pula
   if (isStandalone()) {
@@ -30,17 +21,19 @@ export const PWAInstallScreen: React.FC<PWAInstallScreenProps> = ({ onContinue }
   }
 
   const handleInstall = async () => {
-    if (ios) {
-      setView("ios-instructions");
-    } else if (deferredPrompt) {
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      setDeferredPrompt(null);
-      onContinue();
-    } else {
-      // Android sem prompt disponível — mostra instruções genéricas ou segue
+    const prompt = getInstallPrompt();
+    if (!prompt) {
+      // Sem prompt disponível (PWA não elegível ou já instalado): feedback visual
+      setView("skip-hint");
+      return;
+    }
+    prompt.prompt();
+    const { outcome } = await prompt.userChoice;
+    clearInstallPrompt();
+    if (outcome === "accepted") {
       onContinue();
     }
+    // Se recusou: permanece na tela — usuário pode pular via botão
   };
 
   const handleSkip = () => {
@@ -48,15 +41,14 @@ export const PWAInstallScreen: React.FC<PWAInstallScreenProps> = ({ onContinue }
   };
 
   const handleIosContinue = () => {
-    const nowStandalone = isStandalone();
-    if (ios && !nowStandalone) {
+    if (!isStandalone()) {
       setNotStandaloneWarning(true);
       return;
     }
     onContinue();
   };
 
-  // --- Tela principal ---
+  // --- Tela principal (Android / Desktop) ---
   if (view === "prompt") {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center animate-fade-in">
