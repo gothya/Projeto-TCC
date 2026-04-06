@@ -105,7 +105,7 @@ function isParticipantActive(studyStartDateIso) {
   const start = new Date(studyStartDateIso);
   const now = new Date();
   const diffDays = (now - start) / (1000 * 60 * 60 * 24);
-  return diffDays >= 0 && diffDays <= 7;
+  return diffDays >= 0 && diffDays < 7;
 }
 
 // Nota: Firestore "in" suporta no máximo 30 valores.
@@ -173,3 +173,24 @@ exports.sendPushNotification = onCall(
             throw new HttpsError("internal", "Erro ao enviar push notification.", error);
         }
     });
+
+// ─── onCall: limpa tokens FCM de todos os participantes (migração de origem) ─
+exports.resetAllFcmTokens = onCall(
+    { cors: false },
+    async (request) => {
+        if (!request.auth?.token.admin) {
+            throw new HttpsError("permission-denied", "Apenas administradores.");
+        }
+        const db = admin.firestore();
+        const snapshot = await db.collection("participantes").get();
+        const updates = snapshot.docs.map(doc =>
+            doc.ref.update({
+                fcmToken: admin.firestore.FieldValue.delete(),
+                fcmTokenOrigin: admin.firestore.FieldValue.delete(),
+            })
+        );
+        await Promise.all(updates);
+        console.log(`🔄 ${updates.length} token(s) FCM removido(s).`);
+        return { cleared: updates.length };
+    }
+);

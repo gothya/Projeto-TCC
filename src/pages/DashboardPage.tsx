@@ -81,11 +81,12 @@ export const DashboardPage: React.FC<{
       .catch(() => setIsAdmin(false));
   }, [user]);
 
-  // Refresh silencioso de token FCM para participantes sem token (ex: usuários existentes antes da Fase 1)
+  // Refresh silencioso de token FCM — regenera se ausente ou gerado em outra origem
   useEffect(() => {
     async function refreshFcmToken() {
       if (!user || !participante) return;
-      if (participante.fcmToken) return; // já tem token — não refaz
+      const tokenOriginMatch = participante.fcmTokenOrigin === window.location.origin;
+      if (participante.fcmToken && tokenOriginMatch) return; // token válido e da origem certa
       if (isIOS() && !isStandalone()) return; // iOS fora de standalone: push impossível
       if (Notification.permission === "denied") return; // usuário bloqueou — não incomoda
       try {
@@ -266,42 +267,7 @@ export const DashboardPage: React.FC<{
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    async function handlePushPermission() {
-      if (!("Notification" in window)) return;
 
-      const currentPermission = Notification.permission;
-
-      // Se nunca decidiu ainda
-      if (currentPermission === "default") {
-        const permission = await Notification.requestPermission();
-
-        if (permission === "granted") {
-          await registerPushToken();
-        }
-      }
-
-      // Se já está granted
-      if (currentPermission === "granted") {
-        await registerPushToken();
-      }
-    }
-
-    handlePushPermission();
-  }, []);
-
-  const registerPushToken = async () => {
-    try {
-      const service = await NotificationService.init();
-      const token = await service.requestPermission();
-
-      if (token && participante?.firebaseId) {
-        await service.saveTokenToFirestore(participante.firebaseId, token);
-      }
-    } catch (error) {
-      console.error("Erro ao registrar push:", error);
-    }
-  };
 
   const functions = getFunctions();
   const sendPush = httpsCallable(functions, 'sendPushNotification');
@@ -625,25 +591,8 @@ export const DashboardPage: React.FC<{
     if (!isActiveWindow) {
       // It was waiting for a future ping, which just started.
       setIsBellVisible(true);
-      try {
-        const currentToken = await getToken(getMessaging(), {
-          vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
-        })
-
-        if (currentToken) {
-          const response = await sendPush({
-            token: currentToken,
-            title: "É hora do Ping!",
-            body: "Você tem 50 minutos para responder ao seu ping do Psylogos."
-          });
-          console.log("Push notification sent successfully:", response, new Date().toISOString());
-        }
-      }
-      catch (error) {
-        console.error("Error fetching FCM token:", error);
-      }
     }
-  }, [isActiveWindow, sendPush]);
+  }, [isActiveWindow, highlightedPing]);
 
   const handleLogout = async () => {
     await logout();

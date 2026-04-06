@@ -18,6 +18,7 @@ import { UserIcon } from "@/src/components/icons/UserIcon";
 import { parseDurationMinutes, resolvePlatformName, formatMinutes } from "@/src/utils/screenTimeUtils";
 import { auth, db } from "@/src/services/firebase";
 import { collection, doc, getDocs, setDoc, updateDoc } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -276,6 +277,46 @@ export const AdminDashboardPage: React.FC<{
 
 
     const [isSendingPing, setIsSendingPing] = useState(false);
+
+    const [sendingPing, setSendingPing] = useState(false);
+    const [resettingTokens, setResettingTokens] = useState(false);
+    const functions = getFunctions();
+    const sendPushNotification = httpsCallable(functions, 'sendPushNotification');
+    const resetAllFcmTokens = httpsCallable(functions, 'resetAllFcmTokens');
+
+    const handleResetAllFcmTokens = async () => {
+        if (!confirm("Isso vai apagar o token FCM de TODOS os participantes. Na próxima abertura do app, cada um terá seu token regenerado automaticamente. Confirmar?")) return;
+        setResettingTokens(true);
+        try {
+            const result = await resetAllFcmTokens({});
+            const data = result.data as { cleared: number };
+            setToast(`✅ ${data.cleared} token(s) removido(s). Participantes regenerarão ao abrir o app.`);
+        } catch (error: any) {
+            setToast(`❌ Erro: ${error.message}`);
+        } finally {
+            setResettingTokens(false);
+        }
+    };
+
+    const handleSendTestPing = async () => {
+        if (!selectedUser?.fcmToken) {
+            setToast("Participante sem token FCM. O app precisa ser aberto em projeto-tcc-pi.vercel.app primeiro.");
+            return;
+        }
+        setSendingPing(true);
+        try {
+            await sendPushNotification({
+                token: selectedUser.fcmToken,
+                title: "🧠 Ping de Teste — Pesquisador",
+                body: `Ping enviado manualmente para ${selectedUser.user.nickname}.`,
+            });
+            setToast(`✅ Notificação enviada para ${selectedUser.user.nickname}`);
+        } catch (error: any) {
+            setToast(`❌ Erro ao enviar: ${error.message}`);
+        } finally {
+            setSendingPing(false);
+        }
+    };
 
     const triggerPing = async () => {
 
@@ -654,6 +695,31 @@ export const AdminDashboardPage: React.FC<{
                                 </div>
                             </div>
                         )}
+
+                        {/* --- NEW: PUSH NOTIFICATION TEST --- */}
+                        <div className="mt-4 mb-8 p-6 border rounded-xl bg-slate-900 border-purple-500/30">
+                            <p className="text-lg font-bold text-gray-200 mb-2">Enviar notificação de teste</p>
+
+                            {selectedUser.fcmToken ? (
+                                <p className="text-sm text-green-400 mb-4 flex items-center gap-2">
+                                    <CheckCircleIcon className="w-5 h-5" />
+                                    Token FCM disponível
+                                </p>
+                            ) : (
+                                <p className="text-sm text-red-400 mb-4">
+                                    ❌ Sem token FCM — participante precisa abrir o app no Vercel
+                                </p>
+                            )}
+
+                            <button
+                                onClick={handleSendTestPing}
+                                disabled={sendingPing || !selectedUser.fcmToken}
+                                className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shadow-[0_0_15px_rgba(147,51,234,0.3)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                                <BellIcon className="w-5 h-5" />
+                                {sendingPing ? "Enviando..." : "Enviar Ping de Teste"}
+                            </button>
+                        </div>
 
                         {/* --- HISTÓRICO DIÁRIO DE TEMPO DE TELA --- */}
                         {selectedUser && (() => {
@@ -1079,6 +1145,14 @@ export const AdminDashboardPage: React.FC<{
                                     Disparar Pings Agora (Todos os {activeUsersCount} usuários)
                                 </>
                             )}
+                        </button>
+
+                        <button
+                            onClick={handleResetAllFcmTokens}
+                            disabled={resettingTokens}
+                            className="w-full py-3 px-6 text-amber-300 font-semibold rounded-xl border border-amber-500/40 hover:bg-amber-500/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                        >
+                            {resettingTokens ? "Removendo tokens..." : "Resetar tokens FCM de todos os participantes"}
                         </button>
                     </div>
                 </div>

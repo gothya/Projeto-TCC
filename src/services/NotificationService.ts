@@ -99,9 +99,10 @@ export class NotificationService {
 
         try {
             const userRef = doc(db, "participantes", uid);
-            // We use setDoc with merge: true to arguably be safer if doc doesn't exist, 
-            // though in our app logic user doc should exist.
-            await setDoc(userRef, { fcmToken: token }, { merge: true });
+            await setDoc(userRef, {
+                fcmToken: token,
+                fcmTokenOrigin: window.location.origin,
+            }, { merge: true });
             console.log("Token saved to Firestore for user:", uid);
         } catch (error) {
             console.error("Error saving token to Firestore:", error);

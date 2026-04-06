@@ -20,4 +20,6 @@ export type GameState = {
   reactionEvaluationDone?: boolean;
   /** Token FCM para push notifications. Salvo via setDoc merge — pode estar ausente em participantes antigos. */
   fcmToken?: string;
+  /** Origem onde o token FCM foi gerado (window.location.origin). Usado para detectar tokens de origem errada. */
+  fcmTokenOrigin?: string;
 };
