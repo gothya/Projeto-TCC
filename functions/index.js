@@ -31,10 +31,10 @@ exports.deleteParticipantAccount = onCall(
 );
 
 // ─── Scheduled: dispara nos horários de ping (BRT) ──────────────────────────
-// Cron em UTC: 9h, 11h, 13h, 15h, 17h, 19h, 21h BRT = 12h, 14h, 16h, 18h, 20h, 22h, 0h UTC
+// Cron em Local/BRT: 9h, 11h, 13h, 15h, 17h, 19h, 21h (usando timeZone direto)
 exports.sendPingNotification = onSchedule(
   {
-    schedule: "0 12,14,16,18,20,22,0 * * *",
+    schedule: "0 9,11,13,15,17,19,21 * * *",
     timeZone: "America/Sao_Paulo",
     region: "southamerica-east1",
   },
@@ -133,7 +133,7 @@ async function cleanupInvalidTokens(db, tokens, response) {
 
 // ─── onCall: envio manual pelo painel admin ──────────────────────────────────
 exports.sendPushNotification = onCall(
-    { cors: false },
+    { cors: true },
     async (request) => {
         // Verifica autenticação
         if (!request.auth) {
@@ -176,7 +176,7 @@ exports.sendPushNotification = onCall(
 
 // ─── onCall: limpa tokens FCM de todos os participantes (migração de origem) ─
 exports.resetAllFcmTokens = onCall(
-    { cors: false },
+    { cors: true },
     async (request) => {
         if (!request.auth?.token.admin) {
             throw new HttpsError("permission-denied", "Apenas administradores.");

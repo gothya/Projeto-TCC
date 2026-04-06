@@ -24,8 +24,6 @@ import { PWAInstallScreen } from "@/src/components/screen/PWAInstallScreen";
 import { isIOS, isStandalone } from "@/src/utils/pwaUtils";
 import { db } from "@/src/services/firebase";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
-import { getFunctions, httpsCallable } from "firebase/functions";
-import { getMessaging, getToken } from "firebase/messaging";
 import { useNavigate } from "react-router-dom";
 import { useParticipante } from "../hooks/useParticipante";
 import UserService from "../service/user/UserService";
@@ -268,9 +266,6 @@ export const DashboardPage: React.FC<{
   }, []);
 
 
-
-  const functions = getFunctions();
-  const sendPush = httpsCallable(functions, 'sendPushNotification');
 
   const savePartialResponse = useCallback(async (data: Partial<InstrumentResponse>, completedStep: string) => {
     if (!participante?.firebaseId) return;

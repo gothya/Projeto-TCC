@@ -16,7 +16,7 @@ import { DocumentTextIcon } from "@/src/components/icons/DocumentTextIcon";
 import { MagnifyingGlassIcon } from "@/src/components/icons/MagnifyingGlassIcon";
 import { UserIcon } from "@/src/components/icons/UserIcon";
 import { parseDurationMinutes, resolvePlatformName, formatMinutes } from "@/src/utils/screenTimeUtils";
-import { auth, db } from "@/src/services/firebase";
+import { db } from "@/src/services/firebase";
 import { collection, doc, getDocs, setDoc, updateDoc } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import React, { useEffect, useState } from "react";
@@ -34,7 +34,6 @@ export const AdminDashboardPage: React.FC<{
 
     // Selected User State (for granular view)
     const [selectedUser, setSelectedUser] = useState<GameState | null>(null);
-    const [selectedResponseIndex, setSelectedResponseIndex] = useState<number | null>(null); // Unused now
     const [showAllScreenTimeLogs, setShowAllScreenTimeLogs] = useState(false);
 
 
@@ -262,10 +261,6 @@ export const AdminDashboardPage: React.FC<{
 
     const historyItems = selectedUser ? getFullHistory(selectedUser) : [];
 
-    // Selected History Item logic
-    // We use selectedResponseIndex to store the index in *historyItems* array now?
-    // Or kept it as response index?
-    // Better: Store index of *historyItems*.
     const [selectedHistoryIndex, setSelectedHistoryIndex] = useState<number>(0);
 
     useEffect(() => {
@@ -275,8 +270,6 @@ export const AdminDashboardPage: React.FC<{
     const selectedItem = (selectedUser && historyItems.length > 0) ? historyItems[selectedHistoryIndex] : null;
     const selectedResponse = selectedItem?.data; // Compatible with existing code expecting 'selectedResponse'
 
-
-    const [isSendingPing, setIsSendingPing] = useState(false);
 
     const [sendingPing, setSendingPing] = useState(false);
     const [resettingTokens, setResettingTokens] = useState(false);
@@ -318,51 +311,6 @@ export const AdminDashboardPage: React.FC<{
         }
     };
 
-    const triggerPing = async () => {
-
-        if (!auth.currentUser) {
-            setToast("Erro: Você precisa estar logado.");
-            return;
-        }
-
-        if (!confirm("Tem certeza que deseja enviar uma notificação para TODOS os usuários?")) {
-            return;
-        }
-
-        setIsSendingPing(true);
-        setToast("Enviando comando para o servidor...");
-
-        try {
-            const token = await auth.currentUser.getIdToken();
-
-            const response = await fetch('/api/send-broadcast', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    title: "Hora do Ping! 🔔",
-                    body: "Acesse o app para registrar como você está se sentindo agora."
-                })
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                setToast(`Sucesso! Enviado para ${data.sentCount} dispositivos.`);
-            } else {
-                throw new Error(data.error || "Falha ao enviar");
-            }
-
-        } catch (error) {
-            console.error("Erro ao disparar ping:", error);
-            setToast(`Erro ao enviar: ${error instanceof Error ? error.message : "Erro desconhecido"}`);
-        } finally {
-            setIsSendingPing(false);
-            setTimeout(() => setToast(null), 5000);
-        }
-    };
 
     const ScaleVisual = ({ value, max }: { value: number | undefined, max: number }) => (
         <div className="flex gap-1 items-center">
@@ -1124,29 +1072,6 @@ export const AdminDashboardPage: React.FC<{
                     </p>
 
                     <div className="space-y-4">
-                        <button
-                            onClick={triggerPing}
-                            disabled={isSendingPing}
-                            className={`w-full py-4 px-6 text-white font-bold rounded-xl shadow-[0_0_15px_rgba(147,51,234,0.3)] transition-all transform hover:-translate-y-1 flex items-center justify-center
-                ${isSendingPing ? 'bg-purple-800 cursor-wait opacity-70' : 'bg-purple-600 hover:bg-purple-500'}
-              `}
-                        >
-                            {isSendingPing ? (
-                                <>
-                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Enviando...
-                                </>
-                            ) : (
-                                <>
-                                    <BellIcon className="w-6 h-6 mr-3" />
-                                    Disparar Pings Agora (Todos os {activeUsersCount} usuários)
-                                </>
-                            )}
-                        </button>
-
                         <button
                             onClick={handleResetAllFcmTokens}
                             disabled={resettingTokens}

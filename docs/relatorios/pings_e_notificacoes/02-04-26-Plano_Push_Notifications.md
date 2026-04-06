@@ -1,6 +1,6 @@
 # Plano Técnico: Push Notifications de Ping — Psylogos
 **Data:** 02/04/2026 — Revisado: 06/04/2026 (v10)  
-**Status:** 🔴 Correções pendentes antes de ativar `sendPushEnabled: true` — ver §15 e §16
+**Status:** 🟡 Aguardando validação final (iOS standalone) antes de ativar `sendPushEnabled: true` — ver §16
 
 ---
 
@@ -280,7 +280,7 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 
 exports.sendPingNotification = onSchedule(
   {
-    schedule: "0 12,14,16,18,20,22,0 * * *",
+    schedule: "0 9,11,13,15,17,19,21 * * *", // corrigido §19 — era "0 12,14,16,18,20,22,0" (duplo fuso)
     timeZone: "America/Sao_Paulo",
     region: "southamerica-east1",
   },
@@ -1374,14 +1374,13 @@ Se ausente, adicionar via Firebase Admin SDK ou script antes de usar o botão.
 
 ### Checklist da §17
 
-- [ ] Adicionar import de `getFunctions`, `httpsCallable` em `AdminDashboardPage.tsx`
-- [ ] Adicionar `sendingPing` state e callable `sendPushNotification`
-- [ ] Implementar `handleSendTestPing`
-- [ ] Adicionar bloco de UI na seção de detalhes do participante selecionado
-- [ ] Verificar que o pesquisador tem custom claim `admin: true` no Firebase Auth
-- [ ] Testar: participante com token → notificação recebida
-- [ ] Testar: participante com token → notificação recebida
-- [ ] Testar: participante sem token → toast de aviso correto
+- [x] Adicionar import de `getFunctions`, `httpsCallable` em `AdminDashboardPage.tsx`
+- [x] Adicionar `sendingPing` state e callable `sendPushNotification`
+- [x] Implementar `handleSendTestPing`
+- [x] Adicionar bloco de UI na seção de detalhes do participante selecionado
+- [x] Verificar que o pesquisador tem custom claim `admin: true` no Firebase Auth
+- [x] Testar: participante com token → notificação recebida
+- [x] Testar: participante sem token → toast de aviso correto
 
 ---
 
@@ -1453,7 +1452,37 @@ Botão **"Resetar tokens FCM de todos os participantes"** adicionado ao painel a
 - [x] Atualizar guard do refresh silencioso: checar origem além de presença do token
 - [x] Adicionar `resetAllFcmTokens` em `functions/index.js`
 - [x] Adicionar botão "Resetar tokens FCM" em `AdminDashboardPage.tsx`
-- [ ] Deploy: `npm run build && vercel --prod` + `firebase deploy --only functions`
-- [ ] Executar reset pelo painel admin
-- [ ] Confirmar regeneração dos tokens (participantes abrem o app)
-- [ ] Usar "Enviar Ping de Teste" para validar entrega
+- [x] Deploy: `npm run build && vercel --prod` + `firebase deploy --only functions`
+- [x] Executar reset pelo painel admin
+- [x] Confirmar regeneração dos tokens (participantes abrem o app)
+- [x] Usar "Enviar Ping de Teste" para validar entrega
+
+---
+
+## 19. Correção Crítica: Cron Job com Fuso Horário Duplo (06/04/2026 — v10)
+
+### O Problema Identificado
+
+Participantes estavam recebendo Notificações Push com exatamente **3 horas de atraso**.
+O backend (`functions/index.js`) estava definindo o agendamento somando 3 horas na escrita manual da cron expression (`0 12,14,...`) numa tentativa de compensar o GMT manualmente. Contudo, o argumento `timeZone: "America/Sao_Paulo"` também havia sido aplicado. Resultado: o sistema lia o fuso em BRT, mas executava nos horários defasados resultando em alarmes acionando meio-dia BRT ou invés das nove da manhã.
+
+### A Correção no Código
+
+Substituímos o agendador na Firebase Function para os números literais idênticos aos exibidos pelo App:
+```javascript
+// functions/index.js
+exports.sendPingNotification = onSchedule(
+  {
+    schedule: "0 9,11,13,15,17,19,21 * * *",
+    timeZone: "America/Sao_Paulo",
+    region: "southamerica-east1",
+  },
+```
+
+### Relatório de Impacto
+
+- **Frontend (`src/utils/timeUtils.ts`): NENHUM IMPACTO.** O App já calculava sua própria janela ativa (Offline) baseado localmente nos ponteiros do celular em [9, 11, 13, 15, 17, 19, 21].
+- **Lógica de Expiração (Pings Missed): NENHUM IMPACTO.** A avaliação se um ping expirou não depende do Google Firebase Cron. 
+- **Experiência do Participante: ALTO POSITIVO.** Essa correção resolve integralmente o descompasso de o sino de Ping aparecer no App, mas a notificação do celular nunca vibrar em sintonia.
+
+Em suma, **a correção é isolada** e atua puramente como "despertador". Nenhuma reestruturação foi necessária nas regras do TCC. Somente as notificações invisíveis voltarão para a cronometragem verdadeira.
