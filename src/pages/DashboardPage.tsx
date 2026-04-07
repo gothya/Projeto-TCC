@@ -581,13 +581,11 @@ export const DashboardPage: React.FC<{
     setIsProfileMenuOpen(false);
   };
 
-  const handleTimerEnd = useCallback(async () => {
-    console.log("[TimerEnd]", new Date().toLocaleTimeString(), { isActiveWindow, highlightedPing });
+  const handleTimerEnd = useCallback(() => {
     if (!isActiveWindow) {
-      // It was waiting for a future ping, which just started.
       setIsBellVisible(true);
     }
-  }, [isActiveWindow, highlightedPing]);
+  }, [isActiveWindow]);
 
   const handleLogout = async () => {
     await logout();

@@ -133,7 +133,7 @@ async function cleanupInvalidTokens(db, tokens, response) {
 
 // ─── onCall: envio manual pelo painel admin ──────────────────────────────────
 exports.sendPushNotification = onCall(
-    { cors: true },
+    { cors: true, region: "southamerica-east1" },
     async (request) => {
         // Verifica autenticação
         if (!request.auth) {
@@ -176,7 +176,7 @@ exports.sendPushNotification = onCall(
 
 // ─── onCall: limpa tokens FCM de todos os participantes (migração de origem) ─
 exports.resetAllFcmTokens = onCall(
-    { cors: true },
+    { cors: true, region: "southamerica-east1" },
     async (request) => {
         if (!request.auth?.token.admin) {
             throw new HttpsError("permission-denied", "Apenas administradores.");

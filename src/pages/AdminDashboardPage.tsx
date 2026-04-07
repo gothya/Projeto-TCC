@@ -50,6 +50,11 @@ export const AdminDashboardPage: React.FC<{
                     if (!Array.isArray(data.responses)) {
                         data.responses = [];
                     }
+                    // Mapeamento explícito de campos opcionais — o cast `as GameState` não garante
+                    // que campos como fcmToken sejam copiados do Firestore se o tipo os marca como opcionais.
+                    const rawData = doc.data();
+                    data.fcmToken = rawData.fcmToken ?? undefined;
+                    data.fcmTokenOrigin = rawData.fcmTokenOrigin ?? undefined;
                     usersData.push(data);
                 });
                 setAllUsers(usersData);
@@ -273,7 +278,7 @@ export const AdminDashboardPage: React.FC<{
 
     const [sendingPing, setSendingPing] = useState(false);
     const [resettingTokens, setResettingTokens] = useState(false);
-    const functions = getFunctions();
+    const functions = getFunctions(undefined, "southamerica-east1");
     const sendPushNotification = httpsCallable(functions, 'sendPushNotification');
     const resetAllFcmTokens = httpsCallable(functions, 'resetAllFcmTokens');
 

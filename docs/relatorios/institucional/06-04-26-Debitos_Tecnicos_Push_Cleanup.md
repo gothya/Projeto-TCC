@@ -1,8 +1,8 @@
 # Relatório de Débito Técnico — Pós-Implementação Push Notifications
 **Data:** 06/04/2026  
-**Revisado:** 06/04/2026 (verificação ao vivo no repositório)  
+**Revisado:** 06/04/2026 v3 (pente-fino pós-implementação + execução dos itens 2, 3 e 4)  
 **Escopo:** Limpeza pós-implementação das §15–§19 do Plano de Push Notifications  
-**Status:** 🔴 Items 1 e 2 pendentes de execução — demais resolvidos ou de baixo risco
+**Status:** 🟡 Items 1–4 resolvidos — pendente apenas deploy e Item 5 opcional
 
 ---
 
@@ -10,7 +10,9 @@
 
 Após a implementação completa das features de push notifications (§17–§19), foi realizado um pente-fino no código para identificar sobras, estados órfãos e código morto que permaneceu no repositório. **Todos os itens foram verificados diretamente no código-fonte atual** — não são inferências.
 
-> **Nota de auditoria (06/04):** Itens 3 e 4 tiveram seu status atualizado após verificação ao vivo. O `AdminDashboardScreen.tsx` **não existe mais** em `src/components/screen/` — o Item 1 foi **parcialmente resolvido** pela ausência do arquivo, porém o relatório original precisava refletir esse fato. O `highlightedPing` **ainda está presente** nas dependências do `useCallback` (linha 590), confirmando o Item 4.
+> **Nota de auditoria v1 (06/04):** Itens 3 e 4 tiveram seu status atualizado após verificação ao vivo. O `AdminDashboardScreen.tsx` **não existe mais** em `src/components/screen/` — o Item 1 foi **parcialmente resolvido** pela ausência do arquivo. O `highlightedPing` **ainda está presente** nas dependências do `useCallback` (linha 590), confirmando o Item 4.
+
+> **Nota de auditoria v2 (06/04):** Investigação do botão "Enviar Ping de Teste" (§17) que não estava entregando notificações em produção. Descoberta de **duas causas raízes encadeadas** — Items 7 e 8 abaixo. Ambas corrigidas no código; deploy pendente.
 
 ---
 
@@ -29,102 +31,72 @@ Arquivo **não encontrado** em `src/components/screen/` após auditoria ao vivo 
 
 ---
 
-## Item 2 — Botão "Disparar Pings Agora" com endpoint morto
+## Item 2 — ~~Botão "Disparar Pings Agora" com endpoint morto~~
 
-**Severidade:** 🔴 Alta — **pendente de execução**  
-**Arquivo:** `src/pages/AdminDashboardPage.tsx`  
-**Linhas afetadas (verificadas ao vivo):** 279, 321–365, 1127–1148
+**Severidade:** ~~🔴 Alta~~ → ✅ **Resolvido em 06/04/2026**  
+**Arquivo:** `src/pages/AdminDashboardPage.tsx`
 
-### Verificação ao vivo
+### O que foi removido
 
-```ts
-// AdminDashboardPage.tsx:279 (declaração do estado)
-const [isSendingPing, setIsSendingPing] = useState(false);
+- `const [isSendingPing, setIsSendingPing] = useState(false)` — estado órfão
+- Função `triggerPing` completa — chamava `/api/send-broadcast` (endpoint descontinuado)
+- Bloco `<button onClick={triggerPing}>` — botão "Disparar Pings Agora" removido do UI
+- Import `auth` — ficou sem uso após a remoção, removido junto
 
-// AdminDashboardPage.tsx:338 (endpoint morto confirmado)
-const response = await fetch('/api/send-broadcast', { ... });
+### Observação pós-execução
 
-// AdminDashboardPage.tsx:1127–1148 (botão visível no UI)
-<button onClick={triggerPing} disabled={isSendingPing}>
-    Disparar Pings Agora (Todos os {activeUsersCount} usuários)
-</button>
-```
-
-O endpoint `/api/send-broadcast` foi descontinuado (§1 do plano de push). A chamada não falha em build (é runtime), mas retorna erro de rede ou 404 quando o botão é clicado em produção. O botão **está visível e clicável** no painel — risco de confusão operacional durante o estudo.
-
-### Análise de substituição
+Durante a remoção foi identificado que `getFunctions` já estava chamado com a região explícita `"southamerica-east1"` — alinhado com a declaração das Cloud Functions. Nenhuma ação adicional necessária.
 
 | Função original | Substituto atual |
 |---|---|
-| Disparo para todos os usuários | Cron job automático (Firebase Scheduled Function, horários fixos) |
-| Disparo manual para um usuário | Botão "Enviar Ping de Teste" (`handleSendTestPing`) — §17 |
-| Reset de tokens | Botão "Resetar tokens FCM" (`handleResetAllFcmTokens`) — §18 |
-
-O botão "Disparar Pings Agora" **não tem substituto direto** e **não é necessário para o TCC**. O cron é a fonte de verdade para disparo em massa.
-
-### Ação recomendada
-
-Remover do `AdminDashboardPage.tsx`:
-1. `useState(false)` de `isSendingPing` (linha 279)
-2. Função `triggerPing` completa (linhas 321–365)
-3. Bloco `<button onClick={triggerPing}>` do UI (linhas 1127–1148)
-
-> **Risco de remoção:** zero — o endpoint chamado não existe. A remoção elimina dead code e evita confusão do pesquisador.
-
-> **Atenção:** O estado `isSendingPing` é **diferente** de `sendingPing` (linha 280, usado pelo `handleSendTestPing`). Remover apenas `isSendingPing` — não `sendingPing`.
+| Disparo para todos os usuários | Cron job automático (Firebase Scheduled Function) |
+| Disparo manual para um usuário | Botão "Enviar Ping de Teste" — §17 |
+| Reset de tokens | Botão "Resetar tokens FCM" — §18 |
 
 ---
 
-## Item 3 — Estado órfão: `selectedResponseIndex`
+## Item 3 — ~~Estado órfão: `selectedResponseIndex`~~
 
-**Severidade:** 🟡 Média → ⚠️ **Confirmado ativo no código**  
-**Arquivo:** `src/pages/AdminDashboardPage.tsx:37`
+**Severidade:** ~~🟡 Média~~ → ✅ **Resolvido em 06/04/2026**  
+**Arquivo:** `src/pages/AdminDashboardPage.tsx`
 
-### Verificação ao vivo
+### O que foi removido
 
-```ts
-// AdminDashboardPage.tsx:37
-const [selectedResponseIndex, setSelectedResponseIndex] = useState<number | null>(null); // Unused now
-```
+- `const [selectedResponseIndex, setSelectedResponseIndex] = useState<number | null>(null)` — linha 37
+- Bloco de comentários de rascunho nas linhas 265–268 que questionavam se o estado ainda era usado
 
-O comentário `// Unused now` do próprio autor confirma a obsolescência. Verificado via grep: `setSelectedResponseIndex` **nunca é chamado** em nenhuma linha do arquivo além da declaração. O getter também nunca é lido. O estado foi substituído por `selectedHistoryIndex` (linha 269).
-
-O arquivo `AdminDashboardScreen.tsx` que continha a segunda ocorrência (linha 30) foi deletado (ver Item 1), eliminando a duplicata automaticamente.
-
-### Ação recomendada
-
-Remover linha 37 de `AdminDashboardPage.tsx`. O comentário nas linhas 265–268 (que questionava o uso) também pode ser removido na mesma passagem.
-
-> **Risco de remoção:** zero — setter nunca é chamado, getter nunca é lido.
+O estado foi confirmado como completamente substituído por `selectedHistoryIndex` (ainda presente e em uso).
 
 ---
 
-## Item 4 — Dep. desnecessária em `handleTimerEnd`
+## Item 4 — ~~Dep. desnecessária em `handleTimerEnd`~~
 
-**Severidade:** 🟢 Baixa — **confirmado ativo no código**  
-**Arquivo:** `src/pages/DashboardPage.tsx:584–590`
+**Severidade:** ~~🟢 Baixa~~ → ✅ **Resolvido em 06/04/2026**  
+**Arquivo:** `src/pages/DashboardPage.tsx`
 
-### Verificação ao vivo
+### O que foi alterado
 
 ```ts
-// DashboardPage.tsx:584–590
+// Antes
 const handleTimerEnd = useCallback(async () => {
-    console.log("[TimerEnd]", new Date().toLocaleTimeString(), { isActiveWindow, highlightedPing });
-    if (!isActiveWindow) {
-        setIsBellVisible(true);
-    }
-}, [isActiveWindow, highlightedPing]); // ← highlightedPing: só aparece no console.log
+  console.log("[TimerEnd]", new Date().toLocaleTimeString(), { isActiveWindow, highlightedPing });
+  if (!isActiveWindow) {
+    setIsBellVisible(true);
+  }
+}, [isActiveWindow, highlightedPing]);
+
+// Depois
+const handleTimerEnd = useCallback(() => {
+  if (!isActiveWindow) {
+    setIsBellVisible(true);
+  }
+}, [isActiveWindow]);
 ```
 
-`highlightedPing` é lido exclusivamente dentro do `console.log` de debug (sem efeito no comportamento do callback). Sua presença no array de dependências força a recriação de `handleTimerEnd` a cada troca de ping — que ocorre a cada avaliação do intervalo de `evaluateSchedule` (frequência alta). Isso invalida o `useCallback` para o propósito de memoização ao ser passado como prop para `CountdownTimer → onTimerEnd`.
-
-O impacto em runtime é pequeno (sem bug visível ao usuário), mas contradiz o propósito do `useCallback` e gera re-renders desnecessários com frequência.
-
-### Ação recomendada (duas opções)
-
-**Opção A (recomendada):** Remover o `console.log` de debug (sem valor em produção) e remover `highlightedPing` do array de deps. Array resultante: `[isActiveWindow]`.
-
-**Opção B:** Manter o log mas capturar `highlightedPing` como ref estática fora do callback via `useRef`, evitando a dependência dinâmica. Mais complexo, indicado apenas se o log tiver valor analítico em produção.
+- `console.log` de debug removido (sem valor em produção)
+- `highlightedPing` removido das dependências — não influenciava o comportamento do callback
+- `async` removido — o callback não faz mais nenhuma operação assíncrona
+- O callback agora é estável enquanto `isActiveWindow` não muda, respeitando o propósito do `useCallback`
 
 ---
 
@@ -354,19 +326,112 @@ Comentários de desenvolvimento que descrevem operações óbvias. Não afetam r
 
 ---
 
+## Item 7 — `fcmToken` não mapeado no fetch do AdminDashboard
+
+**Severidade:** 🔴 Alta — **causa raiz confirmada do botão Enviar Ping de Teste não funcionando**  
+**Arquivo:** `src/pages/AdminDashboardPage.tsx:47–54`  
+**Status:** ✅ Corrigido — deploy pendente
+
+### Causa raiz
+
+O fetch de participantes usava `doc.data() as GameState` (cast TypeScript direto). Em TypeScript, um cast `as T` **não executa mapeamento — apenas suprime erros de tipo em tempo de compilação**. Campos marcados como `optional` em `GameState.tsx` (`fcmToken?: string`, `fcmTokenOrigin?: string`) não são garantidos pelo runtime — apenas pelo compilador.
+
+O resultado em memória era: `selectedUser.fcmToken === undefined`, mesmo que o campo existisse no documento Firestore. Com `undefined`, a guard na linha 295:
+
+```ts
+if (!selectedUser?.fcmToken) {
+    setToast("Participante sem token FCM...");
+    return; // saía aqui — nunca chegava no sendPushNotification
+}
+```
+
+...disparava sempre. O toast de aviso aparecia, ma **nenhuma chamada à Cloud Function era feita**.
+
+### Correção aplicada
+
+```ts
+// AdminDashboardPage.tsx — dentro do forEach do fetchUsers
+const rawData = doc.data();
+data.fcmToken = rawData.fcmToken ?? undefined;
+data.fcmTokenOrigin = rawData.fcmTokenOrigin ?? undefined;
+usersData.push(data);
+```
+
+O `doc.data()` retorna o documento Firestore sem o filtro do cast TypeScript — incluindo todos os campos presentes, inclusive campos opcionais. O mapeamento explícito garante que o `fcmToken` chegue ao estado do componente.
+
+### Lição
+
+Nunca confiar em `as T` para mapear dados externos (Firestore, APIs). Campos opcionais em TypeScript exigem mapeamento explícito ou uso de bibliotecas de validação (Zod, io-ts). Para o TCC, o mapeamento manual é suficiente.
+
+---
+
+## Item 8 — `getFunctions()` sem região: chama endpoint errado
+
+**Severidade:** 🔴 Alta — **segunda causa raiz do botão Enviar Ping de Teste não funcionando**  
+**Arquivos:** `src/pages/AdminDashboardPage.tsx:275` e `functions/index.js:135, 179`  
+**Status:** ✅ Corrigido — deploy pendente
+
+### Causa raiz
+
+`getFunctions()` sem argumentos conecta o cliente Firebase JS SDK à região padrão `us-central1`. As Cloud Functions `sendPushNotification` e `resetAllFcmTokens` foram deployadas **sem `region` definida**, o que também as coloca em `us-central1` por padrão.
+
+Começamos a investigar se o problema era de região ao constatar que `sendPingNotification` (onSchedule) tinha `region: "southamerica-east1"` explícito, enquanto as onCall não tinham. A ausência de `region` nas funções onCall significava:
+
+1. Funções deployadas em `us-central1` pelo Firebase
+2. Cliente chamando `us-central1` via `getFunctions()` sem região
+3. **Inconsistência latente:** se qualquer deploy futuro definir região globalmente no projeto Firebase, ou se o Firebase mudar o padrão, a chamada quebraria silenciosamente
+
+Ainda que a falha técnica não fosse a causa imediata (mesmo região no cliente e servidor — ambos em `us-central1`), a ausência de `region` explícita é um débito técnico grave por falta de rastreabilidade e risco real em redeploys.
+
+### Correção aplicada
+
+**Frontend (`AdminDashboardPage.tsx`):**
+```ts
+// Antes:
+const functions = getFunctions();
+
+// Depois:
+const functions = getFunctions(undefined, "southamerica-east1");
+```
+
+**Backend (`functions/index.js`):**
+```js
+// Antes:
+exports.sendPushNotification = onCall({ cors: true }, ...);
+exports.resetAllFcmTokens = onCall({ cors: true }, ...);
+
+// Depois:
+exports.sendPushNotification = onCall({ cors: true, region: "southamerica-east1" }, ...);
+exports.resetAllFcmTokens = onCall({ cors: true, region: "southamerica-east1" }, ...);
+```
+
+As três funções do projeto agora usam `southamerica-east1` de forma consistente, alinhadas com a latência do Brasil e com a função de cron existente.
+
+> **Atenção de deploy:** Alterar a `region` de uma Cloud Function **exige que a versão anterior seja deletada manualmente** no Console Firebase antes do novo deploy, ou que o deploy use `--force`. Se o `firebase deploy --only functions` falhar com erro de conflito de região, deletar as funções afetadas pelo console e fazer redeploy.
+
+---
+
 ## Resumo Executivo
 
-| # | Arquivo | Tipo | Linhas | Severidade | Ação |
-|---|---|---|---|---|---|
-| 1 | `AdminDashboardScreen.tsx` | Arquivo morto (1133 linhas) + bug coleção `"users"` | inteiro | 🔴 Alta | Deletar arquivo |
-| 2 | `AdminDashboardPage.tsx` | Botão com endpoint morto (`/api/send-broadcast`) | 279, 321–365, 1127–1148 | 🔴 Alta | Remover função + estado + UI |
-| 3 | `AdminDashboardPage.tsx` | Estado órfão `selectedResponseIndex` | 37, 265–268 | 🟡 Média | Remover declaração + comentários |
-| 4 | `DashboardPage.tsx` | Dep. desnecessária em `useCallback` | 590 | 🟢 Baixa | Remover `highlightedPing` das deps |
-| 5 | `DashboardPage.tsx` | Comentários de rascunho | 551, 554, 576, 578 | 🟢 Baixa | Opcional |
+| # | Arquivo | Tipo | Severidade | Status |
+|---|---|---|---|---|
+| 1 | `AdminDashboardScreen.tsx` | Arquivo morto | 🔴 Alta | ✅ Resolvido — arquivo deletado |
+| 2 | `AdminDashboardPage.tsx` | Botão com endpoint morto (`/api/send-broadcast`) | 🔴 Alta | ✅ Resolvido em 06/04 |
+| 3 | `AdminDashboardPage.tsx` | Estado órfão `selectedResponseIndex` | 🟡 Média | ✅ Resolvido em 06/04 |
+| 4 | `DashboardPage.tsx` | Dep. desnecessária + `console.log` em `handleTimerEnd` | 🟢 Baixa | ✅ Resolvido em 06/04 |
+| 5 | `DashboardPage.tsx` | Comentários de rascunho `🔥` | 🟢 Baixa | 🟢 Opcional — a critério do mantenedor |
+| 6 | `functions/index.js` | Cron com timezone duplo | 🔴 Alta | ✅ Corrigido — deploy pendente |
+| 7 | `AdminDashboardPage.tsx` | `fcmToken` não mapeado no fetch | 🔴 Alta | ✅ Corrigido — deploy pendente |
+| 8 | `AdminDashboardPage.tsx` + `functions/index.js` | `getFunctions()` sem região | 🔴 Alta | ✅ Corrigido — deploy pendente |
 
-### Prioridade de execução
+### Pendências
 
-1. **Item 1** — deletar `AdminDashboardScreen.tsx` (maior risco se reativado acidentalmente)
-2. **Item 2** — remover botão morto (risco de confusão operacional durante o estudo)
-3. **Item 3** — remover estado órfão (limpeza de código)
-4. **Items 4 e 5** — opcional, baixo impacto
+> [!CAUTION]
+> **Deploy duplo obrigatório antes de qualquer teste de push:**
+>
+> 1. `firebase deploy --only functions` — publica correção do cron (Item 6) e regiões das funções onCall (Item 8)
+> 2. `npm run build && vercel --prod` — publica correção do `fcmToken` (Item 7), região do `getFunctions` (Item 8) e limpezas dos itens 2–4
+>
+> Fazer apenas um dos dois **não resolve** — as correções são interdependentes.
+
+- **Item 5** (opcional): limpeza de comentários `🔥` no `DashboardPage.tsx` — sem impacto funcional.
